@@ -1,0 +1,353 @@
+﻿/* =========================================================
+   Today’s Focus (card + list)
+   ========================================================= */
+
+.focus-card__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-md);
+    /* Fullbredds-linje under headern */
+    padding-bottom: var(--space-md);
+    border-bottom: 1px solid var(--border-divider);
+    /* gör linjen kant-till-kant trots card-body padding */
+    margin-left: calc(var(--space-lg) * -1);
+    margin-right: calc(var(--space-lg) * -1);
+    padding-left: var(--space-lg);
+    padding-right: var(--space-lg);
+    /* behåll spacing ned till listan */
+    margin-bottom: var(--space-md);
+}
+
+.focus-card__headerLeft {
+    min-width: 0;
+}
+
+.focus-card__title {
+    margin: 0;
+    font-size: var(--text-h4);
+    line-height: var(--leading-tight);
+    color: var(--text-primary);
+}
+
+.focus-card__subtitle {
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+/* Add button */
+.focus-addBtn {
+    appearance: none;
+    border: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0; /* viktiga centeringen */
+    padding: 0;
+    cursor: pointer;
+    transition: transform var(--transition-fast) var(--ease-default), box-shadow var(--transition-fast) var(--ease-default), background var(--transition-fast) var(--ease-default);
+}
+
+    .focus-addBtn i {
+        display: block; /* tar bort baseline-luft */
+        line-height: 1;
+        margin: 0;
+        font-size: 18px;
+    }
+
+    .focus-addBtn:hover {
+        background: var(--bg-hover);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-hover);
+    }
+
+    .focus-addBtn:focus-visible {
+        outline: none;
+        box-shadow: var(--shadow-focus);
+    }
+
+.focus-card__empty {
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+}
+
+/* List */
+.focus-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.focus-item {
+    display: flex;
+    gap: var(--space-md);
+    padding: var(--space-sm) 0;
+}
+
+    .focus-item + .focus-item {
+        border-top: 1px solid var(--border-subtle);
+    }
+
+/* Toggle */
+.focus-toggle {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: flex-start;
+    justify-content: center;
+}
+
+    .focus-toggle:focus-visible .focus-check {
+        box-shadow: var(--shadow-focus);
+        outline: none;
+    }
+
+.focus-check {
+    width: 22px;
+    height: 22px;
+    border-radius: var(--radius-full);
+    border: 1.5px solid var(--border-default);
+    background: transparent;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform var(--transition-fast) var(--ease-default), background var(--transition-fast) var(--ease-default), border-color var(--transition-fast) var(--ease-default), box-shadow var(--transition-fast) var(--ease-default);
+    flex: 0 0 auto;
+    margin-top: 4px;
+}
+
+.focus-check__inner {
+    width: 18px;
+    height: 18px;
+    border-radius: var(--radius-full);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-inverse);
+    font-size: 16px;
+    line-height: 1;
+}
+
+.focus-check.is-done {
+    background: var(--ui-focus);
+    border-color: var(--ui-focus);
+}
+
+.focus-toggle:hover .focus-check {
+    transform: translateY(-1px);
+    border-color: var(--border-strong);
+}
+
+/* Content */
+.focus-content {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.focus-link,
+.focus-static {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    border-radius: var(--radius-md);
+    padding: var(--space-xs) 0;
+    cursor: pointer;
+}
+
+.focus-titleRow {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-family: var(--font-sans);
+    font-weight: var(--font-semibold);
+    font-size: var(--text-base);
+    line-height: var(--leading-normal);
+    color: var(--text-primary);
+    min-width: 0;
+}
+
+.focus-icon {
+    color: var(--ui-primary);
+    font-size: 16px;
+    flex: 0 0 auto;
+}
+
+.focus-desc {
+    margin-top: 2px;
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    line-height: var(--leading-normal);
+    color: var(--text-secondary);
+}
+
+.focus-item:focus-within .focus-link,
+.focus-item:focus-within .focus-static {
+    background: var(--bg-selected);
+}
+
+/* =========================================================
+   Row actions (Edit) - hover on desktop, always on mobile
+   ========================================================= */
+
+.focus-item {
+    align-items: flex-start;
+}
+
+/* Edit-knappen (grund) */
+.focus-editBtn {
+    appearance: none;
+    border: 1px solid var(--border-default);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius-md);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex: 0 0 auto;
+    margin-left: auto;
+    margin-top: 1px;
+    transition: background var(--transition-fast) var(--ease-default), transform var(--transition-fast) var(--ease-default), box-shadow var(--transition-fast) var(--ease-default), border-color var(--transition-fast) var(--ease-default), opacity var(--transition-fast) var(--ease-default), visibility var(--transition-fast) var(--ease-default);
+}
+
+    .focus-editBtn:hover {
+        background: var(--bg-hover);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-hover);
+        border-color: var(--border-strong);
+        color: var(--text-primary);
+    }
+
+    .focus-editBtn:focus-visible {
+        outline: none;
+        box-shadow: var(--shadow-focus);
+        border-color: var(--border-focus);
+        color: var(--text-primary);
+    }
+
+    /* Bootstrap-icons: stabil centrering */
+    .focus-editBtn i {
+        display: block;
+        line-height: 1;
+        margin: 0;
+        padding: 0;
+        font-size: 16px;
+    }
+
+/* --- Desktop: dölj tills hover/focus --- */
+@media (hover: hover) and (pointer: fine) {
+    .focus-editBtn {
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(0);
+        pointer-events: none; /* viktig: annars kan den “stjäla” hover */
+    }
+
+    .focus-item:hover .focus-editBtn,
+    .focus-item:focus-within .focus-editBtn {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+    }
+}
+
+/* --- Touch/mobil: visa alltid (ingen hover) --- */
+@media (hover: none) and (pointer: coarse) {
+    .focus-editBtn {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+    }
+}
+
+/* (Valfritt) lite mindre på små skärmar */
+@media (max-width: 575.98px) {
+    .focus-editBtn {
+        width: 32px;
+        height: 32px;
+    }
+
+        .focus-editBtn i {
+            font-size: 15px;
+        }
+}
+
+
+/* Expand / collapse */
+.focus-expand {
+    display: flex;
+    justify-content: center;
+    padding: var(--space-sm) 0;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.focus-expand__btn {
+    appearance: none;
+    background: none;
+    border: 0;
+    padding: var(--space-xs) var(--space-md);
+    border-radius: var(--radius-md);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background var(--transition-fast) var(--ease-default), transform var(--transition-fast) var(--ease-default);
+}
+
+    .focus-expand__btn:hover {
+        background: var(--bg-hover);
+        transform: translateY(-1px);
+    }
+
+    .focus-expand__btn:focus-visible {
+        outline: none;
+        box-shadow: var(--shadow-focus);
+    }
+
+.focus-expand__count {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--text-disabled);
+}
+
+/* Wrapper som animeras */
+.focus-more {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(calc(var(--space-sm) * -1));
+    overflow: hidden;
+    transition: max-height var(--transition-medium) var(--ease-default), opacity var(--transition-medium) var(--ease-default), transform var(--transition-medium) var(--ease-default);
+}
+
+.focus-more__inner {
+    padding-top: var(--space-sm);
+    border-top: 1px solid var(--border-subtle);
+}
+
+.focus-more.is-open {
+    max-height: 700px;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+    /* Dölj +N när listan är expanderad */
+    .focus-more.is-open + .focus-expand .focus-expand__count {
+        opacity: 0;
+        transform: translateY(-2px);
+        transition: opacity var(--transition-fast) var(--ease-default), transform var(--transition-fast) var(--ease-default);
+    }

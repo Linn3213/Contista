@@ -1,0 +1,107 @@
+﻿/* =========================================================
+   ✍️ TYPOGRAPHY 
+   ========================================================= */
+
+.page-title {
+    font-family: var(--font-serif);
+    font-size: var(--text-h1);
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    font-weight: var(--font-bold);
+    letter-spacing: -0.02em;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.page-subtitle {
+    font-family: var(--font-serif);
+    color: var(--text-secondary);
+    font-size: var(--text-lg);
+    font-weight: var(--font-regular);
+    line-height: var(--leading-relaxed);
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-serif);
+    color: var(--text-primary);
+    margin-top: 0;
+}
+
+h1 {
+    font-size: var(--text-h1);
+    line-height: var(--leading-tight);
+    margin-bottom: 0.5em;
+    font-weight: var(--font-bold);
+}
+
+h2 {
+    font-size: var(--text-h2);
+    line-height: var(--leading-tight);
+    margin-bottom: 0.5em;
+    font-weight: var(--font-semibold);
+}
+
+h3 {
+    font-size: var(--text-h3);
+    line-height: var(--leading-normal);
+    margin-bottom: 0.5em;
+    font-weight: var(--font-semibold);
+}
+
+h4 {
+    font-size: var(--text-h4);
+    line-height: var(--leading-normal);
+    margin-bottom: 0.5em;
+    font-weight: var(--font-medium);
+}
+
+h5 {
+    font-size: var(--text-h4);
+    line-height: var(--leading-normal);
+    margin-bottom: 0.5em;
+    font-weight: var(--font-medium);
+}
+
+h6 {
+    font-size: var(--text-base);
+    line-height: var(--leading-normal);
+    margin-bottom: 0.5em;
+    font-weight: var(--font-medium);
+}
+
+h1:focus {
+    outline: none;
+}
+
+/* Body text */
+p {
+    margin-bottom: 1em;
+    line-height: var(--leading-normal);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    color: var(--text-primary);
+}
+
+/* Small & muted */
+.small {
+    font-family: var(--font-sans);
+    color: var(--text-secondary);
+}
+
+.text-muted {
+    font-family: var(--font-sans);
+    color: var(--text-disabled);
+}
+
+/* Utilities */
+.text-base {
+    font-size: var(--text-base);
+}
+
+.text-lg {
+    font-size: var(--text-lg);
+}
+
+.text-sm {
+    font-size: var(--text-sm);
+}

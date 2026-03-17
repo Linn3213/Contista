@@ -1,0 +1,22 @@
+﻿@* Loader.razor component *@
+@if (Visible)
+{
+    <div class="app-loader-overlay fade-in">
+        <div class="app-loader-dots" aria-hidden="true">
+            <div class="app-loader-dot"></div>
+            <div class="app-loader-dot delay1"></div>
+            <div class="app-loader-dot delay2"></div>
+        </div>
+        <p class="app-loader-text">@DisplayMessage</p>
+    </div>
+}
+
+@code {
+    [CascadingParameter] public ILocalizationService Loc { get; set; } = default!;
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public string? Message { get; set; }
+
+    private string DisplayMessage => string.IsNullOrWhiteSpace(Message)
+        ? Loc["Common_Messages_Loading"]
+        : Message!;
+}

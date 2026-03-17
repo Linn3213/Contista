@@ -1,0 +1,49 @@
+﻿@*FeatureCardGate.razor component*@
+
+@using Contista.Shared.Core.Models.Auth
+@inject IFeatureAccessService Features
+@inject NavigationManager Nav
+
+<div class="feature-card-gate">
+    <div class="feature-card-gate-content @(!_allowed ? "is-locked" : "")">
+        @ChildContent
+    </div>
+
+    @if (!_allowed)
+    {
+        <div class="feature-card-gate-overlay" role="note" aria-live="polite">
+            <div class="feature-card-gate-title">@Loc["Page_FeatureCardGate_Title"]</div>
+            <div class="feature-card-gate-message">@DisplayMessage</div>
+
+            <button type="button" class="btn btn-sm feature-card-gate-btn" @onclick="GoUpgrade">
+                @Loc["Common_Actions_Upgrade"] →
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+    [CascadingParameter] public ILocalizationService Loc { get; set; } = default!;
+    [Parameter, EditorRequired] public FeatureKey Feature { get; set; }
+    [Parameter, EditorRequired] public RenderFragment ChildContent { get; set; } = default!;
+    [Parameter] public string? Message { get; set; }
+    [Parameter] public string UpgradeHref { get; set; } = "/app/upgrade";
+
+    private string DisplayMessage =>
+        Message ?? (Loc?["Page_FeatureCardGate_Message"] ?? "This feature is not included in your plan.");
+
+    private bool _allowed;
+
+    protected override async Task OnParametersSetAsync()
+        => _allowed = await Features.CanAsync(Feature);
+
+    private void GoUpgrade()
+    {
+        var target =
+            UpgradeHref
+            + "?feature=" + Uri.EscapeDataString(Feature.ToString())
+            + "&returnUrl=" + Uri.EscapeDataString(Nav.ToBaseRelativePath(Nav.Uri));
+
+        Nav.NavigateTo("/" + target.TrimStart('/'));
+    }
+}

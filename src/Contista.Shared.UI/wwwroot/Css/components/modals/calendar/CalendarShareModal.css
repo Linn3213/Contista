@@ -1,0 +1,23 @@
+﻿/* =========================================================
+   CalendarShareModal (scoped overrides)
+   Endast saker som är unika för Share-modalen.
+   ========================================================= */
+
+.cal-shareModal {
+    /* tom med flit tills vi ser behov */
+}
+
+    /* Om du vill att dropdowns här alltid följer samma bredd (oftast redan fixat av .cal-dd/.cal-dd-menu) */
+    .cal-shareModal .cal-dd {
+        width: 100%;
+    }
+
+    .cal-shareModal .cal-dd-menu {
+        width: 100%;
+        min-width: 100%;
+    }
+
+    /* Om du vill säkra caret-position även här */
+    .cal-shareModal .dropdown-toggle::after {
+        margin-left: auto;
+    }

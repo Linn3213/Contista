@@ -1,0 +1,48 @@
+﻿/* =========================================================
+    BASE STYLES
+   ========================================================= */
+
+.status-bar-safe-area {
+    height: 0 !important;
+    background: transparent !important;
+}
+
+.app-root {
+    position: relative;
+    z-index: 1;
+    --bs-heading-font-family: var(--font-serif);
+    --bs-body-font-family: var(--font-sans);
+}
+
+.app-shell {
+    min-height: calc(100vh - 56px);
+}
+/* om topbar ~56px */
+.app-main {
+    min-width: 0;
+}
+
+html, body {
+    height: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    color-scheme: light;
+}
+
+body {
+    line-height: var(--leading-normal);
+    position: relative;
+}
+
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        /* Dekorativt – OK att vara lägre kontrast */
+        background: radial-gradient(circle at 20% 35%, rgba(156,146,136,0.18) 0%, transparent 55%), radial-gradient(circle at 80% 80%, rgba(107,98,89,0.08) 0%, transparent 55%);
+    }

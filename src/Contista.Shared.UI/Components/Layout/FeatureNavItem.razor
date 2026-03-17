@@ -1,0 +1,56 @@
+﻿@*FeatureNavItem.razor component*@
+@using Contista.Shared.Core.Models.Auth
+@inject IFeatureAccessService Features
+@inject NavigationManager Nav
+
+@if (_allowed)
+{
+    <NavLink class="nav-item" href="@Href" @onclick="OnClicked">
+        <span class="nav-icon">@Icon</span>
+        <span>@Text</span>
+    </NavLink>
+}
+else if (ShowLocked)
+{
+    <button type="button"
+            class="nav-item nav-item-locked"
+            title="@DisplayLockedTooltip"
+            @onclick="GoUpgrade">
+        <span class="nav-icon">@Icon</span>
+        <span>@Text</span>
+        <span class="nav-arrow" aria-hidden="true">→</span>
+    </button>
+}
+
+@code {
+
+    [CascadingParameter] public ILocalizationService Loc { get; set; } = default!;
+    [Parameter, EditorRequired] public FeatureKey Feature { get; set; }
+    [Parameter, EditorRequired] public string Href { get; set; } = "/";
+    [Parameter, EditorRequired] public string Text { get; set; } = "";
+    [Parameter] public RenderFragment? Icon { get; set; }
+
+    [Parameter] public bool ShowLocked { get; set; } = true;
+    [Parameter] public string? LockedTooltip { get; set; }
+    [Parameter] public string UpgradeHref { get; set; } = "/app/upgrade";
+
+    private bool _allowed;
+    private string DisplayLockedTooltip =>
+        LockedTooltip ?? (Loc?["Page_FeatureNavItem_Tooltip_Button"] ?? "Requires update");
+
+    protected override async Task OnParametersSetAsync()
+        => _allowed = await Features.CanAsync(Feature);
+
+    private Task OnClicked() => Task.CompletedTask;
+
+    private void GoUpgrade()
+    {
+        // aktivt val: du går hit via klick, inte auto-redirect
+        var target =
+            UpgradeHref
+            + "?feature=" + Uri.EscapeDataString(Feature.ToString())
+            + "&returnUrl=" + Uri.EscapeDataString(Href);
+
+        Nav.NavigateTo(target);
+    }
+}

@@ -1,0 +1,579 @@
+﻿/* =========================================================
+   Calendar Styles (Base / Calendar.razor + Shared UI)
+   ========================================================= */
+
+.cal-card {
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    background: var(--bg-card);
+    box-shadow: var(--shadow-card);
+    font-family: var(--font-sans);
+}
+
+.cal-header {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-md);
+}
+
+.cal-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+}
+
+.cal-title {
+    margin: 0;
+    font-size: var(--text-h3);
+    font-family: var(--font-serif);
+    writing-mode: horizontal-tb;
+    text-orientation: mixed;
+    word-break: normal;
+    overflow-wrap: anywhere;
+}
+
+.cal-subtitle {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    margin-top: var(--space-xs);
+    writing-mode: horizontal-tb;
+    text-orientation: mixed;
+    word-break: normal;
+}
+
+.cal-headerLeft {
+    min-width: 0;
+}
+
+.cal-headerCenter {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.cal-headerRight {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: var(--space-xs);
+    flex-wrap: wrap;
+}
+
+.cal-modalBody {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.cal-sep {
+    height: 1px;
+    background: var(--border-divider);
+    margin: var(--space-md) 0;
+}
+
+.cal-statusPanel {
+    margin: var(--space-sm) 0;
+}
+
+.cal-statusPanel-neutral {
+    padding: var(--space-md);
+    border: 1px solid var(--border-divider);
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+}
+
+/* Desktop vs mobile action containers */
+.cal-desktopAction {
+    display: inline-flex;
+}
+
+.cal-mobileActions {
+    display: none;
+}
+
+/* View toggle (Month/Week/Agenda) */
+.cal-viewToggle {
+    display: flex;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-full);
+    padding: var(--space-xs);
+    gap: var(--space-xs);
+}
+
+.cal-toggleBtn {
+    border: 0;
+    background: transparent;
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-full);
+    font-size: var(--text-sm);
+    color: var(--text-primary);
+    min-height: 40px;
+}
+
+    .cal-toggleBtn.is-active {
+        background: var(--bg-secondary);
+        color: var(--ui-focus);
+    }
+
+/* Calendar filter dropdown (Calendar.razor) */
+.cal-calendarFilterMenu {
+    min-width: 18rem;
+    max-width: min(92vw, 34rem);
+}
+
+.cal-calendarFilterBtn {
+    min-width: clamp(13rem, 24vw, 18rem);
+    max-width: min(70vw, 24rem);
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-xs);
+    border: 1px solid var(--border-divider);
+    background: var(--bg-surface);
+    border-radius: var(--radius-md);
+    transition: background 0.15s ease, border-color 0.15s ease;
+    font-weight: var(--font-medium);
+}
+
+    .cal-calendarFilterBtn:hover {
+        background: var(--bg-secondary);
+        border-color: var(--border-default);
+    }
+
+    .cal-calendarFilterBtn .text-truncate {
+        min-width: 0;
+        max-width: 100%;
+        font-weight: var(--font-medium);
+    }
+
+/* Period header used by Month + Week + Agenda */
+.cal-monthTop {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-md);
+    margin-bottom: var(--space-sm);
+}
+
+.cal-navBtn {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-default);
+    background: var(--bg-surface);
+}
+
+.cal-monthLabel {
+    font-weight: 600;
+}
+
+.cal-todayBtn {
+    min-height: 36px;
+    min-width: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+/* Grid helpers (MonthView can override columns) */
+.cal-dowRow {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: var(--space-sm);
+    margin-bottom: var(--space-sm);
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+}
+
+.cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: var(--space-sm);
+}
+
+/* Bootstrap dropdown width helpers */
+.cal-dd {
+    width: 100%;
+}
+
+    .cal-dd > .dropdown-toggle {
+        width: 100%;
+    }
+
+.cal-dd-menu {
+    min-width: 100%;
+    width: 100%;
+}
+
+/* =========================================================
+   Shared "Event chip" UI (used by Month now, Week/Agenda later)
+   ========================================================= */
+
+/* Add button base (inline by default) */
+.cal-addBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+    /* Month-style positioning (opt-in) */
+    .cal-addBtn.is-abs {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        z-index: 3;
+    }
+
+@media (hover: hover) and (pointer: fine) {
+    .cal-addBtn.is-abs {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    .cal-cell:hover .cal-addBtn.is-abs,
+    .cal-cell:focus-within .cal-addBtn.is-abs {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+    }
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .cal-addBtn.is-abs {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+    }
+}
+
+/* Event list stack base */
+.cal-items {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    min-width: 0;
+}
+
+    /* Month-style spacing (opt-in) */
+    .cal-items.is-month {
+        position: relative;
+        z-index: 2;
+        margin-top: 26px;
+    }
+
+/* Event chip */
+.cal-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: var(--text-xs);
+    white-space: nowrap;
+    overflow: hidden;
+    border-left: 3px solid var(--cal-accent);
+    padding-left: var(--space-xs);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--cal-accent) 10%, white);
+}
+
+.cal-itemTime {
+    color: var(--text-muted);
+    flex: 0 0 auto;
+    white-space: nowrap;
+    letter-spacing: -0.1px;
+}
+
+.cal-itemTitle {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cal-more {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    margin-top: var(--space-xs);
+}
+
+    .cal-item:focus-visible,
+    .cal-more:focus-visible {
+        outline: 2px solid var(--border-strong);
+        outline-offset: 2px;
+        border-radius: var(--radius-md);
+    }
+
+/* =========================================================
+   Loading overlay (Calendar.razor)
+   ========================================================= */
+
+.cal-viewWrap {
+    position: relative;
+}
+
+.cal-loadingOverlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 10px;
+    pointer-events: none;
+}
+
+.cal-loadingChip {
+    background: var(--bg-card);
+    border: 1px solid var(--border-divider);
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: var(--text-sm);
+    box-shadow: var(--shadow-hover);
+    opacity: 0.95;
+}
+
+/* Icons in right header buttons */
+.cal-headerRight .btn .bi {
+    font-size: var(--text-base);
+    line-height: 1;
+}
+
+/* Responsive header / toggle */
+@media (max-width: 768px) {
+    .cal-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .cal-headerCenter,
+    .cal-headerRight {
+        width: 100%;
+    }
+
+    .cal-headerRight {
+        justify-content: space-between;
+    }
+
+    .cal-desktopAction {
+        display: none;
+    }
+
+    .cal-mobileActions {
+        display: inline-flex;
+        margin-left: auto;
+    }
+
+    .cal-title {
+        font-size: var(--text-h2);
+        line-height: var(--leading-tight);
+    }
+
+    .cal-subtitle {
+        max-width: 42ch;
+    }
+
+    .cal-viewToggle {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .cal-toggleBtn {
+        flex: 1 1 calc(33.333% - var(--space-xs));
+        min-width: 0;
+        text-align: center;
+    }
+}
+
+/* =========================================================
+   Calendar form controls (works in views + modals)
+   ========================================================= */
+
+.cal-formRow {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.cal-grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-sm);
+    align-items: start;
+}
+
+
+/* 2 kolumner på desktop, 1 på mobil */
+.cal-grid2-collapse {
+}
+
+
+@media (max-width: 575.98px) {
+    .cal-grid2-collapse {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+.cal-label {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+/* Inputs du själv äger */
+.cal-input {
+    width: 100%;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+    padding: var(--space-sm) var(--space-md);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    line-height: 1.2;
+    box-shadow: none;
+}
+
+    .cal-input:focus {
+        outline: none;
+        border-color: var(--border-focus);
+        box-shadow: var(--shadow-focus);
+    }
+
+/* Bootstrap dropdown i kalendern – håll den “Contista-ren” */
+.cal-dd .dropdown-menu,
+.cal-colorMenu {
+    border: 1px solid var(--border-divider);
+    border-radius: var(--radius-md);
+    background: var(--bg-card);
+    box-shadow: var(--shadow-dropdown);
+}
+
+    .cal-dd .dropdown-item,
+    .cal-colorMenu .dropdown-item {
+        border-radius: var(--radius-sm);
+    }
+
+/* Fix för den konstiga "button.form-select" du har i Members-role */
+.cal-modal .dropdown > button.form-select {
+    /* gör den som en cal-input istället för ett “fake select” */
+    width: auto;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+    padding: 6px 10px;
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    line-height: 1.2;
+    box-shadow: none;
+}
+
+    .cal-modal .dropdown > button.form-select:focus {
+        outline: none;
+        border-color: var(--border-focus);
+        box-shadow: var(--shadow-focus);
+    }
+
+/* Swatches: fallback om design token saknas */
+/* Color picker dropdown (custom) */
+.cal-colorPicker {
+    position: relative;
+}
+
+.cal-colorPickerBtn {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: var(--space-sm);
+}
+
+/* Vänsterdel: swatch + label */
+.cal-colorLeft {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    min-width: 0;
+}
+
+/* Label ska kunna truncas */
+.cal-colorLabel {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Bootstrap caret längst till höger */
+.cal-colorPickerBtn.dropdown-toggle::after {
+    margin-left: auto; /* <-- flyttar pilen längst till höger */
+}
+
+/* Meny bredd + maxhöjd så man kan scrolla om många */
+.cal-colorMenu {
+    width: 100%;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.cal-colorItem {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+/* Swatch: kvadratisk */
+.cal-colorSwatch {
+    width: var(--space-sm2);
+    height: var(--space-sm2);
+    border-radius: var(--radius-xxs);
+    border: 1px solid var(--border-default);
+    flex: 0 0 auto;
+}
+
+
+/* Availability hooks for Week blocks */
+.cal-block {
+    position: absolute; /* antar att du redan använder absolute i layouten */
+    overflow: hidden;
+}
+
+    /* Free ska synas men vara "lättare" */
+    .cal-block.avail-free {
+        opacity: 0.88;
+    }
+
+    /* Busy = normal "blocker" */
+    .cal-block.avail-busy {
+        /* valfritt: lite tydligare kant */
+        box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+    }
+
+    /* OutOfOffice ska sticka ut MER än Busy */
+    .cal-block.avail-ooo {
+        box-shadow: inset 0 0 0 2px rgba(0,0,0,0.12);
+        font-weight: var(--font-semibold);
+    }
+
+    /* Tentative = diagonala stripes (som Outlook-känsla) */
+    .cal-block.avail-tentative::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background-image: repeating-linear-gradient( -45deg, rgba(0,0,0,0.10) 0px, rgba(0,0,0,0.10) 6px, transparent 6px, transparent 12px );
+    }
+
+/* availability label/badge inne i blocket */
+.cal-blockAvail {
+    margin-top: 4px;
+    font-size: 12px;
+    opacity: 0.85;
+    line-height: 1.1;
+}

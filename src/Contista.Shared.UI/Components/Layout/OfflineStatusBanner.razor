@@ -1,0 +1,331 @@
+﻿@* OfflineStatusBanner.razor component *@
+@implements IDisposable
+
+@inject INetworkStatus Network
+@inject ISyncQueue SyncQueue
+@inject ISyncRunner SyncRunner
+@inject IFirebaseAuthService Auth
+@inject AuthenticationStateProvider AuthProvider
+@inject IServiceProvider Services
+
+@if (!(HideWhenOnline && EffectiveOnline))
+{
+    <div class="offline-banner @(Compact ? "offline-banner-compact" : "") @(EffectiveOnline ? "offline-banner-online" : "offline-banner-offline")"
+         title="@BannerTitle">
+
+        <div class="offline-banner-left">
+            <span class="offline-banner-dot" aria-hidden="true"></span>
+
+            <span class="offline-banner-status">@StatusText</span>
+
+            @if (!Compact && NetworkDebug?.IsSupported == true && NetworkDebug.ForcedOnline is not null)
+            {
+                <span class="offline-banner-sep" aria-hidden="true">•</span>
+                <span class="offline-banner-msg">
+                    Debug: @(NetworkDebug.ForcedOnline == true ? Loc["Page_OfflineStatusBanner_ForcedOnline_Text"] : Loc["Page_OfflineStatusBanner_ForcedOffline_Text"])
+                </span>
+            }
+
+            @if (!Compact)
+            {
+                <span class="offline-banner-sep" aria-hidden="true">•</span>
+                <span class="offline-banner-pending">
+                    Kö: <b>@_pending</b>
+                </span>
+
+                @if (!string.IsNullOrWhiteSpace(_msg))
+                {
+                    <span class="offline-banner-sep" aria-hidden="true">•</span>
+                    <span class="offline-banner-msg">@_msg</span>
+                }
+            }
+            else
+            {
+                @if (!string.IsNullOrWhiteSpace(_msg))
+                {
+                    <span class="offline-banner-sep" aria-hidden="true">•</span>
+                    <span class="offline-banner-msg">@_msg</span>
+                }
+            }
+        </div>
+
+        @if (!Compact)
+        {
+            <div class="offline-banner-right">
+                <button class="btn btn-sm btn-outline-primary"
+                        @onclick="SyncNow"
+                        disabled="@(!_canSync)">
+                    @Loc["Page_OfflineStatusBanner_SyncNow_Button"]
+                </button>
+
+                @if (NetworkDebug?.IsSupported == true)
+                {
+                    <button class="btn btn-sm btn-outline-secondary"
+                            title="@Loc["Page_OfflineStatusBanner_ForcedNetwork_Button"]"
+                            @onclick="CycleNetworkDebug">
+                        @DebugButtonText
+                    </button>
+                }
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [CascadingParameter] public ILocalizationService Loc { get; set; } = default!;
+    [Parameter] public bool Compact { get; set; }
+    [Parameter] public bool HideWhenOnline { get; set; } = true;
+
+    private INetworkDebugControl? NetworkDebug; // SAFE resolve
+    private int _pending;
+    private string? _msg;
+    private bool _busy;
+    private bool _disposed;
+    private CancellationTokenSource? _cts;
+
+    // ---------- Online som UI ska utgå från (inkl debug forcing) ----------
+    private bool EffectiveOnline
+        => NetworkDebug?.IsSupported == true && NetworkDebug.ForcedOnline is bool forced
+            ? forced
+            : Network.IsOnline;
+
+    private bool _canSync => !_busy && EffectiveOnline && Auth.IsLoggedIn;
+
+    private string BannerTitle =>
+        !EffectiveOnline
+            ? Loc["Page_OfflineStatusBanner_Offline_Title"]
+            : Loc["Page_OfflineStatusBanner_Online_Title"];
+
+    private string StatusText
+    {
+        get
+        {
+            if (Compact && !EffectiveOnline)
+                return Loc["Page_OfflineStatusBanner_Status_Text"];
+
+            return EffectiveOnline ? "Online" : "Offline";
+        }
+    }
+
+    private string DebugButtonText
+        => NetworkDebug?.ForcedOnline switch
+        {
+            null => "Debug: AUTO",
+            true => "Debug: ONLINE",
+            false => "Debug: OFFLINE"
+        };
+
+    // ---------- Polling policy ----------
+    // Vi vill polla när:
+    //  - offline (för att kunna uppdatera när queue / status förändras)
+    //  - eller när vi är online, inloggade och pending > 0 (för att visa att kön töms)
+    // Annars: ingen polling.
+    private bool ShouldPoll
+        => !EffectiveOnline || (Auth.IsLoggedIn && _pending > 0);
+
+    protected override async Task OnInitializedAsync()
+    {
+        // ✅ SAFE resolve: null om ej registrerad
+        NetworkDebug = Services.GetService<INetworkDebugControl>();
+
+        Network.OnlineChanged += OnOnlineChanged;
+        AuthProvider.AuthenticationStateChanged += OnAuthChanged;
+
+        await RefreshCountsAsync();
+
+        // Starta polling bara om det behövs
+        EnsurePollingState();
+    }
+
+    private async void OnOnlineChanged(bool _)
+    {
+        if (_disposed) return;
+        try
+    {
+            await InvokeAsync(async () =>
+            {
+                if (_disposed) return;
+                await RefreshCountsAsync();
+                EnsurePollingState();
+            });
+        }
+        catch { }
+    }
+
+    private async void OnAuthChanged(Task<AuthenticationState> _)
+    {
+        if (_disposed) return;
+        try
+        {
+            await InvokeAsync(async () =>
+            {
+                if (_disposed) return;
+                await RefreshCountsAsync();
+                EnsurePollingState();
+            });
+        }
+        catch { }
+    }
+
+    private void EnsurePollingState()
+    {
+        if (ShouldPoll)
+            StartPolling();
+        else
+            StopPolling();
+    }
+
+    private void StartPolling()
+    {
+        if (_disposed) return;
+        if (_cts is not null && !_cts.IsCancellationRequested) return;
+
+        StopPolling(); // viktig: stoppa gammal loop helt
+        _cts = new CancellationTokenSource();
+        var ct = _cts.Token;
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                while (!ct.IsCancellationRequested)
+                {
+                    await Task.Delay(3000, ct);
+
+                    if (ct.IsCancellationRequested) break;
+                    await InvokeAsync(async () =>
+                    {
+                        if (_disposed) return;
+                        await RefreshCountsAsync();
+                        EnsurePollingState();
+                    });
+                }
+            }
+            catch (OperationCanceledException) { }
+            catch { /* ignore */ }
+        }, ct);
+    }
+
+    private void StopPolling()
+    {
+        if (_cts is null) return;
+
+        try { _cts.Cancel(); } catch { }
+        _cts.Dispose();
+        _cts = null;
+    }
+
+    private async Task RefreshCountsAsync()
+    {
+        // Lägg inga calls som kräver auth om vi inte är inloggade
+        var pendingNew = 0;
+
+        if (Auth.IsLoggedIn)
+        {
+            try
+            {
+                pendingNew = await SyncQueue.CountAsync(SyncQueueStatus.Pending);
+            }
+            catch
+            {
+                pendingNew = 0;
+            }
+        }
+
+        var msgNew = ComputeMessage(pendingNew);
+
+        // 🔇 undvik onödig StateHasChanged-storm
+        var changed = pendingNew != _pending || msgNew != _msg;
+
+        _pending = pendingNew;
+        _msg = msgNew;
+
+        if (changed)
+            StateHasChanged();
+    }
+
+    private string? ComputeMessage(int pending)
+    {
+        if (!Auth.IsLoggedIn)
+        {
+            // På landing vill vi kunna förklara varför login är disabled
+            return (Compact && !EffectiveOnline) ? Loc["Page_OfflineStatusBanner_ComputeMessage_1"] : null;
+        }
+
+        if (!EffectiveOnline)
+            return Compact ? Loc["Page_OfflineStatusBanner_ComputeMessage_1"] : Loc["Page_OfflineStatusBanner_ComputeMessage_2"];
+
+        if (pending > 0)
+            return Loc["Page_OfflineStatusBanner_ComputeMessage_3"];
+
+        return null;
+    }
+
+    private async Task SyncNow()
+    {
+        _msg = null;
+
+        if (!Auth.IsLoggedIn)
+        {
+            _msg = Loc["SyncDebug_NotLoggedIn"];
+            StateHasChanged();
+            return;
+        }
+
+        if (!EffectiveOnline)
+        {
+            _msg = Loc["Page_OfflineStatusBanner_Offline_Text"];
+            StateHasChanged();
+            return;
+        }
+
+        _busy = true;
+        try
+        {
+            await SyncRunner.RunOnceAsync();
+            _msg = "Synk klar.";
+        }
+        catch (Exception ex)
+        {
+            _msg = $"{Loc["Common_Errors_Generic"]} {ex.Message}";
+        }
+        finally
+        {
+            _busy = false;
+            await RefreshCountsAsync();
+            EnsurePollingState();
+        }
+    }
+
+    private Task CycleNetworkDebug()
+    {
+        if (NetworkDebug?.IsSupported != true)
+            return Task.CompletedTask;
+
+        var next = NetworkDebug.ForcedOnline switch
+        {
+            null => (bool?)false,
+            false => (bool?)true,
+            true => (bool?)null
+        };
+
+        NetworkDebug.Force(next);
+
+        // Re-eval efter debug toggle
+        return InvokeAsync(async () =>
+        {
+            await RefreshCountsAsync();
+            EnsurePollingState();
+        });
+    }
+
+    public void Dispose()
+    {
+        _disposed = true;
+
+        Network.OnlineChanged -= OnOnlineChanged;
+        AuthProvider.AuthenticationStateChanged -= OnAuthChanged;
+
+        StopPolling();
+    }
+}

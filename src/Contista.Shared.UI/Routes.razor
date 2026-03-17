@@ -1,0 +1,50 @@
+﻿@* Routes.razor *@
+@using Contista.Shared.UI.Components.Routing
+
+@inherits FormPageBase
+<CascadingAuthenticationState>
+    <AppGate>
+        <Router AppAssembly="typeof(Layout.MainLayout).Assembly" NotFoundPage="typeof(Pages.Shell.NotFound)">
+            <Found Context="routeData">
+                @if (IsAppRoute(routeData))
+                {
+                    <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.AuthenticatedLayout)">
+                        <NotAuthorized>
+                            <RouteGuardRedirect ReturnUrl="@GetReturnUrl()" />
+                        </NotAuthorized>
+                        <Authorizing>
+                            <div class="container">
+                                <p class="la-muted">@Loc["Common_Messages_Loading"]</p>
+                            </div>
+                        </Authorizing>
+                    </AuthorizeRouteView>
+                }
+                else
+                {
+                    <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+                }
+
+                <FocusOnNavigate RouteData="routeData" Selector="h1" />
+            </Found>
+        </Router>
+    </AppGate>
+</CascadingAuthenticationState>
+
+@code {
+
+    private static bool IsAppRoute(RouteData routeData)
+    {
+        var templates = routeData.PageType
+            .GetCustomAttributes(typeof(Microsoft.AspNetCore.Components.RouteAttribute), inherit: true)
+            .OfType<Microsoft.AspNetCore.Components.RouteAttribute>()
+            .Select(a => a.Template?.TrimStart('/') ?? "");
+
+        return templates.Any(t => t.StartsWith("app/", StringComparison.OrdinalIgnoreCase) || t.Equals("app", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private string GetReturnUrl()
+    {
+        var relative = Nav.ToBaseRelativePath(Nav.Uri);
+        return "/" + relative;
+    }
+}

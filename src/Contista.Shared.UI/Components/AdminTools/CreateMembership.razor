@@ -1,0 +1,154 @@
+﻿@* CreateMembership.razor component *@
+@inherits AppPageBase
+
+@inject IFirebaseAuthService AuthService
+@inject IOfflineWriteService OfflineWrite
+@inject ISyncRunner SyncRunner
+
+<div class="card">
+    <h1 class="page-title">@Loc["Page_CreateMembership_Title"]</h1>
+    <p class="page-subtitle">@Loc["Page_CreateMembership_SubTitle"]</p>
+
+    <div class="card">
+        <div class="form-group">
+            <label for="membershipName">@Loc["Page_CreateMembership_MembershipName_Label"]</label>
+            <input id="membershipName"
+                   class="form-input"
+                   type="text"
+                   @bind="NewMembership.MembershipName"
+                   placeholder="@Loc["Page_CreateMembership_MembershipName_Plaaceholder"]" />
+
+            <label for="membershipType">@Loc["Page_CreateMembership_MembershipType_Label"]</label>
+            <input id="membershipType"
+                   class="form-input"
+                   type="text"
+                   @bind="NewMembership.MembershipType"
+                   placeholder="@Loc["Page_CreateMembership_MembershipType_Plaaceholder"]" />
+
+            <label for="membershipPrice">@Loc["Page_CreateMembership_Price_Label"]</label>
+            <input id="membershipPrice"
+                   class="form-input"
+                   type="number"
+                   step="1"
+                   @bind="NewMembership.MembershipPrice"
+                   placeholder="199" />
+
+            <div class="mt-2">
+                <label class="form-checkbox">
+                    <input type="checkbox" @bind="NewMembership.IsActive" />
+                    @Loc["Common_Actions_Active"]
+                </label>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button class="btn primary" @onclick="SaveMembership" disabled="@IsSavingMembership">
+                @if (IsSavingMembership)
+                {
+                    <span>@Loc["Common_Actions_Save"]</span>
+                }
+                else
+                {
+                    <span>@Loc["Page_CreateMembership_SaveMembership_Text"]</span>
+                }
+            </button>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(MessageMembership))
+        {
+            <p class="form-message">@MessageMembership</p>
+        }
+    </div>
+</div>
+
+@code {
+    [CascadingParameter] public ILocalizationService Loc { get; set; } = default!;
+    [Parameter] public List<Membership> Memberships { get; set; } = new();
+
+    private Membership NewMembership = new()
+    {
+        IsActive = true,
+        MembershipPrice = 0
+    };
+
+    private bool IsSavingMembership;
+    private string? MessageMembership;
+
+    protected override Task OnInitializedAsync()
+        => Task.CompletedTask;
+
+    private async Task SaveMembership()
+    {
+        if (!AuthService.IsLoggedIn)
+        {
+            MessageMembership = Loc["Common_Errors_MustBeLoggedIn"];
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(NewMembership.MembershipName))
+        {
+            MessageMembership = Loc["Page_CreateMembership_MembershipNameRequired_Text"];
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(NewMembership.MembershipType))
+        {
+            MessageMembership = Loc["Page_CreateMembership_MembershipTypeRequired_Text"];
+            return;
+        }
+
+        if (NewMembership.MembershipPrice < 0)
+        {
+            MessageMembership = Loc["Page_CreateMembership_PriceNegative_Text"];
+            return;
+        }
+
+        IsSavingMembership = true;
+        MessageMembership = null;
+
+        try
+        {
+            // Bygg operation-payload (DTO för sync)
+            var dto = new CreateMembershipOperationDto
+            {
+                MembershipName = NewMembership.MembershipName.Trim(),
+                MembershipType = NewMembership.MembershipType.Trim(),
+                MembershipPrice = NewMembership.MembershipPrice,
+                IsActive = NewMembership.IsActive
+            };
+
+            // Paketera i envelope (OfflineWrite förväntar envelope)
+            var envelope = new SyncOperationEnvelope
+            {
+                UserId = UserState?.Current?.UserId ?? "",
+                OperationType = SyncOperationType.CreateMembership,
+                ClientTimestampUtc = DateTime.UtcNow,
+                Payload = JsonSerializer.SerializeToElement(dto, new JsonSerializerOptions(JsonSerializerDefaults.Web))
+            };
+
+            // Köa offline
+            await OfflineWrite.EnqueueAsync(envelope);
+
+            // Försök synka direkt (om online)
+            await SyncRunner.RunOnceAsync();
+
+            // Uppdatera UI/cache
+            await CommonState.RefreshAsync();
+
+            MessageMembership = $"{Loc["Page_CreateMembership_MembershipQueue_Text1"]} '{dto.MembershipName}' {Loc["Page_CreateMembership_MembershipQueue_Text2"]}";
+            NewMembership = new Membership
+            {
+                IsActive = true,
+                MembershipPrice = 0
+            };
+        }
+        catch (Exception ex)
+        {
+            MessageMembership = $"{Loc["Common_Errors_Generic"]} {ex.Message}";
+        }
+        finally
+        {
+            IsSavingMembership = false;
+        }
+    }
+}

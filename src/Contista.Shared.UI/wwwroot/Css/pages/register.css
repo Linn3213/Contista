@@ -1,0 +1,14 @@
+﻿
+/* register.css (scoped) */
+
+.register-actions .btn {
+    min-width: 180px;
+}
+
+/* På små skärmar: fullbredd */
+@media (max-width: 576px) {
+    .register-actions .btn {
+        width: 100%;
+        min-width: 0;
+    }
+}

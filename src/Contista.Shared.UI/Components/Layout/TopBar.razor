@@ -1,0 +1,871 @@
+﻿@* Components/Layout/TopBar.razor *@
+@using System.Security.Claims
+@using Contista.Shared.Core.DTO.Calendar
+@using Contista.Shared.Core.Interfaces.Calendar
+@using Contista.Shared.Core.Models.Calendar
+@using Contista.Shared.UI.Components.Modals.Calendar
+@using Contista.Shared.UI.Components.Toasts
+@using Contista.Shared.UI.Routing
+@inherits AppPageBase
+@inject AppBusyService Busy
+@inject IReminderHub ReminderHub
+@inject ICalendarState CalendarState
+@implements IDisposable
+@inject IJSRuntime JS
+
+<header class="topbar-shell sticky-top w-100" @onkeydown="OnTopbarKeyDown" @onclick="UnlockSoundOnce" tabindex="0">
+    <div class="topbar-inner container-fluid px-2 px-lg-3">
+
+        <div class="d-flex align-items-center justify-content-between position-relative px-2 mb-1 topbar-row">
+
+            <!-- LEFT -->
+            <div class="d-flex align-items-center gap-2">
+                <a href="/app/home"
+                   class="d-none d-lg-inline-flex flex-column justify-content-center text-decoration-none">
+                    <span class="h2 mb-0">@Loc["Common_Company_Title"]</span>
+                    <span class="text-muted small">@Loc["Common_Company_Subtitle"]</span>
+                </a>
+
+                <button type="button"
+                        class="btn topbar-iconbtn d-lg-none"
+                        @onclick="ToggleSidebarClicked"
+                        aria-label="Open menu">
+                    <i class="bi bi-layout-sidebar-inset"></i>
+                </button>
+            </div>
+
+            <!-- CENTER -->
+            <div class="position-absolute top-50 start-50 translate-middle text-center px-2 topbar-center">
+                <div class="topbar-title">
+                    @Title
+                </div>
+            </div>
+
+            <!-- RIGHT -->
+            <div class="d-flex align-items-center gap-2">
+                <AuthorizeView>
+                    <Authorized Context="auth">
+                        @{
+                            var u = auth.User;
+                            var dto = UserState.Current;
+
+                            var displayName = GetDisplayName(dto, u);
+                            var email = dto?.Email ?? u.FindFirst(ClaimTypes.Email)?.Value ?? "";
+
+                            var role = ResolveRoleName(dto?.RoleId);
+                            var membership = ResolveMembershipObject(dto?.MembershipId);
+
+                            var hasAnyMeta =
+                            !string.IsNullOrWhiteSpace(role?.RoleName)
+                            || !string.IsNullOrWhiteSpace(membership?.MembershipName)
+                            || !string.IsNullOrWhiteSpace(membership?.MembershipType)
+                            || !string.IsNullOrWhiteSpace(dto?.MembershipId)
+                            || !string.IsNullOrWhiteSpace(dto?.RoleId);
+                        }
+
+                        <div class="position-relative">
+                            <!-- Message -->
+                            <button type="button"
+                                    class="btn topbar-iconbtn position-relative"
+                                    @onclick="OpenInvites"
+                                    aria-label="Open invites">
+                                <i class="bi bi-envelope"></i>
+
+                                @if (PendingInvitesCount > 0)
+                                {
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill text-bg-danger topbar-badgeSmall">
+                                        @PendingInvitesCount
+                                    </span>
+                                }
+                            </button>
+
+                            <!-- Reminder -->
+                            <button type="button"
+                                    class="btn topbar-iconbtn topbar-iconbtn--ghost topbar-remindersBtn position-relative"
+                                    @onclick="ToggleReminders"
+                                    aria-label="Open reminders"
+                                    aria-expanded="@RemindersOpen"
+                                    title="@Loc.GetOr("Common_Reminders", "Reminders")">
+                                <i class="bi bi-bell"></i>
+
+                                @if (ReminderBadgeCount > 0)
+                                {
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill text-bg-danger topbar-badgeCount">
+                                        @ReminderBadgeCount
+                                    </span>
+                                }
+                            </button>
+
+                            @if (RemindersOpen)
+                            {
+                                <!-- Overlay: klick utanför stänger -->
+                                <div class="topbar-overlayClickCatcher"
+                                     @onclick="CloseReminders"
+                                     aria-hidden="true"></div>
+
+                                <div class="topbar-remindersDropdown">
+                                    <div class="topbar-remindersDropdownBody">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <div class="topbar-remindersTitle">@Loc.GetOr("Common_Reminders", "Reminders")</div>
+
+                                            @if (_reminderItems.Count > 0)
+                                            {
+                                                <button type="button"
+                                                        class="btn btn-sm btn-ghost"
+                                                        @onclick="DismissAll">
+                                                    @Loc.GetOr("Common_Actions_Clear", "Clear")
+                                                </button>
+                                            }
+                                        </div>
+
+                                        @if (_reminderItems.Count == 0)
+                                        {
+                                            <div class="topbar-remindersEmpty">
+                                                @Loc.GetOr("Page_TopBar_Reminders_Empty", "No reminders")
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            @foreach (var r in _reminderItems)
+                                            {
+                                                <div class="topbar-remindersItem d-flex align-items-start justify-content-between gap-2">
+                                                    <div class="flex-grow-1">
+                                                        <div class="topbar-remindersItemTitle">@r.EventTitle</div>
+
+                                                        <div class="topbar-remindersItemMeta">
+                                                            @($"{Loc.GetOr("Common_StartsAt", "Starts")} {r.EventStartLocal:HH:mm} · {Loc.GetOr("Common_In", "In")} {r.MinutesUntilStart} {Loc.GetOr("Common_MinutesShort", "min")}")
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="d-flex align-items-center gap-1">
+                                                        <button type="button"
+                                                                class="btn btn-sm btn-ghost topbar-reminderOpenBtn"
+                                                                title="@Loc.GetOr("Common_Actions_Open", "Open")"
+                                                                @onclick="() => OpenEventFromReminder(r.EventId)">
+                                                            <i class="bi bi-box-arrow-up-right"></i>
+                                                        </button>
+
+                                                        <button type="button"
+                                                                class="btn btn-sm btn-ghost"
+                                                                title="@Loc.GetOr("Common_Actions_Close", "Close")"
+                                                                @onclick="() => DismissReminder(r.EventId)">
+                                                            <i class="bi bi-x"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            }
+                                        }
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- Toggle button (desktop) -->
+                            <button type="button"
+                                    class="btn d-none d-lg-inline-flex align-items-center gap-2 topbar-profileBtn"
+                                    @onclick="ToggleProfileMenu"
+                                    aria-haspopup="menu"
+                                    aria-expanded="@ProfileOpen">
+                                <span class="d-inline-flex align-items-center justify-content-center rounded-circle border topbar-initials">
+                                    @initials
+                                </span>
+
+                                <i class="bi @(ProfileOpen ? "bi-chevron-up" : "bi-chevron-down")"></i>
+                            </button>
+
+                            <!-- Toggle button (mobile) -->
+                            <button type="button"
+                                    class="btn topbar-iconbtn d-inline-flex d-lg-none"
+                                    @onclick="ToggleProfileMenu"
+                                    aria-haspopup="menu"
+                                    aria-expanded="@ProfileOpen"
+                                    aria-label="Open account menu">
+                                <i class="bi @(ProfileOpen ? "bi-x" : "bi-list")"></i>
+                            </button>
+
+                            @if (ProfileOpen)
+                            {
+                                <div class="topbar-overlay"
+                                     @onclick="CloseProfileMenu"
+                                     aria-hidden="true"></div>
+
+                                <div class="dropdown-menu show p-3 profile-dropdown"
+                                     role="menu">
+
+                                    <div class="mb-2">
+                                        <div class="d-flex align-items-center justify-content-between gap-2">
+                                            <div class="fw-semibold text-truncate">@displayName</div>
+                                            @if (!string.IsNullOrWhiteSpace(role?.RoleName))
+                                            {
+                                                <span class="badge text-bg-light border">@role!.RoleName</span>
+                                            }
+                                        </div>
+
+                                        @if (!string.IsNullOrWhiteSpace(dto?.FirstName))
+                                        {
+                                            <div class="text-muted small text-truncate">@dto!.FirstName @dto.LastName</div>
+                                        }
+
+                                        @if (!string.IsNullOrWhiteSpace(email))
+                                        {
+                                            <div class="text-muted small text-truncate">@email</div>
+                                        }
+                                    </div>
+
+                                    @if (hasAnyMeta)
+                                    {
+                                        <div class="small mb-3">
+                                            @if (!string.IsNullOrWhiteSpace(membership?.MembershipName))
+                                            {
+                                                <div class="d-flex justify-content-between gap-3">
+                                                    <span class="text-muted">@Loc["Page_TopBar_Membership_Text"]</span>
+                                                    <span class="text-truncate">@membership!.MembershipName</span>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+
+                                    <hr class="my-3" />
+
+                                    <div class="small text-muted mb-2">
+                                        @(Loc["Settings_Language_Title"] ?? "Language")
+                                    </div>
+                                    <LanguageSelector OutlineButton="true"
+                                                      OnLanguageSelected="HandleLanguageSelected" />
+
+                                    <hr class="my-3" />
+
+                                    <div class="d-flex gap-2">
+                                        <button type="button"
+                                                class="btn btn-outline-secondary btn-sm me-2 w-100"
+                                                @onclick="GoSettings">
+                                            <i class="bi bi-gear"></i>
+                                            <span>@(Loc["Page_Sidebar_Settings_Nav"] ?? "Settings")</span>
+                                        </button>
+
+                                        <button type="button"
+                                                class="btn btn-outline-secondary btn-sm w-100"
+                                                disabled="@Busy.IsBusy"
+                                                @onclick="LogoutClicked">
+                                            <i class="bi bi-box-arrow-right"></i>
+                                            <span>@Loc["Common_Actions_SignOut"]</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </Authorized>
+
+                    <NotAuthorized>
+                        <a class="topbar-link" href="/">@Loc["Common_Actions_SignIn"]</a>
+                    </NotAuthorized>
+                </AuthorizeView>
+            </div>
+
+        </div>
+    </div>
+</header>
+<ToastHost @ref="_toastHost" />
+
+<CalendarDayEventsModal IsOpen="@_dayEventsOpen"
+                        IsOpenChanged="@OnDayEventsOpenChanged"
+                        DayLocal="@_dayEventsDayLocal"
+                        FocusEventId="@_dayEventsFocusEventId"
+                        Events="@DayEventsForSelectedDay"
+                        AllEvents="@(CalendarState.Current?.Events)"
+                        HideActions="true" 
+                        OnEditRequested="@HandleDayModalEditRequested"
+                        OnEditSeriesRequested="@HandleDayModalEditSeriesRequested"
+                        OnDeleteRequested="@HandleDayModalDeleteRequested"
+                        OnAddRequested="@HandleDayModalAddRequested" />
+
+<CalendarInvitesModal IsOpen="@InvitesOpen"
+                      IsOpenChanged="@OnInvitesOpenChanged"
+                      UserId="@Auth.Uid" />
+
+@code {
+    [Inject] private ICalendarInvitesService InvitesApi { get; set; } = default!;
+    [Parameter] public EventCallback ToggleSidebar { get; set; }
+    [Parameter] public EventCallback Logout { get; set; }
+
+    private ToastHost? _toastHost;
+    private bool _soundUnlocked;
+
+    private bool InvitesOpen;
+    private int PendingInvitesCount;
+
+    private bool ProfileOpen;
+    private bool RemindersOpen;
+
+    private bool _dayEventsOpen;
+    private DateTime _dayEventsDayLocal = DateTime.Today;
+    private string? _dayEventsFocusEventId;
+    private bool _dayEventsHideActions = false;
+
+    private List<CalendarEventDto> DayEventsForSelectedDay
+    => (CalendarState.Current?.Events ?? new List<CalendarEventDto>())
+        .Where(e =>
+        {
+            if (e?.StartUtc == default) return false;
+            var startLocal = DateTime.SpecifyKind(e.StartUtc, DateTimeKind.Utc).ToLocalTime();
+            return startLocal.Date == _dayEventsDayLocal.Date;
+        })
+        .OrderBy(e => e.StartUtc)
+        .ThenBy(e => e.Title)
+        .ToList();
+
+    private string initials = "U";
+
+    // Kommande reminders som UI visar
+    private readonly List<UpcomingReminderVm> _upcomingReminders = new();
+
+    // “Dismiss” så de inte poppar tillbaka direkt efter rebuild
+    private readonly HashSet<string> _dismissedUpcomingKeys = new(StringComparer.Ordinal);
+
+    private int UpcomingReminderCount;
+
+    // Lista vi renderar i dropdownen (innehåller både kommande och aktiva)
+    private readonly List<ReminderItemVm> _reminderItems = new();
+
+    // “Stäng” per eventId: döljer den tills eventet startar eller eventet försvinner
+    private readonly HashSet<string> _dismissedReminderEventIds = new(StringComparer.Ordinal);
+
+    // Badge = antal synliga reminders (ej dismissed, ej event som redan startat)
+    private int ReminderBadgeCount;
+
+    private PeriodicTimer? _reminderUiTimer;
+    private CancellationTokenSource? _reminderUiCts;
+
+    // Hur långt “bakåt” vi fortfarande visar en reminder som aktiv (om appen startas efter trigger)
+    // (matcha gärna LookBack i ReminderStartupService)
+    private static readonly TimeSpan TriggerGrace = TimeSpan.FromHours(2);
+
+    private string Title { get; set; } = "Dashboard";
+
+    protected override void OnInitialized()
+    {
+        UserState.Changed += OnUserStateChanged;
+        Loc.LanguageChanged += OnLanguageChanged;
+        Nav.LocationChanged += OnLocationChanged;
+
+        Title = RouteTitleMap.Resolve(Nav.Uri, Nav, key => Loc[key]).Title;
+
+        ReminderHub.ReminderTriggered += HandleReminderTriggered;
+        CalendarState.Changed += OnCalendarStateChanged;
+
+        RebuildReminderItems();
+        RebuildUpcomingReminders();
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        initials = await GetInitials();
+        await LoadInviteCountAsync();
+    }
+
+    private async Task LoadInviteCountAsync()
+    {
+        try
+        {
+            var list = await InvitesApi.GetInvitesAsync();
+            PendingInvitesCount = list.Count(x => x.InviteStatus == CalendarInviteStatus.Pending);
+            await InvokeAsync(StateHasChanged);
+        }
+        catch
+        {
+            PendingInvitesCount = 0;
+        }
+    }
+
+    private async Task OpenInvites()
+    {
+        ProfileOpen = false;
+        InvitesOpen = true;
+        await LoadInviteCountAsync();
+    }
+
+    private async Task OnInvitesOpenChanged(bool open)
+    {
+        InvitesOpen = open;
+        if (!open) await LoadInviteCountAsync();
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        Title = RouteTitleMap.Resolve(e.Location, Nav, key => Loc[key]).Title;
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void OnLanguageChanged()
+    {
+        Title = RouteTitleMap.Resolve(Nav.Uri, Nav, key => Loc[key]).Title;
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private async Task UnlockSoundOnce()
+    {
+        if (_soundUnlocked) return;
+        _soundUnlocked = true;
+
+        try
+        {
+            await JS.InvokeVoidAsync("contista.reminderSound.unlock");
+        }
+        catch
+        {
+            // ignore
+        }
+    }
+
+    private Task OpenEventFromReminder(string eventId)
+    {
+        var ev = (CalendarState.Current?.Events ?? new List<CalendarEventDto>())
+            .FirstOrDefault(e => string.Equals(e.EventId, eventId, StringComparison.Ordinal));
+
+        if (ev is null) return Task.CompletedTask;
+
+        var startLocal = DateTime.SpecifyKind(ev.StartUtc, DateTimeKind.Utc).ToLocalTime();
+        return OpenDayEvents(startLocal, eventId);
+    }
+
+    private Task OnDayEventsOpenChanged(bool open)
+    {
+        _dayEventsOpen = open;
+        if (!open)
+        {
+            _dayEventsFocusEventId = null;
+        }
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task HandleDayModalEditRequested(CalendarEventDto ev)
+    {
+        // Enkelt och robust: navigera till kalendern och be den öppna edit
+        var day = DateTime.SpecifyKind(ev.StartUtc, DateTimeKind.Utc).ToLocalTime().Date;
+        var url = $"/app/calendar?day={day:yyyy-MM-dd}&edit={Uri.EscapeDataString(ev.EventId ?? "")}";
+        Nav.NavigateTo(url);
+        return Task.CompletedTask;
+    }
+
+    private Task HandleDayModalEditSeriesRequested(CalendarEventDto ev)
+    {
+        var day = DateTime.SpecifyKind(ev.StartUtc, DateTimeKind.Utc).ToLocalTime().Date;
+        var url = $"/app/calendar?day={day:yyyy-MM-dd}&editSeries={Uri.EscapeDataString(ev.OccurrenceOverrideSeriesId ?? ev.Recurrence?.SeriesId ?? "")}";
+        Nav.NavigateTo(url);
+        return Task.CompletedTask;
+    }
+
+    private Task HandleDayModalDeleteRequested(CalendarEventDto ev)
+    {
+        var day = DateTime.SpecifyKind(ev.StartUtc, DateTimeKind.Utc).ToLocalTime().Date;
+        var url = $"/app/calendar?day={day:yyyy-MM-dd}&delete={Uri.EscapeDataString(ev.EventId ?? "")}";
+        Nav.NavigateTo(url);
+        return Task.CompletedTask;
+    }
+
+    private Task HandleDayModalAddRequested(DateTime dayLocal)
+    {
+        var url = $"/app/calendar?day={dayLocal:yyyy-MM-dd}&add=1";
+        Nav.NavigateTo(url);
+        return Task.CompletedTask;
+    }
+
+    private Task ToggleSidebarClicked()
+        => ToggleSidebar.HasDelegate ? ToggleSidebar.InvokeAsync() : Task.CompletedTask;
+
+    private void ToggleReminders()
+    {
+        RemindersOpen = !RemindersOpen;
+
+        if (RemindersOpen)
+        {
+            ProfileOpen = false;
+
+            RebuildReminderItems();
+            StartReminderUiTimer();
+        }
+        else
+        {
+            StopReminderUiTimer();
+        }
+    }
+
+    private void CloseReminders()
+    {
+        RemindersOpen = false;
+        StopReminderUiTimer();
+    }
+
+    private void OnReminderTriggered(TriggeredReminder reminder)
+    {
+        RebuildReminderItems();
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+
+    private async void HandleReminderTriggered(TriggeredReminder reminder)
+    {
+        RebuildReminderItems();
+
+        await PlayReminderSoundAsync();
+
+        // ✅ Vi har redan EventStartLocalTime i TriggeredReminder
+        var startLocal = reminder.EventStartLocalTime;
+
+        // 0 = “Startar nu”-toast (kommer från schedulern)
+        var isStartToast = reminder.MinutesBeforeStart == 0;
+
+        var title = isStartToast
+            ? Loc.GetOr("Common_StartsNow", "Starts now")
+            : Loc.GetOr("Common_Reminder", "Reminder");
+
+        // Text:
+        // - före: “Titel · Startar 11:00”
+        // - vid start: “Titel · Startar nu (11:00)”
+        var msg = isStartToast
+            ? $"{reminder.EventTitle} · {Loc.GetOr("Common_StartsNow", "Starts now")} ({startLocal:HH:mm})"
+            : $"{reminder.EventTitle} · {Loc.GetOr("Common_StartsAt", "Starts")} {startLocal:HH:mm}";
+
+        _toastHost?.Show(
+            title: title,
+            message: msg,
+            actionText: Loc.GetOr("Common_Actions_Open", "Open"),
+            onAction: () => OpenDayEvents(startLocal, reminder.EventId));
+
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OpenDayEvents(DateTime dayLocal, string? focusEventId)
+    {
+        _dayEventsDayLocal = dayLocal.Date;
+        _dayEventsFocusEventId = focusEventId;
+
+        _dayEventsHideActions = false; // ✅ öppnat via reminder -> actions ska synas
+
+        _dayEventsOpen = true;
+
+        RemindersOpen = false;
+        StopReminderUiTimer();
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void OnCalendarStateChanged()
+    {
+        RebuildReminderItems();
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+
+    private void RebuildUpcomingReminders()
+    {
+        _upcomingReminders.Clear();
+
+        var now = DateTime.Now;
+        var events = CalendarState.Current?.Events ?? new List<CalendarEventDto>();
+
+        foreach (var ev in events)
+        {
+            if (ev is null) continue;
+            if (string.IsNullOrWhiteSpace(ev.EventId)) continue;
+            if (ev.StartUtc == default) continue;
+
+            // Bara första InApp-remindern (enkel start)
+            var reminder = ev.Reminders?.FirstOrDefault(r => r.Channel == ReminderChannel.InApp);
+            if (reminder is null) continue;
+
+            var minutesBefore = reminder.MinutesBeforeStart;
+            if (minutesBefore < 0) minutesBefore = 0;
+
+            var startLocal = DateTime.SpecifyKind(ev.StartUtc, DateTimeKind.Utc).ToLocalTime();
+            if (startLocal <= now) continue; // visar bara kommande event
+
+            var triggerLocal = startLocal.AddMinutes(-minutesBefore);
+
+            // endast NU -> framåt
+            if (triggerLocal < now) continue;
+
+            var minsUntil = (int)Math.Ceiling((triggerLocal - now).TotalMinutes);
+            if (minsUntil < 0) minsUntil = 0;
+
+            var key = BuildUpcomingKey(ev.EventId!, triggerLocal);
+
+            if (_dismissedUpcomingKeys.Contains(key))
+                continue;
+
+            _upcomingReminders.Add(new UpcomingReminderVm
+            {
+                Key = key,
+                EventId = ev.EventId!,
+                EventTitle = ev.Title,
+                EventStartLocal = startLocal,
+                TriggerLocal = triggerLocal,
+                MinutesUntilTrigger = minsUntil
+            });
+        }
+
+        _upcomingReminders.Sort((a, b) => a.TriggerLocal.CompareTo(b.TriggerLocal));
+
+        if (_upcomingReminders.Count > 10)
+            _upcomingReminders.RemoveRange(10, _upcomingReminders.Count - 10);
+
+        UpcomingReminderCount = _upcomingReminders.Count;
+    }
+
+    private static string BuildUpcomingKey(string eventId, DateTime triggerLocal)
+        => $"{eventId}|{triggerLocal:O}";
+
+    private void DismissReminder(string eventId)
+    {
+        if (string.IsNullOrWhiteSpace(eventId)) return;
+
+        _dismissedReminderEventIds.Add(eventId);
+        RebuildReminderItems();
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void DismissAll()
+    {
+        foreach (var r in _reminderItems)
+            _dismissedReminderEventIds.Add(r.EventId);
+
+        RebuildReminderItems();
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void StartReminderUiTimer()
+    {
+        if (_reminderUiTimer is not null) return;
+
+        _reminderUiCts = new CancellationTokenSource();
+        _reminderUiTimer = new PeriodicTimer(TimeSpan.FromSeconds(20));
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                while (await _reminderUiTimer.WaitForNextTickAsync(_reminderUiCts.Token))
+                {
+                    RebuildReminderItems();
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+            catch
+            {
+                // dispose/cancel
+            }
+        });
+    }
+
+    private void StopReminderUiTimer()
+    {
+        try { _reminderUiCts?.Cancel(); } catch { }
+
+        _reminderUiTimer?.Dispose();
+        _reminderUiTimer = null;
+
+        _reminderUiCts?.Dispose();
+        _reminderUiCts = null;
+    }
+
+    private sealed class ReminderItemVm
+    {
+        public string EventId { get; init; } = "";
+        public string EventTitle { get; init; } = "";
+        public DateTime EventStartLocal { get; init; }
+        public DateTime TriggerLocal { get; init; }
+        public int MinutesBeforeStart { get; init; }
+
+        // ✅ detta är det du vill visa: minuter tills eventstart
+        public int MinutesUntilStart { get; set; }
+    }
+
+    private sealed class UpcomingReminderVm
+    {
+        public string Key { get; init; } = "";
+        public string EventId { get; init; } = "";
+        public string EventTitle { get; init; } = "";
+        public DateTime EventStartLocal { get; init; }
+        public DateTime TriggerLocal { get; init; }
+        public int MinutesUntilTrigger { get; set; }
+    }
+
+    private void ToggleProfileMenu() => ProfileOpen = !ProfileOpen;
+    private void CloseProfileMenu() => ProfileOpen = false;
+
+    private Task LogoutClicked()
+    {
+        CloseProfileMenu();
+        return Logout.HasDelegate ? Logout.InvokeAsync() : Task.CompletedTask;
+    }
+
+    private void GoSettings()
+    {
+        CloseProfileMenu();
+        Nav.NavigateTo("/app/settings");
+    }
+
+    private void OnTopbarKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            ProfileOpen = false;
+            CloseReminders();
+        }
+    }
+
+    private Task HandleLanguageSelected(string _)
+    {
+        ProfileOpen = false;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private async void OnUserStateChanged()
+    {
+        initials = await GetInitials();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private static string GetDisplayName(UserDataDto? dto, ClaimsPrincipal u)
+    {
+        var dn = dto?.DisplayName;
+
+        if (string.IsNullOrWhiteSpace(dn) && dto is not null)
+        {
+            var full = $"{dto.FirstName} {dto.LastName}".Trim();
+            if (!string.IsNullOrWhiteSpace(full))
+                dn = full;
+        }
+
+        dn ??= u.Identity?.Name;
+        dn ??= u.FindFirst(ClaimTypes.Email)?.Value;
+
+        return string.IsNullOrWhiteSpace(dn) ? "User" : dn;
+    }
+
+    private Role? ResolveRoleName(string? roleId)
+    {
+        if (string.IsNullOrWhiteSpace(roleId)) return null;
+        if (!CommonState.HasData || CommonState.Current is null) return null;
+
+        return CommonState.Current.Roles.FirstOrDefault(r => r.RoleId == roleId);
+    }
+
+    private Membership? ResolveMembershipObject(string? membershipId)
+    {
+        if (string.IsNullOrWhiteSpace(membershipId)) return null;
+        if (!CommonState.HasData || CommonState.Current is null) return null;
+
+        return CommonState.Current.Memberships.FirstOrDefault(m => m.MembershipId == membershipId);
+    }
+
+    private void RebuildReminderItems()
+    {
+        _reminderItems.Clear();
+
+        var now = DateTime.Now;
+
+        // rensa dismiss för events som redan startat (så de kan dyka upp igen nästa gång man skapar)
+        // och för events som inte längre finns i state
+        var existingIds = (CalendarState.Current?.Events ?? new List<CalendarEventDto>())
+            .Where(e => e is not null && !string.IsNullOrWhiteSpace(e.EventId))
+            .Select(e => e.EventId!)
+            .ToHashSet(StringComparer.Ordinal);
+
+        _dismissedReminderEventIds.RemoveWhere(id => !existingIds.Contains(id));
+
+        var events = CalendarState.Current?.Events ?? new List<CalendarEventDto>();
+
+        foreach (var ev in events)
+        {
+            if (ev is null) continue;
+            if (string.IsNullOrWhiteSpace(ev.EventId)) continue;
+            if (ev.StartUtc == default) continue;
+
+            var startLocal = DateTime.SpecifyKind(ev.StartUtc, DateTimeKind.Utc).ToLocalTime();
+
+            // Event som redan startat: inte längre relevant i reminders
+            if (startLocal <= now)
+            {
+                _dismissedReminderEventIds.Remove(ev.EventId!);
+                continue;
+            }
+
+            if (_dismissedReminderEventIds.Contains(ev.EventId!))
+                continue;
+
+            // Första in-app reminder
+            var reminder = ev.Reminders?.FirstOrDefault(r => r.Channel == ReminderChannel.InApp);
+            if (reminder is null) continue;
+
+            var minutesBefore = reminder.MinutesBeforeStart;
+            if (minutesBefore < 0) minutesBefore = 0;
+
+            var triggerLocal = startLocal.AddMinutes(-minutesBefore);
+
+            // ✅ Viktigt: visa även om trigger redan passerat (app startades “för sent”)
+            // men inte om trigger var “för gammal”
+            var isTooOld = triggerLocal < now - TriggerGrace;
+            if (isTooOld) continue;
+
+            // “Om X min” ska vara till START, inte till trigger
+            var minutesUntilStart = (int)Math.Ceiling((startLocal - now).TotalMinutes);
+            if (minutesUntilStart < 0) minutesUntilStart = 0;
+
+            _reminderItems.Add(new ReminderItemVm
+            {
+                EventId = ev.EventId!,
+                EventTitle = ev.Title,
+                EventStartLocal = startLocal,
+                TriggerLocal = triggerLocal,
+                MinutesBeforeStart = minutesBefore,
+                MinutesUntilStart = minutesUntilStart
+            });
+        }
+
+        // Sort: närmast start först (eller om du hellre vill sorta på triggerLocal)
+        _reminderItems.Sort((a, b) => a.EventStartLocal.CompareTo(b.EventStartLocal));
+
+        if (_reminderItems.Count > 10)
+            _reminderItems.RemoveRange(10, _reminderItems.Count - 10);
+
+        ReminderBadgeCount = _reminderItems.Count;
+    }
+
+
+    private async Task<string> GetInitials()
+    {
+        var dto = UserState.Current;
+
+        var f = (dto?.FirstName ?? "").Trim();
+        var l = (dto?.LastName ?? "").Trim();
+
+        if (string.IsNullOrWhiteSpace(f) && string.IsNullOrWhiteSpace(l)) return "U";
+        if (string.IsNullOrWhiteSpace(f)) return l[..1].ToUpperInvariant();
+        if (string.IsNullOrWhiteSpace(l)) return f[..1].ToUpperInvariant();
+        return ("" + f[0] + l[0]).ToUpperInvariant();
+    }
+
+    private Task PlayReminderSoundAsync()
+    {
+        // Om script saknas eller blockas: bara ignorera
+        try
+        {
+            return JS.InvokeVoidAsync("contista.reminderSound.play").AsTask();
+        }
+        catch
+        {
+            return Task.CompletedTask;
+        }
+    }
+
+    public void Dispose()
+    {
+        UserState.Changed -= OnUserStateChanged;
+        Loc.LanguageChanged -= OnLanguageChanged;
+        Nav.LocationChanged -= OnLocationChanged;
+        ReminderHub.ReminderTriggered -= HandleReminderTriggered;
+        CalendarState.Changed -= OnCalendarStateChanged;
+        StopReminderUiTimer();
+    }
+}

@@ -1,0 +1,122 @@
+﻿/* =========================================================
+   📅 WEEK PLAN (WeekPlanSection.razor)
+   DesignTokens: bg/text/ui/border/shadow/radius/motion
+   ========================================================= */
+
+.weekplan.card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+}
+
+/* Header nav */
+.weekplan_nav-btn {
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    border: 2px solid var(--ui-primary);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-weight: var(--font-semibold);
+    transition: transform var(--transition-fast) var(--ease-default), box-shadow var(--transition-fast) var(--ease-default), background-color var(--transition-fast) var(--ease-default), border-color var(--transition-fast) var(--ease-default);
+}
+
+    .weekplan_nav-btn:hover,
+    .weekplan_nav-btn:focus-visible {
+        background: var(--bg-card);
+        border-color: var(--ui-focus);
+        box-shadow: var(--shadow-hover);
+        transform: translateY(-1px);
+    }
+
+    .weekplan_nav-btn:focus-visible {
+        outline: 3px solid var(--ui-primary);
+        outline-offset: 2px;
+    }
+
+    .weekplan_nav-btn .bi {
+        font-size: 1.1rem;
+        color: currentColor;
+    }
+
+.weekplan_nav-pill {
+    padding: 8px 12px;
+    border-radius: var(--radius-full);
+    border: 2px solid var(--ui-primary);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-weight: var(--font-bold);
+    white-space: nowrap;
+}
+
+/* Grid */
+.weekplan_daycol {
+    min-width: 220px;
+}
+
+/* Day card */
+.weekplan_daycard {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: 18px 18px 16px;
+    border: 1px solid var(--border-default);
+    border-top: 4px solid var(--ui-focus);
+    box-shadow: var(--shadow-card);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform var(--transition-medium) var(--ease-default), box-shadow var(--transition-medium) var(--ease-default), border-color var(--transition-medium) var(--ease-default);
+}
+
+    /* Accent strip (token-baserad) */
+    .weekplan_daycard::before {
+        content: "";
+        position: absolute;
+        inset: 0 0 auto 0;
+        height: 10px;
+        background: var(--gradient-accent);
+        pointer-events: none;
+        opacity: 0.12;
+    }
+
+    .weekplan_daycard:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-hover);
+        border-color: var(--border-strong);
+    }
+
+    .weekplan_daycard:focus-visible {
+        outline: 3px solid var(--ui-primary);
+        outline-offset: 3px;
+        box-shadow: var(--shadow-focus), var(--shadow-hover);
+        border-color: var(--border-focus);
+    }
+
+/* Text */
+.weekplan_dayname {
+    color: var(--ui-focus);
+    font-weight: var(--font-bold);
+    margin-bottom: 6px;
+}
+
+.weekplan_daycategory {
+    color: var(--text-primary);
+    font-weight: var(--font-semibold);
+    margin-bottom: 10px;
+}
+
+.weekplan_dayposts {
+    color: var(--text-secondary);
+    font-weight: var(--font-medium);
+    line-height: var(--leading-normal);
+}
+
+@media (max-width: 992px) {
+    .weekplan_daycol {
+        min-width: 180px;
+    }
+}

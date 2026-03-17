@@ -1,0 +1,331 @@
+﻿/* =========================
+   Topbar
+   ========================= */
+
+.topbar-shell {
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border-divider);
+    z-index: 900;
+}
+
+.topbar-inner {
+    width: 100%;
+}
+
+/* 3-kolumners grid – och ALLT centrerat vertikalt */
+.topbar-grid {
+    height: 80px; /* lås höjden */
+    display: grid;
+    grid-template-columns: 1fr minmax(0, 520px) 1fr;
+    align-items: center; /* grid items centreras vertikalt */
+}
+
+/* Gör varje cell till en flex container för perfekt alignment */
+.topbar-left,
+.topbar-center,
+.topbar-right {
+    display: flex;
+    align-items: center; /* centrerar innehållet vertikalt */
+    height: 56px;
+}
+
+/* Vänster/höger positionering */
+.topbar-left {
+    justify-content: flex-start;
+    gap: var(--space-sm);
+}
+
+.topbar-center {
+    justify-content: center;
+    min-width: 0;
+}
+
+.topbar-right {
+    justify-content: flex-end;
+    gap: var(--space-sm);
+}
+
+/* Title */
+.topbar-title {
+    font-size: var(--text-h2);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    line-height: 1.2;
+    padding-bottom: 2px; 
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Enhetliga ikonknappar (både pil + burger + ev andra) */
+.topbar-iconbtn {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transform: translateY(-0.5px);
+}
+
+    .topbar-iconbtn:hover {
+        background: var(--bg-glass);
+        transform: translateY(-1px);
+    }
+
+    .topbar-iconbtn:focus,
+    .topbar-iconbtn:focus-visible {
+        outline: none;
+        box-shadow: var(--shadow-focus);
+        border-color: var(--border-focus);
+    }
+
+    .topbar-iconbtn i,
+    .topbar-shell i.bi {
+        display: block;
+        line-height: 1;
+    }
+
+
+/* Sidebar toggle – helt utan outline/border */
+.topbar-iconbtn--ghost {
+    border: none;
+    background: transparent;
+}
+
+    /* Ingen focus/active outline */
+    .topbar-iconbtn--ghost:focus,
+    .topbar-iconbtn--ghost:focus-visible,
+    .topbar-iconbtn--ghost:active {
+        outline: none;
+        box-shadow: none;
+    }
+
+    /* Subtil hover (valfri, men rekommenderad) */
+    .topbar-iconbtn--ghost:hover {
+        background: var(--bg-glass);
+    }
+
+
+/* Logo på samma höjd som knapparna */
+.topbar-brand {
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.topbar-brand-logo {
+    font-family: var(--font-serif);
+    font-size: 1.35rem;
+    font-weight: var(--font-bold);
+    line-height: 1;
+    background: var(--gradient-accent);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Profilknapp: samma 40px höjd */
+.profile-btn {
+    height: 40px;
+    border: 1px solid var(--border-default);
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    padding: 0 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.profile-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: var(--radius-full);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-default);
+    background: color-mix(in srgb, var(--bg-secondary) 70%, var(--bg-card));
+    font-weight: var(--font-semibold);
+    line-height: 1;
+}
+
+.profile-dropdown {
+    min-width: 360px;
+    max-width: min(90vw, 420px);
+    position: absolute;
+    right: 0.1rem;
+    top: calc(100% + 0.1rem);
+    margin-top: .5rem;
+    overflow-wrap: break-word;
+    z-index: 1050;
+    font-family: var(--font-sans);
+}
+
+.open-section-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    margin-left: 10px;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: var(--font-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: color-mix(in srgb, var(--bg-secondary) 70%, transparent);
+    border: 1px solid var(--border-default);
+    color: var(--text-primary);
+    position: relative;
+}
+
+    .open-section-chip::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 9999px;
+        background: var(--ui-focus);
+        box-shadow: 0 0 0 3px rgba(63,58,53,0.12);
+    }
+
+/* =========================
+   Reminders (TopBar)
+   ========================= */
+
+/* själva klock-knappen (ingen inline style) */
+.topbar-remindersBtn {
+    width: 40px;
+    height: 40px;
+    border: 0;
+}
+
+/* badge textstorlek utan inline */
+.topbar-badgeCount {
+    font-size: .65rem;
+}
+
+/* dropdown-kortet */
+.topbar-remindersDropdown {
+    position: absolute;
+    right: 0;
+    margin-top: .5rem;
+    width: min(380px, 90vw);
+    z-index: 1055;
+    background: var(--bg-card);
+    border: 1px solid var(--border-divider);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-dropdown);
+    /* Viktigt: inte serif */
+    font-family: var(--font-sans);
+}
+
+/* inre padding (motsvarar card-body p-2) */
+.topbar-remindersDropdownBody {
+    padding: 8px;
+}
+
+.topbar-remindersTitle {
+    font-weight: var(--font-semibold);
+    padding: 6px 8px;
+}
+
+.topbar-remindersEmpty {
+    padding: 8px;
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+}
+
+.topbar-remindersItem {
+    padding: 8px;
+    border-top: 1px solid var(--border-divider);
+}
+
+.topbar-remindersItemTitle {
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.topbar-remindersItemTitleBtn {
+    text-decoration: none;
+    font-weight: 600;
+    color: inherit;
+}
+
+    .topbar-remindersItemTitleBtn:hover {
+        text-decoration: underline;
+    }
+
+.topbar-remindersItemMeta {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+}
+
+/* TopBar layout helpers */
+.topbar-row {
+    height: 80px;
+}
+
+.topbar-center {
+    max-width: 70vw;
+}
+
+/* Icon buttons: ersätter inline width/height/border */
+.topbar-iconbtn {
+    width: 40px;
+    height: 40px;
+    border: 0;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Badge size som du hade inline font-size på */
+.topbar-badgeSmall {
+    font-size: .65rem;
+}
+
+/* Overlay för click-outside (ersätter inline z-index/background) */
+.topbar-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1040;
+    background: transparent;
+}
+
+/* Desktop profile button (ersätter inline height/border) */
+.topbar-profileBtn {
+    height: 40px;
+    border: 0;
+}
+
+.topbar-initials {
+    width: 28px;
+    height: 28px;
+    font-size: .75rem;
+}
+
+.topbar-overlayClickCatcher {
+    position: fixed;
+    inset: 0;
+    z-index: 1040;
+    background: transparent;
+}
+
+/* Gör "open"-ikonen harmonisk med övriga */
+.topbar-reminderOpenBtn {
+    width: 28px;
+    height: 28px;
+    padding: 0.25rem 0.35rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+    .topbar-reminderOpenBtn i {
+        font-size: 0.95rem;
+        line-height: 1;
+    }

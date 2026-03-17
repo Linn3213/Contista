@@ -1,0 +1,89 @@
+﻿/* =========================================================
+   IKONER
+   ========================================================= */
+.bi {
+    font-size: 1.6rem;
+    vertical-align: middle;
+    margin-right: 0.25rem;
+    color: currentColor; /* viktigt: ärv färg från kontext */
+}
+
+/* Semantiska “helpers” */
+.bi-primary {
+    color: var(--ui-focus);
+}
+
+.bi-muted {
+    color: var(--ui-primary);
+}
+
+.bi-decorative {
+    color: var(--ui-secondary);
+}
+
+.bi-inverse {
+    color: var(--bg-card);
+}
+
+/* Buttons – ikoner följer textfärgen */
+.btn .bi {
+    color: currentColor;
+}
+
+.btn-link .bi {
+    color: currentColor;
+}
+
+/* Card title icons */
+.card-title .bi {
+    color: var(--ui-primary);
+    margin-right: 0.5rem;
+}
+
+/* Collapse chevron */
+.btn[aria-expanded="true"] .bi-chevron-down::before {
+    content: "\f286";
+}
+
+.btn[aria-expanded="false"] .bi-chevron-down {
+    transform: rotate(0deg);
+    transition: transform var(--transition-medium) var(--ease-default);
+}
+
+/* Tooltip/info icon */
+.position-relative {
+    position: relative;
+}
+
+.info-icon {
+    cursor: pointer;
+    margin-left: 6px;
+    font-size: 0.9rem;
+    color: var(--ui-focus);
+}
+
+.tooltip-box {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    margin-bottom: 4px;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    font-size: var(--text-sm);
+    color: var(--text-primary);
+    width: 280px;
+    z-index: 10;
+    box-shadow: var(--shadow-card);
+    opacity: 0;
+    transform: translateY(5px);
+    pointer-events: none;
+    transition: opacity var(--transition-fast) var(--ease-default), transform var(--transition-fast) var(--ease-default);
+}
+
+    .tooltip-box.show {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+    }

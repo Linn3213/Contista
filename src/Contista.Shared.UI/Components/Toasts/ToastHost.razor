@@ -1,0 +1,90 @@
+﻿@* Components/Toasts/ToastHost.razor *@
+@if (_toasts.Count > 0)
+{
+    <div class="toastHost" aria-live="polite" aria-relevant="additions">
+        @foreach (var t in _toasts)
+        {
+            <div class="toastItem" role="status">
+                <div class="toastBody">
+                    <div class="toastTitle">@t.Title</div>
+
+                    @if (!string.IsNullOrWhiteSpace(t.Message))
+                    {
+                        <div class="toastMsg">@t.Message</div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(t.ActionText))
+                    {
+                        <div class="toastActions">
+                            <button type="button"
+                                    class="btn btn-sm btn-ghost"
+                                    @onclick="() => OnAction(t.Id)">
+                                @t.ActionText
+                            </button>
+                        </div>
+                    }
+                </div>
+
+                <button type="button" class="btn btn-sm btn-ghost toastClose"
+                        aria-label="Close"
+                        @onclick="() => Close(t.Id)">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private readonly List<ToastVm> _toasts = new();
+
+    public void Show(string title, string? message = null, string? actionText = null, Func<Task>? onAction = null)
+    {
+        var id = Guid.NewGuid().ToString("N");
+
+        _toasts.Insert(0, new ToastVm
+        {
+            Id = id,
+            Title = title,
+            Message = message,
+            ActionText = actionText,
+            OnAction = onAction
+        });
+
+        if (_toasts.Count > 5)
+            _toasts.RemoveRange(5, _toasts.Count - 5);
+
+        StateHasChanged();
+    }
+
+    private async Task OnAction(string id)
+    {
+        var t = _toasts.FirstOrDefault(x => x.Id == id);
+        if (t?.OnAction is null) return;
+
+        try
+        {
+            await t.OnAction();
+        }
+        catch
+        {
+            // toast actions ska inte krascha UI
+        }
+    }
+
+    public void Close(string id)
+    {
+        _toasts.RemoveAll(x => x.Id == id);
+        StateHasChanged();
+    }
+
+    private sealed class ToastVm
+    {
+        public string Id { get; init; } = "";
+        public string Title { get; init; } = "";
+        public string? Message { get; init; }
+
+        public string? ActionText { get; init; }
+        public Func<Task>? OnAction { get; init; }
+    }
+}

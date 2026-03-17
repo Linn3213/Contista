@@ -1,0 +1,179 @@
+﻿@* LoginCard.razor component *@
+
+@inherits FormPageBase
+@implements IDisposable
+
+@inject ICommonDataState<CommonDataDto> CommonState
+@inject IFirebaseAuthService Auth
+@inject AppAuthStateProvider AuthState
+@inject IUserDataState<UserDataDto> UserState
+@inject INetworkStatus Network
+@inject IServiceProvider Services
+
+
+
+<EditForm Model="@User" OnValidSubmit="DoLogin" FormName="login" Enhance="false">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group login-card">
+        <div class="mb-3">
+            <label class="form-label">@Loc["Page_Landing_LoginCard_Email_Label"]</label>
+            <InputText class="form-control"
+                       @bind-Value="User.Email"
+                       autocomplete="username" />
+            <ValidationMessage For="@(() => User.Email)" class="text-danger small" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">@Loc["Page_Landing_LoginCard_Password_Label"]</label>
+            <InputText class="form-control"
+                       type="password"
+                       @bind-Value="User.Password"
+                       autocomplete="current-password" />
+            <ValidationMessage For="@(() => User.Password)" class="text-danger small" />
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(StatusMessage))
+        {
+            <div class="alert @StatusMessageClass">@StatusMessage</div>
+        }
+
+        <button class="btn btn-primary w-100"
+                type="submit"
+                disabled="@(IsProcessing || !EffectiveOnline)">
+            <i class="bi bi-box-arrow-in-right me-2"></i>
+            @(Loc["Page_Landing_LoginCard_Login_Button"] ?? "Log in")
+        </button>
+
+        @if (!EffectiveOnline)
+        {
+            <div class="alert alert-warning mt-2 mb-0">
+                Du är offline. Slå på internet för att logga in.
+            </div>
+        }
+
+        <div class="d-flex justify-content-between mt-3 small">
+            <a href="/register">@(Loc["Page_Landing_LoginCard_CreateAccount_Button"] ?? "Create account")</a>
+            <a href="/forgot">@(Loc["Page_Landing_LoginCard_ForgotPassword_Link"] ?? "Forgot password?")</a>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    // ReturnUrl från landing, ex "/app/uc/week"
+    [Parameter] public string? ReturnUrl { get; set; }
+
+    // Skicka tillbaka vart vi vill navigera efter login
+    [Parameter] public EventCallback<string?> OnLoggedIn { get; set; }
+
+    [Parameter] public EventCallback<bool> OnBusyChanged { get; set; }
+
+    private LoginModel User = new();
+    private INetworkDebugControl? _networkDebug;
+
+    private bool EffectiveOnline =>
+        _networkDebug?.IsSupported == true && _networkDebug.ForcedOnline is bool forced
+            ? forced
+            : Network.IsOnline;
+
+    protected override Task OnInitializedAsync()
+    {
+        _networkDebug = Services.GetService<INetworkDebugControl>();
+        Network.OnlineChanged += OnOnlineChanged;
+
+        // testdata
+#if DEBUG
+        User.Email = "linda@test.com";
+        User.Password = "123456lt!";
+#else
+        User.Email = "";
+        User.Password = "";
+#endif
+        return Task.CompletedTask;
+    }
+
+    private async void OnOnlineChanged(bool _)
+    {
+        try { await InvokeAsync(StateHasChanged); }
+        catch { }
+    }
+
+    private async Task DoLogin()
+    {
+        if (!EffectiveOnline)
+        {
+            SetStatus(Loc["Page_LoginCard_NotOnline_Text"], "alert-warning");
+            return;
+        }
+        await OnBusyChanged.InvokeAsync(true);
+        await RunWithProcessing(async () =>
+        {
+            SetStatus("", "alert-info");
+
+            var email = (User.Email ?? "").Trim();
+            var pwd = User.Password ?? "";
+
+            var loginOk = await Auth.SignInWithEmailPassword(email, pwd);
+            if (!loginOk)
+            {
+                SetStatus(Loc["Page_LoginCard_FailedToLogin_Error"] ?? "Fail to login. Wrong email or password.", "alert-danger");
+                return;
+            }
+
+
+            // hämta /api/auth/me och sätt Uid i AuthService
+            await Auth.TryResumeSessionAsync();
+
+            // Auth-state först (principal + enrich)
+            await AuthState.RefreshAsync();
+
+            // Ladda states efter login
+            await CommonState.EnsureLoadedAsync();
+
+            if (!string.IsNullOrWhiteSpace(Auth.Uid))
+                await UserState.RefreshAsync(Auth.Uid!, force: true);
+
+            // Välj target: returnUrl (om säker) annars /app/home
+            var target = ResolvePostLoginTarget(ReturnUrl);
+
+            if (OnLoggedIn.HasDelegate)
+                await OnLoggedIn.InvokeAsync(target);
+            else
+                Nav.NavigateTo(target, replace: true);
+
+        });
+        await OnBusyChanged.InvokeAsync(false);
+    }
+
+    private static string ResolvePostLoginTarget(string? returnUrl)
+    {
+        var ru = (returnUrl ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(ru))
+            return "/app/home";
+
+        if (!ru.StartsWith("/"))
+            ru = "/" + ru;
+
+        // säkerhetscheck: local only
+        if (ru.StartsWith("//") || ru.StartsWith("/\\") || ru.Contains("://", StringComparison.OrdinalIgnoreCase))
+            return "/app/home";
+
+        return ru;
+    }
+
+    public void Dispose()
+    {
+        Network.OnlineChanged -= OnOnlineChanged;
+    }
+
+    private sealed class LoginModel
+    {
+        [System.ComponentModel.DataAnnotations.Required]
+        [System.ComponentModel.DataAnnotations.EmailAddress]
+        public string Email { get; set; } = "";
+
+        [System.ComponentModel.DataAnnotations.Required]
+        public string Password { get; set; } = "";
+    }
+}

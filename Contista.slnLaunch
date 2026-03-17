@@ -1,0 +1,17 @@
+[
+  {
+    "Name": "Maui Windows",
+    "Projects": [
+      {
+        "Path": "src\\Contista.App\\Contista.App.csproj",
+        "Action": "Start",
+        "DebugTarget": "Windows Machine"
+      },
+      {
+        "Path": "src\\Contista.Web\\Contista.Web.csproj",
+        "Action": "Start",
+        "DebugTarget": "Web no browser"
+      }
+    ]
+  }
+]

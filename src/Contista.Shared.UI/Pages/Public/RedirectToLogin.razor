@@ -1,0 +1,15 @@
+﻿@inject NavigationManager Nav
+
+@code {
+    [Parameter] public string? ReturnUrl { get; set; }
+
+    protected override void OnInitialized()
+    {
+        var target = string.IsNullOrWhiteSpace(ReturnUrl)
+            ? "/"
+            : $"/?returnUrl={Uri.EscapeDataString(ReturnUrl)}";
+
+        if (!Nav.Uri.EndsWith(target, StringComparison.OrdinalIgnoreCase))
+            Nav.NavigateTo(target, forceLoad: false);
+    }
+}

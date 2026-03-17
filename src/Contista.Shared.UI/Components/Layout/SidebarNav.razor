@@ -1,0 +1,280 @@
+﻿@* SidebarNav.razor component *@
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Authorization
+@using Contista.Shared.UI.Components.Auth
+@using Contista.Shared.UI.Routing
+@using Contista.Shared.UI.Services
+@inherits AppPageBase
+@implements IDisposable
+@inject AuthenticationStateProvider AuthProvider
+
+<div class="sidebar-overlay @(IsOpen ? "show" : "")"
+     @onclick="Close"
+     aria-hidden="@(IsOpen ? "false" : "true")"></div>
+
+<aside class="sidebar sidebar-drawer @(IsOpen ? "open" : "")"
+       id="appSidebar"
+       aria-label="Sidebar navigation"
+       aria-hidden="@(IsOpen ? "false" : "true")"
+       tabindex="-1"
+       @onkeydown="OnSidebarKeyDown">
+
+    <div class="sidebar-body">
+
+        <button type="button"
+                class="btn btn-outline-secondary d-inline-flex align-items-center justify-content-center p-0 d-lg-none position-absolute ms-2 sidebar-close-btn"
+                @onclick="Close"
+                aria-label="@Loc.GetOr("Common_Actions_Close", "Close")">
+            <i class="bi bi-chevron-left"></i>
+        </button>
+
+        @* DASHBOARD *@
+        <FeatureGate Feature="FeatureKey.Dashboard">
+            <NavLink class="nav-item nav-item--top" href="/app/home" Match="NavLinkMatch.All" @onclick="OnNavLinkClicked">
+                <span class="nav-icon"><i class="bi bi-house icon"></i></span>
+                <span class="nav-text">@Loc.GetOr("Page_Sidebar_Dashboard_Nav", "Dashboard")</span>
+            </NavLink>
+        </FeatureGate>
+
+        @* CREATE CONTENT *@
+        <FeatureGate Feature="FeatureKey.CreateContent">
+            <NavLink class="nav-item nav-item--top" href="/app/uc/creator" @onclick="OnNavLinkClicked">
+                <span class="nav-icon"><i class="bi bi-pencil-square icon"></i></span>
+                <span class="nav-text">@Loc.GetOr("Page_Sidebar_CreateContent_Nav", "Create content")</span>
+            </NavLink>
+        </FeatureGate>
+
+        @* CALENDAR *@
+        <FeatureGate Feature="FeatureKey.Calendar">
+            <NavLink class="nav-item nav-item--top" href="/app/calendar" Match="NavLinkMatch.All" @onclick="OnNavLinkClicked">
+                <span class="nav-icon"><i class="bi bi-calendar3 icon"></i></span>
+                <span class="nav-text">@Loc.GetOr("Page_Sidebar_Calendar_Nav", "Calendar")</span>
+            </NavLink>
+        </FeatureGate>
+
+        @* WEEKLY PLANNING *@
+        <FeatureGate Feature="FeatureKey.WeeklyPlanning">
+            <NavLink class="nav-item nav-item--top" href="/app/uc/week" @onclick="OnNavLinkClicked">
+                <span class="nav-icon"><i class="bi bi-calendar-week icon"></i></span>
+                <span class="nav-text">@Loc.GetOr("Page_Sidebar_WeeklyPlanning_Nav", "Weekly Planning")</span>
+            </NavLink>
+        </FeatureGate>
+
+        @* DREAM CUSTOMER *@
+        <FeatureGate Feature="FeatureKey.DreamCustomer">
+            <NavLink class="nav-item nav-item--top" href="/app/uc/dreamclient" @onclick="OnNavLinkClicked">
+                <span class="nav-icon"><i class="bi bi-person-heart icon"></i></span>
+                <span class="nav-text">@Loc.GetOr("Page_Sidebar_DreamCustomer_Nav", "Dream Customer")</span>
+            </NavLink>
+        </FeatureGate>
+
+        @* SOCIAL MEDIA *@
+        <FeatureGate Feature="FeatureKey.SocialMedia">
+            <NavLink class="nav-item nav-item--top" href="/app/uc/social" @onclick="OnNavLinkClicked">
+                <span class="nav-icon"><i class="bi bi-phone icon"></i></span>
+                <span class="nav-text">@Loc.GetOr("Page_Sidebar_SocialMedia_Nav", "Social Media")</span>
+            </NavLink>
+        </FeatureGate>
+
+        @* CONTENT LIBRARY *@
+        <div class="nav-group">
+            <button type="button"
+                    class="nav-title-btn @(OpenSection == "library" ? "open" : "")"
+                    @onclick="@(() => ToggleSection("library"))"
+                    aria-expanded="@(OpenSection == "library")">
+                <span class="nav-title-left">
+                    <span class="nav-title-icon">
+                        <i class="bi @(OpenSection == "library" ? "bi-collection-fill" : "bi-collection")" aria-hidden="true"></i>
+                    </span>
+                    <span class="nav-title-text">@Loc.GetOr("Page_Sidebar_ContentLibrary_Title", "Content Library")</span>
+                </span>
+                <i class="bi bi-chevron-down nav-title-chevron" aria-hidden="true"></i>
+            </button>
+
+            <div class="nav-panel @(OpenSection == "library" ? "open" : "")">
+                <FeatureGate Feature="FeatureKey.Avatars">
+                    <NavLink class="nav-item nav-item--sub" href="/app/uc/avatars" @onclick="OnNavLinkClicked">
+                        <span class="nav-icon"><i class="bi bi-people icon"></i></span>
+                        <span class="nav-text">@Loc.GetOr("Page_Sidebar_Avatars_Nav", "Avatars")</span>
+                    </NavLink>
+                </FeatureGate>
+
+                <FeatureGate Feature="FeatureKey.HooksAndCtas">
+                    <NavLink class="nav-item nav-item--sub" href="/app/uc/resources" @onclick="OnNavLinkClicked">
+                        <span class="nav-icon"><i class="bi bi-lightning-charge icon"></i></span>
+                        <span class="nav-text">@Loc.GetOr("Page_Sidebar_HooksCTAs_Nav", "Hooks & CTAs")</span>
+                    </NavLink>
+                </FeatureGate>
+
+                <FeatureGate Feature="FeatureKey.AllTexts">
+                    <NavLink class="nav-item nav-item--sub" href="/app/uc/texts" @onclick="OnNavLinkClicked">
+                        <span class="nav-icon"><i class="bi bi-journals icon"></i></span>
+                        <span class="nav-text">@Loc.GetOr("Page_Sidebar_AllTexts_Nav", "All texts")</span>
+                    </NavLink>
+                </FeatureGate>
+
+                <FeatureGate Feature="FeatureKey.MyStory">
+                    <NavLink class="nav-item nav-item--sub" href="/app/uc/story" @onclick="OnNavLinkClicked">
+                        <span class="nav-icon"><i class="bi bi-star icon"></i></span>
+                        <span class="nav-text">@Loc.GetOr("Page_Sidebar_MyStory_Nav", "My story")</span>
+                    </NavLink>
+                </FeatureGate>
+
+                <FeatureGate Feature="FeatureKey.ContentStrategy">
+                    <NavLink class="nav-item nav-item--sub" href="/app/uc/questions" @onclick="OnNavLinkClicked">
+                        <span class="nav-icon"><i class="bi bi-question-circle icon"></i></span>
+                        <span class="nav-text">@Loc.GetOr("Page_Sidebar_QuestionsAnswers_Nav", "Q & A")</span>
+                    </NavLink>
+                </FeatureGate>
+            </div>
+        </div>
+
+        @* INSPIRATION & IDEAS *@
+        <div class="nav-group">
+            <button type="button"
+                    class="nav-title-btn @(OpenSection == "ideas" ? "open" : "")"
+                    @onclick="@(() => ToggleSection("ideas"))"
+                    aria-expanded="@(OpenSection == "ideas")">
+                <span class="nav-title-left">
+                    <span class="nav-title-icon">
+                        <i class="bi @(OpenSection == "ideas" ? "bi-lightbulb-fill" : "bi-lightbulb")" aria-hidden="true"></i>
+                    </span>
+                    <span class="nav-title-text">@Loc.GetOr("Page_Sidebar_InspirationIdeas_Title", "Inspiration & Ideas")</span>
+                </span>
+                <i class="bi bi-chevron-down nav-title-chevron" aria-hidden="true"></i>
+            </button>
+
+            <div class="nav-panel @(OpenSection == "ideas" ? "open" : "")">
+                <FeatureGate Feature="FeatureKey.ContentPillars">
+                    <NavLink class="nav-item nav-item--sub" href="/app/uc/pillars" @onclick="OnNavLinkClicked">
+                        <span class="nav-icon"><i class="bi bi-bullseye icon"></i></span>
+                        <span class="nav-text">@Loc.GetOr("Page_Sidebar_ContentPillars_Nav", "Content pillars")</span>
+                    </NavLink>
+                </FeatureGate>
+
+                <FeatureGate Feature="FeatureKey.TrendScouting">
+                    <NavLink class="nav-item nav-item--sub" href="/app/uc/trends" @onclick="OnNavLinkClicked">
+                        <span class="nav-icon"><i class="bi bi-graph-up-arrow icon"></i></span>
+                        <span class="nav-text">@Loc.GetOr("Page_Sidebar_TrendScouting_Nav", "Trend scouting")</span>
+                    </NavLink>
+                </FeatureGate>
+
+                <FeatureGate Feature="FeatureKey.Notepad">
+                    <NavLink class="nav-item nav-item--sub" href="/app/uc/inspiration" @onclick="OnNavLinkClicked">
+                        <span class="nav-icon"><i class="bi bi-journal-text icon"></i></span>
+                        <span class="nav-text">@Loc.GetOr("Page_Sidebar_Notepad_Nav", "Notepad")</span>
+                    </NavLink>
+                </FeatureGate>
+
+                <FeatureGate Feature="FeatureKey.ContentStrategy">
+                    <NavLink class="nav-item nav-item--sub" href="/app/uc/strategy" @onclick="OnNavLinkClicked">
+                        <span class="nav-icon"><i class="bi bi-diagram-3 icon"></i></span>
+                        <span class="nav-text">@Loc.GetOr("Page_Sidebar_ContentStrategy_Nav", "Content Strategy")</span>
+                    </NavLink>
+                </FeatureGate>
+            </div>
+        </div>
+
+        @* ADMIN *@
+        <FeatureGate Feature="FeatureKey.AdminTools">
+            <div class="nav-group">
+                <button type="button"
+                        class="nav-title-btn @(OpenSection == "admin" ? "open" : "")"
+                        @onclick="@(() => ToggleSection("admin"))"
+                        aria-expanded="@(OpenSection == "admin")">
+                    <span class="nav-title-left">
+                        <span class="nav-title-icon">
+                            <i class="bi @(OpenSection == "admin" ? "bi-shield-fill" : "bi-shield")" aria-hidden="true"></i>
+                        </span>
+                        <span class="nav-title-text">@Loc.GetOr("Page_Sidebar_Admin_Title", "Admin")</span>
+                    </span>
+                    <i class="bi bi-chevron-down nav-title-chevron" aria-hidden="true"></i>
+                </button>
+
+                <div class="nav-panel @(OpenSection == "admin" ? "open" : "")">
+                    <NavLink class="nav-item nav-item--sub" href="/app/admin/adminTools" @onclick="OnNavLinkClicked">
+                        <span class="nav-icon"><i class="bi bi-tools icon"></i></span>
+                        <span class="nav-text">@Loc.GetOr("Page_Sidebar_AdminTools_Nav", "Admin tools")</span>
+                    </NavLink>
+
+                    <NavLink class="nav-item nav-item--sub" href="/app/admin/sampels" @onclick="OnNavLinkClicked">
+                        <span class="nav-icon"><i class="bi bi-palette icon"></i></span>
+                        <span class="nav-text">@Loc.GetOr("Page_Sidebar_Sampels_Nav", "Sampels")</span>
+                    </NavLink>
+                </div>
+            </div>
+        </FeatureGate>
+
+    </div>
+</aside>
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public EventCallback<bool> IsOpenChanged { get; set; }
+
+    [Parameter] public string? CurrentOpenSection { get; set; }
+    [Parameter] public EventCallback<string> CurrentOpenSectionChanged { get; set; }
+
+    private string OpenSection { get; set; } = "";
+
+    protected override Task OnInitializedAsync()
+    {
+        ApplyFromRoute(Nav.Uri);
+
+        Nav.LocationChanged += OnLocationChanged;
+        Loc.LanguageChanged += OnLanguageChanged;
+
+        return Task.CompletedTask;
+    }
+
+    private void OnLanguageChanged()
+        => _ = InvokeAsync(StateHasChanged);
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        ApplyFromRoute(e.Location);
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void ApplyFromRoute(string absoluteUrl)
+    {
+        var meta = RouteTitleMap.Resolve(absoluteUrl, Nav, key => Loc[key]);
+        OpenSection = meta.Section ?? "";
+
+        if (CurrentOpenSectionChanged.HasDelegate)
+            _ = CurrentOpenSectionChanged.InvokeAsync(OpenSection);
+    }
+
+    private async Task OnSidebarKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+            await Close();
+    }
+
+    private async Task SetOpenSectionAsync(string key)
+    {
+        OpenSection = (OpenSection == key) ? "" : key;
+
+        if (CurrentOpenSectionChanged.HasDelegate)
+            await CurrentOpenSectionChanged.InvokeAsync(OpenSection);
+    }
+
+    private Task ToggleSection(string key) => SetOpenSectionAsync(key);
+
+    private async Task OnNavLinkClicked() => await Close();
+
+    private async Task Close()
+    {
+        if (IsOpen)
+        {
+            IsOpen = false;
+            await IsOpenChanged.InvokeAsync(false);
+        }
+    }
+
+    public void Dispose()
+    {
+        Nav.LocationChanged -= OnLocationChanged;
+        Loc.LanguageChanged -= OnLanguageChanged;
+    }
+}

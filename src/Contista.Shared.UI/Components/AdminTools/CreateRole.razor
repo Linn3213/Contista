@@ -1,0 +1,107 @@
+﻿@* CreateRole.razor component *@
+@inherits AppPageBase
+@inject IFirebaseAuthService AuthService
+@inject IOfflineWriteService OfflineWrite
+@inject ISyncRunner SyncRunner
+
+<div class="card">
+    <h1 class="page-title">@Loc["Page_CreateRole_Title"]</h1>
+    <p class="page-subtitle">@Loc["Page_CreateRole_SubTitle"]</p>
+
+    <div class="card">
+        <div class="form-group">
+            <label for="roleName">@Loc["Page_CreateRole_RoleName_Label"]</label>
+            <input id="roleName"
+                   class="form-input"
+                   @bind="NewRoleName"
+                   placeholder="@Loc["Page_CreateRole_RoleName_Placeholder"]" />
+        </div>
+
+        <div class="form-actions">
+            <button class="btn primary"
+                    @onclick="SaveRole"
+                    disabled="@IsSavingRole">
+                @if (IsSavingRole)
+                {
+                    <span>@Loc["Common_Actions_Save"]</span>
+                }
+                else
+                {
+                    <span>@Loc["Page_CreateRole_SaveRole_Text"]</span>
+                }
+            </button>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(MessageRole))
+        {
+            <p class="form-message">@MessageRole</p>
+        }
+    </div>
+</div>
+
+@code {
+    [CascadingParameter] public ILocalizationService Loc { get; set; } = default!;
+    [Parameter] public List<Role> Roles { get; set; } = new();
+
+    private string NewRoleName = "";
+    private bool IsSavingRole;
+    private string? MessageRole;
+
+    private async Task SaveRole()
+    {
+        if (!AuthService.IsLoggedIn)
+        {
+            MessageRole = Loc["Common_Errors_MustBeLoggedIn"];
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(NewRoleName))
+        {
+            MessageRole = Loc["Page_CreateRole_RoleNameRequired_Text"];
+            return;
+        }
+
+        IsSavingRole = true;
+        MessageRole = null;
+
+        try
+        {
+            // 1️⃣ Bygg DTO för sync
+            var dto = new CreateRoleOperationDto
+            {
+                RoleName = NewRoleName.Trim()
+            };
+
+            // 2️⃣ Paketera i envelope
+            var envelope = new SyncOperationEnvelope
+            {
+                UserId = UserState?.Current?.UserId ?? "",
+                OperationType = SyncOperationType.CreateRole,
+                ClientTimestampUtc = DateTime.UtcNow,
+                Payload = JsonSerializer.SerializeToElement(
+                    dto,
+                    new JsonSerializerOptions(JsonSerializerDefaults.Web))
+            };
+
+            // 3️⃣ Lägg i offline-kön
+            await OfflineWrite.EnqueueAsync(envelope);
+
+            // 4️⃣ Kör sync direkt (adminverktyg)
+            await SyncRunner.RunOnceAsync();
+
+            // 5️⃣ Uppdatera UI / cache
+            await CommonState.RefreshAsync();
+
+            MessageRole = $"{Loc["Page_CreateRole_TheRoleQueued_Text1"]} '{dto.RoleName}' {Loc["Page_CreateRole_TheRoleQueued_Text2"]}";
+            NewRoleName = "";
+        }
+        catch (Exception ex)
+        {
+            MessageRole = $"{Loc["Common_Errors_Generic"]} {ex.Message}";
+        }
+        finally
+        {
+            IsSavingRole = false;
+        }
+    }
+}

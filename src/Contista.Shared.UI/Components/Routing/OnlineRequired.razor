@@ -1,0 +1,100 @@
+﻿@* OnlineRequired.razor component *@
+@implements IDisposable
+@inject INetworkStatus Network
+@inject NavigationManager Nav
+
+@if (!Enabled || Network.IsOnline)
+{
+    @ChildContent
+}
+else
+{
+    <div class="online-required @(Compact ? "compact" : "")" role="alert">
+        <div class="online-required-left">
+            <span class="online-required-dot"></span>
+
+            <div class="online-required-text">
+                <div class="online-required-title">@DisplayTitle</div>
+                @if (!string.IsNullOrWhiteSpace(Message))
+                {
+                    <div class="online-required-msg">@DisplayMessage</div>
+                }
+            </div>
+        </div>
+
+        <div class="online-required-right">
+            @if (!Compact)
+            {
+                <button type="button"
+                        class="btn btn-sm btn-outline-primary"
+                        @onclick="GoBack">
+                    @DisplayBackButtonText
+                </button>
+
+                @if (ShowReload)
+                {
+                    <button type="button"
+                            class="btn btn-sm btn-outline-secondary"
+                            @onclick="Reload">
+                        @DisplayReloadButtonTextt
+                    </button>
+                }
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [CascadingParameter] public ILocalizationService Loc { get; set; } = default!;
+    [Parameter, EditorRequired] public RenderFragment ChildContent { get; set; } = default!;
+
+    /// <summary>Visar en mindre variant utan knappar.</summary>
+    [Parameter] public bool Compact { get; set; }
+
+    /// <summary>Var användaren skickas när man klickar "Tillbaka". Default: /app/home</summary>
+    [Parameter] public string BackHref { get; set; } = "/app/home";
+
+    [Parameter] public bool Enabled { get; set; } = true;
+
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Message { get; set; } 
+
+    [Parameter] public string? BackButtonText { get; set; } 
+    [Parameter] public bool ShowReload { get; set; } = true;
+    [Parameter] public string? ReloadButtonText { get; set; } 
+
+
+    private string DisplayTitle =>
+        Title ?? (Loc?["Page_OnlineRequired_Title"] ?? "You are offline");
+
+    private string DisplayMessage =>
+        Message ?? (Loc?["Page_OnlineRequired_Message"] ?? "This page requires internet. Please turn on the internet and try again.");
+
+    private string DisplayBackButtonText =>
+    BackButtonText ?? (Loc?["Common_Actions_Back"] ?? "Back");
+
+    private string DisplayReloadButtonTextt =>
+    ReloadButtonText ?? (Loc?["Common_Actions_Reload"] ?? "Reload");
+
+    protected override void OnInitialized()
+    {
+        Network.OnlineChanged += OnOnlineChanged;
+    }
+
+    private async void OnOnlineChanged(bool _)
+    {
+        try { await InvokeAsync(StateHasChanged); }
+        catch { }
+    }
+
+    private void GoBack()
+        => Nav.NavigateTo(BackHref, replace: true);
+
+    private void Reload()
+        => Nav.NavigateTo(Nav.Uri, forceLoad: true);
+
+    public void Dispose()
+    {
+        Network.OnlineChanged -= OnOnlineChanged;
+    }
+}

@@ -1,0 +1,171 @@
+﻿@* CalendarEventCard.razor *@
+@using Contista.Shared.Core.DTO.Calendar
+@using Contista.Shared.Core.Models.Calendar
+@using Contista.Shared.UI.Utils
+
+@if (Ev is null || EffectiveVisibility == CalendarVisibility.Private)
+{
+    @* Private => rendera ingenting *@
+}
+else if (Variant == "month")
+{
+    <div class="cal-item @AvailabilityCssClass"
+         data-avail="@AvailabilityCssKey"
+         style="--cal-accent:@AccentHex"
+         title="@DisplayTitle"
+         role="button"
+         tabindex="0"
+         @onclick="OnClick"
+         @onkeydown="HandleKeyDown">
+        <span class="cal-itemTime">@GetMonthTimeText(Ev)</span>
+        <span class="cal-itemTitle">@DisplayTitle</span>
+    </div>
+}
+else if (Variant == "week")
+{
+    <div class="cal-block @AvailabilityCssClass"
+         data-avail="@AvailabilityCssKey"
+         style="@($"{WeekStyle};--cal-accent:{AccentHex};")"
+         title="@DisplayTitle"
+         role="button"
+         tabindex="0"
+         @onclick:stopPropagation="true"
+         @onmousedown:stopPropagation="true"
+         @onclick="OnClick"
+         @onkeydown="HandleKeyDown">
+
+        <div class="cal-blockTitle">@DisplayTitle</div>
+
+        @if (ShowAvailabilityDecorations)
+        {
+            <div class="cal-blockAvail">@AvailabilityLabel</div>
+        }
+    </div>
+}
+else if (Variant == "week-allday")
+{
+    <div class="cal-block @AvailabilityCssClass"
+         data-avail="@AvailabilityCssKey"
+         style="@($"{WeekStyle};--cal-accent:{AccentHex};")"
+         title="@DisplayTitle"
+         role="button"
+         tabindex="0"
+         @onclick:stopPropagation="true"
+         @onmousedown:stopPropagation="true"
+         @onclick="OnClick"
+         @onkeydown="HandleKeyDown">
+
+        <div class="cal-blockTitle">@DisplayTitle</div>
+    </div>
+}
+else if (Variant == "list")
+{
+    <div class="cal-dayEventInfo">
+        <div class="cal-dayEventTimeCol">
+            @if (ShowTime)
+            {
+                <span class="cal-dayRowTime">@GetRangeText(Ev)</span>
+            }
+
+            @if (ShowAvailabilityDecorations)
+            {
+                <span class="cal-availBadge cal-availBadge--inline">@AvailabilityLabel</span>
+            }
+        </div>
+
+        <div class="cal-dayEventTitleCol">
+            <span class="cal-dayRowTitle @AvailabilityCssClass"
+                  data-avail="@AvailabilityCssKey"
+                  title="@DisplayTitle">
+                @DisplayTitle
+            </span>
+        </div>
+    </div>
+}
+else if (Variant == "agenda-row")
+{
+    <div class="cal-agendaEventInfo">
+        <div class="cal-agendaEventTimeCol">
+            @if (ShowTime)
+            {
+                <span class="cal-agendaEventTime">@GetRangeText(Ev)</span>
+            }
+
+            @if (ShowAvailabilityDecorations)
+            {
+                <span class="cal-availBadge cal-availBadge--inline">@AvailabilityLabel</span>
+            }
+        </div>
+
+        <div class="cal-agendaEventTitleCol">
+            <span class="cal-agendaEventTitle @AvailabilityCssClass"
+                  data-avail="@AvailabilityCssKey"
+                  title="@DisplayTitle">
+                @DisplayTitle
+            </span>
+        </div>
+    </div>
+}
+
+@code {
+    [CascadingParameter] public ILocalizationService Loc { get; set; } = default!;
+    [Parameter, EditorRequired] public CalendarEventDto Ev { get; set; } = default!;
+    [Parameter] public string Variant { get; set; } = "month";
+    [Parameter] public string AccentHex { get; set; } = "#2B2622";
+    [Parameter] public bool SpacedRange { get; set; } = false;
+    [Parameter] public EventCallback OnClick { get; set; }
+    [Parameter] public bool ShowTime { get; set; } = true;
+    [Parameter] public string? CurrentUserId { get; set; }
+    [Parameter] public string? WeekStyle { get; set; }
+
+    private CalendarVisibility EffectiveVisibility
+        => CalendarVisibilityPolicy.EffectiveVisibility(Ev, CurrentUserId);
+
+    private string DisplayTitle
+        => CalendarVisibilityPolicy.DisplayTitle(Loc, Ev, EffectiveVisibility);
+
+    private CalendarAvailability DisplayAvailability
+        => CalendarAvailabilityPolicy.GetDisplayAvailability(Ev, EffectiveVisibility);
+
+    private bool ShowAvailabilityDecorations
+        => CalendarAvailabilityPolicy.ShouldShowAvailabilityDecorations(EffectiveVisibility);
+
+    private string AvailabilityCssKey
+        => CalendarAvailabilityPolicy.CssKey(DisplayAvailability);
+
+    private string AvailabilityLabel
+        => CalendarAvailabilityPolicy.Label(Loc, DisplayAvailability);
+
+    private string AvailabilityCssClass => $"avail-{AvailabilityCssKey}";
+
+    private string GetRangeText(CalendarEventDto ev)
+    {
+        if (ev.IsAllDay)
+            return Loc.GetOr("Common_Actions_AllDay", "All day");
+
+        var start = DateTimes.ToLocalFromUtc(ev.StartUtc);
+        var end = DateTimes.ToLocalFromUtc(ev.EndUtc);
+
+        return SpacedRange
+            ? $"{start:HH:mm} - {end:HH:mm}"
+            : $"{start:HH:mm}-{end:HH:mm}";
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" || e.Key == " " || e.Code == "Space")
+        {
+            if (OnClick.HasDelegate)
+                await OnClick.InvokeAsync();
+        }
+    }
+
+    private string GetMonthTimeText(CalendarEventDto ev)
+    {
+        if (ev.IsAllDay)
+            return Loc.GetOr("Common_Actions_AllDay", "All day");
+
+        var start = DateTimes.ToLocalFromUtc(ev.StartUtc);
+        return $"{start:HH:mm}";
+    }
+}

@@ -1,0 +1,79 @@
+﻿@inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthProvider
+@inject INetworkStatus Network
+
+@* Minimal fallback UI om vi inte redirectar *@
+@* <div class="p-3">
+    <h5>Åtkomst nekad</h5>
+    <p class="text-muted mb-2">@_msg</p>
+    <a class="btn btn-sm btn-outline-primary" href="/">Till startsidan</a>
+</div> *@
+
+@code {
+    // [Parameter, EditorRequired] public RouteData RouteData { get; set; } = default!;
+
+    // private string _msg = "Du behöver vara inloggad för att se den här sidan.";
+
+    // protected override async Task OnParametersSetAsync()
+    // {
+    //     var state = await AuthProvider.GetAuthenticationStateAsync();
+    //     var user = state.User;
+
+    //     var path = new Uri(Nav.Uri).AbsolutePath; // t.ex. /app/home
+    //     var requiresAuth = RequiresAuth(path);
+    //     var requiresOnline = RequiresOnline(path);
+    //     var requiresAdmin = RequiresAdmin(path);
+
+    //     // 1) Om sidan kräver auth men man är anon -> tillbaka till landing
+    //     if (requiresAuth && user.Identity?.IsAuthenticated != true)
+    //     {
+    //         // Landing ska fungera offline; vi vill alltid dit.
+    //         Nav.NavigateTo("/", replace: true);
+    //         return;
+    //     }
+
+    //     // 2) Om vi är inloggade men sidan kräver online och vi är offline -> visa meddelande/redirect
+    //     if (user.Identity?.IsAuthenticated == true && requiresOnline && !Network.IsOnline)
+    //     {
+    //         _msg = "Du är offline. Den här sidan kräver internetanslutning.";
+    //         // Valfritt: redirect till home istället för att visa text
+    //         Nav.NavigateTo("/app/home", replace: true);
+    //         return;
+    //     }
+
+    //     // 3) Admin guard (roll eller planLevel)
+    //     if (user.Identity?.IsAuthenticated == true && requiresAdmin && !IsAdminOrHasPlan(user))
+    //     {
+    //         _msg = "Du saknar behörighet (Admin/plan).";
+    //         Nav.NavigateTo("/app/home", replace: true);
+    //         return;
+    //     }
+
+    //     // Om vi hamnar här: “NotAuthorized” av andra skäl (policy etc)
+    //     _msg = "Åtkomst nekad.";
+    // }
+
+    // private static bool RequiresAuth(string path)
+    //     => path.StartsWith("/app", StringComparison.OrdinalIgnoreCase)
+    //     || path.StartsWith("/admin", StringComparison.OrdinalIgnoreCase);
+
+    // // Välj vad som kräver online:
+    // // - AdminTools
+    // // - Sync-debug
+    // // - Sidor där du inte vill ha “halv-state”
+    // private static bool RequiresOnline(string path)
+    //     => path.StartsWith("/app/admin", StringComparison.OrdinalIgnoreCase)
+    //     || path.StartsWith("/admin", StringComparison.OrdinalIgnoreCase);
+
+    // private static bool RequiresAdmin(string path)
+    //     => path.StartsWith("/app/admin", StringComparison.OrdinalIgnoreCase)
+    //     || path.StartsWith("/admin", StringComparison.OrdinalIgnoreCase);
+
+    // private static bool IsAdminOrHasPlan(ClaimsPrincipal user)
+    // {
+    //     if (user.IsInRole("Admin")) return true;
+
+    //     var pl = user.FindFirst("la.planLevel")?.Value;
+    //     return int.TryParse(pl, out var lvl) && lvl > 0;
+    // }
+}

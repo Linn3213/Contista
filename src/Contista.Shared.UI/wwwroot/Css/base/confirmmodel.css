@@ -1,0 +1,170 @@
+﻿/* =========================================================
+   CONFIRM MODAL THEME
+   ========================================================= */
+
+.confirm-modal .modal-content {
+    border-radius: var(--radius-lg);
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-default);
+    box-shadow: var(--shadow-dropdown);
+    overflow: hidden;
+}
+
+.confirm-modal .modal-header {
+    color: var(--bg-card);
+    border-bottom: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-top-left-radius: var(--radius-lg);
+    border-top-right-radius: var(--radius-lg);
+    background-color: var(--ui-focus);
+}
+
+.confirm-modal .modal-header .modal-title {
+    color: var(--bg-card);
+}
+
+    .confirm-modal .modal-header .danger {
+        color: var(--text-inverse);
+    }
+
+    .confirm-modal .modal-header .warning {
+        color: var(--text-inverse);
+    }
+
+/* Header “themes” (Bootstrap bg-*) – mappa till WCAG */
+.confirm-modal .bg-primary {
+    background-color: var(--ui-focus) !important;
+    color: var(--bg-card) !important;
+}
+
+.confirm-modal .bg-secondary {
+    background-color: var(--ui-primary) !important;
+    color: var(--bg-card) !important;
+}
+
+.confirm-modal .bg-success {
+    background-color: var(--color-success) !important;
+    color: var(--bg-card) !important;
+}
+
+.confirm-modal .bg-warning {
+    background-color: var(--color-warning) !important;
+    color: var(--bg-card) !important;
+}
+
+.confirm-modal .bg-danger {
+    background-color: var(--color-error) !important;
+    color: var(--bg-card) !important;
+}
+
+.confirm-modal .bg-info {
+    background-color: var(--color-info) !important;
+    color: var(--bg-card) !important;
+}
+
+/* Body text */
+.confirm-modal .modal-body {
+    font-size: var(--text-base);
+    color: var(--text-secondary);
+    background-color: var(--bg-card);
+    padding: 1.25rem 1.5rem;
+}
+
+    .confirm-modal .modal-body strong {
+        color: var(--text-primary);
+        font-weight: var(--font-semibold);
+    }
+
+/* Footer buttons */
+.confirm-modal .modal-footer {
+    border-top: 1px solid var(--border-default);
+    background-color: var(--bg-secondary);
+    border-bottom-left-radius: var(--radius-lg);
+    border-bottom-right-radius: var(--radius-lg);
+    padding: 1rem 1.5rem;
+}
+
+.confirm-modal .btn {
+    border-radius: var(--radius-md);
+    font-weight: var(--font-semibold);
+}
+
+/* Icon styles */
+.confirm-modal i {
+    font-size: 1.25rem;
+    vertical-align: middle;
+}
+
+/* Om modalen använder .btn-*-klasser – låt theme-buttons.css styra,
+   men här säkerställer vi att de funkar även om den filen inte laddas. */
+.confirm-modal .modal-footer .btn-primary {
+    background-color: var(--ui-focus);
+    border-color: var(--ui-focus);
+    color: var(--bg-card);
+}
+
+    .confirm-modal .btn-primary:hover {
+        background-color: var(--text-primary);
+        border-color: var(--text-primary);
+    }
+
+.confirm-modal .modal-footer .btn-secondary {
+    background-color: transparent;
+    border: 2px solid var(--ui-primary);
+    color: var(--text-primary);
+}
+
+    .confirm-modal .btn-secondary:hover {
+        background-color: var(--bg-card);
+        border-color: var(--ui-focus);
+    }
+
+.confirm-modal .modal-footer .btn-warning {
+    background-color: var(--color-warning);
+    border-color: var(--color-warning);
+    color: var(--text-inverse);
+}
+
+    .confirm-modal .btn-warning:hover {
+        filter: brightness(0.95);
+    }
+
+.confirm-modal .modal-footer .btn-danger {
+    background-color: var(--color-error);
+    border-color: var(--color-error);
+    color: var(--text-inverse);
+}
+
+    .confirm-modal .btn-danger:hover {
+        filter: brightness(0.95);
+    }
+
+.confirm-modal .btn-info {
+    background-color: var(--color-info);
+    border-color: var(--color-info);
+    color: var(--bg-card);
+}
+
+    .confirm-modal .btn-info:hover {
+        filter: brightness(0.95);
+    }
+
+.confirm-modal .btn-success {
+    background-color: var(--color-success);
+    border-color: var(--color-success);
+    color: var(--bg-card);
+}
+
+    .confirm-modal .btn-success:hover {
+        filter: brightness(0.95);
+    }
+
+.modal-backdrop {
+    z-index: 4000 !important;
+}
+
+.modal {
+    z-index: 4005 !important;
+}

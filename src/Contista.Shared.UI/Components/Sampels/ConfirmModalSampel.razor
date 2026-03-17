@@ -1,0 +1,89 @@
+﻿@* ConfirmModelSampel.razor component *@
+@if (IsOpen)
+{
+    <div class="modal-backdrop" @onclick="OnBackdropClick" role="presentation"></div>
+
+    <div class="modal-shell" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+        <div class="modal-dialog modal-dialog-centered m-0" style="max-width: 520px; width: 100%;">
+            <div class="modal-content confirm-modal">
+                <div class="modal-header @HeaderBgClass p-2">
+                    @if (!string.IsNullOrWhiteSpace(IconClass))
+                    {
+                        <i class="@IconClass" aria-hidden="true"></i>
+                    }
+
+                    <h5 class="modal-title m-0" id="confirmTitle">@Title</h5>
+
+                    <button type="button"
+                            class="btn-close btn-close-white ms-auto"
+                            aria-label="Close"
+                            @onclick="Cancel">
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    @Message
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary me-2" @onclick="Cancel">
+                        @CancelText
+                    </button>
+
+                    <button type="button" class="btn @ConfirmBtnClass" @onclick="Confirm">
+                        @ConfirmText
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public EventCallback<bool> IsOpenChanged { get; set; }
+
+    [Parameter] public string Title { get; set; } = "Bekräfta";
+    [Parameter] public string Message { get; set; } = "Är du säker?";
+    [Parameter] public string CancelText { get; set; } = "Avbryt";
+    [Parameter] public string ConfirmText { get; set; } = "OK";
+
+    // Theme: "primary|secondary|success|warning|danger|info"
+    [Parameter] public string Variant { get; set; } = "primary";
+
+    // Bootstrap icon class, ex: "bi bi-exclamation-triangle-fill"
+    [Parameter] public string? IconClass { get; set; } = "bi bi-exclamation-triangle-fill";
+
+    [Parameter] public EventCallback OnConfirm { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // Klick på overlay stänger (kan göras valfritt)
+    [Parameter] public bool CloseOnBackdrop { get; set; } = true;
+
+    private string HeaderBgClass => $"bg-{Variant}";
+    private string ConfirmBtnClass => $"btn-{Variant}";
+
+    private async Task Cancel()
+    {
+        if (OnCancel.HasDelegate) await OnCancel.InvokeAsync();
+        await Close();
+    }
+
+    private async Task Confirm()
+    {
+        if (OnConfirm.HasDelegate) await OnConfirm.InvokeAsync();
+        await Close();
+    }
+
+    private async Task Close()
+    {
+        IsOpen = false;
+        await IsOpenChanged.InvokeAsync(false);
+    }
+
+    private async Task OnBackdropClick()
+    {
+        if (CloseOnBackdrop)
+            await Cancel();
+    }
+}

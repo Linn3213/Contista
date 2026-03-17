@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Contista.App/Contista.App.csproj">
+      <Deploy Solution="Debug|*" />
+    </Project>
+    <Project Path="src/Contista.Infrastructure.Firestore/Contista.Infrastructure.Firestore.csproj" />
+    <Project Path="src/Contista.Shared.Client/Contista.Shared.Client.csproj" />
+    <Project Path="src/Contista.Shared.Core/Contista.Shared.Core.csproj" />
+    <Project Path="src/Contista.Shared.UI/Contista.Shared.UI.csproj" />
+    <Project Path="src/Contista.Web.Client/Contista.Web.Client.csproj" />
+    <Project Path="src/Contista.Web/Contista.Web.csproj" />
+  </Folder>
+</Solution>

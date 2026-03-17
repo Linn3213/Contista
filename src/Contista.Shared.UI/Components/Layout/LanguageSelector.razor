@@ -1,0 +1,30 @@
+@* LanguageSelector.razor component *@
+@inject ILocalizationService Loc
+
+<div class="d-flex gap-2">
+    <button class="btn @ButtonDesign(OutlineButton) btn-sm me-2 w-100"
+            @onclick='async () => await Change("sv-SE")'>
+        @(Loc["Settings_Language_Swedish_Button"] ?? "Swedish")
+    </button>
+
+    <button class="btn @ButtonDesign(OutlineButton) btn-sm w-100"
+            @onclick='async () => await Change("en-US")'>
+        @(Loc["Settings_Language_English_Button"] ?? "English")
+    </button>
+</div>
+
+@code {
+    [Parameter] public EventCallback<string> OnLanguageSelected { get; set; }
+    [Parameter] public bool OutlineButton { get; set; } = false;
+
+    private async Task Change(string culture)
+    {
+        await Loc.SetLanguageAsync(culture);
+
+        if (OnLanguageSelected.HasDelegate)
+            await OnLanguageSelected.InvokeAsync(culture);
+    }
+
+    private string ButtonDesign(bool outline)
+        => outline ? "btn-outline-secondary" : "btn-secondary";
+}

@@ -1,0 +1,113 @@
+﻿@* RouteGuardRedirect.razor component *@
+@using Microsoft.AspNetCore.Components.Authorization
+@inject NavigationManager Nav
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState> AuthenticationStateTask { get; set; } = default!;
+    [Parameter] public string? ReturnUrl { get; set; }
+
+    // Anti-loop: om samma redirect körs igen pga rerender/claims, ignorera
+    private string? _lastTarget;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        AuthenticationState state;
+        try
+        {
+            state = await AuthenticationStateTask;
+        }
+        catch
+        {
+            // Om auth-state inte kan läsas: gå inte in och navigera
+            return;
+        }
+
+        var isAuth = state.User?.Identity?.IsAuthenticated == true;
+
+        // Current relativt base, med query
+        var currentRel = Nav.ToBaseRelativePath(Nav.Uri) ?? "";   // "" eller "app/home?x=1" eller "?returnUrl=..."
+        var current = "/" + currentRel;                            // "/" eller "/app/home?x=1" eller "/?returnUrl=..."
+
+        if (!isAuth)
+        {
+            // Om vi redan är på landing ("/" eller "/?returnUrl=...") -> gör inget
+            if (string.IsNullOrEmpty(currentRel) || currentRel.StartsWith("?", StringComparison.Ordinal))
+                return;
+
+            var target = BuildLandingTarget(ReturnUrl);
+
+            NavigateOnceIfNeeded(current, target, replace: true);
+            return;
+        }
+
+        // Auth men NotAuthorized => 403-UX
+        var forbidden = "/app/home?forbidden=1";
+
+        // Om vi redan är på /app/home (även utan query) men forbidden saknas -> lägg på
+        // Om vi redan har forbidden -> gör inget
+        if (IsSamePath(current, forbidden))
+        {
+            if (current.Contains("forbidden=", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            NavigateOnceIfNeeded(current, forbidden, replace: true);
+            return;
+        }
+
+        NavigateOnceIfNeeded(current, forbidden, replace: true);
+    }
+
+    private void NavigateOnceIfNeeded(string current, string target, bool replace)
+    {
+        // extra skydd: om den försöker navigera till samma target igen vid rerender
+        if (string.Equals(_lastTarget, target, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        if (IsSameUrl(current, target))
+            return;
+
+        _lastTarget = target;
+        Nav.NavigateTo(target, replace: replace);
+    }
+
+    private static string BuildLandingTarget(string? returnUrl)
+    {
+        var target = "/";
+
+        var ru = (returnUrl ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(ru))
+            return target;
+
+        // Normalisera ReturnUrl till absolut app-path
+        if (!ru.StartsWith("/"))
+            ru = "/" + ru;
+
+        // Skicka inte returnUrl om den ändå bara pekar på "/"
+        if (string.Equals(ru, "/", StringComparison.OrdinalIgnoreCase))
+            return target;
+
+        return target + "?returnUrl=" + Uri.EscapeDataString(ru);
+    }
+
+    private static string SplitPath(string url)
+        => (url ?? "/").Split('?', '#')[0].TrimEnd('/').ToLowerInvariant() switch
+        {
+            "" => "/",
+            var p => p
+        };
+
+    private static string SplitQuery(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return "";
+        var qIndex = url.IndexOf('?');
+        if (qIndex < 0) return "";
+        return url.Substring(qIndex).Trim();
+    }
+
+    private static bool IsSamePath(string a, string b)
+        => string.Equals(SplitPath(a), SplitPath(b), StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsSameUrl(string a, string b)
+        => string.Equals(SplitPath(a), SplitPath(b), StringComparison.OrdinalIgnoreCase)
+           && string.Equals(SplitQuery(a), SplitQuery(b), StringComparison.OrdinalIgnoreCase);
+}

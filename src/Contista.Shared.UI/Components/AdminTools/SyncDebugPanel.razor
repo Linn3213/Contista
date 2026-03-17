@@ -1,0 +1,91 @@
+﻿@* SyncDebugPanel.razor *@
+@inherits AppPageBase
+@implements IDisposable
+@attribute [Authorize]
+
+@using Contista.Shared.UI.Components.AdminTools.SyncDebug
+@using Contista.Shared.Core.Interfaces.SyncDebug
+
+@inject IFirebaseAuthService AuthService
+@inject INetworkStatus Network
+@inject ISyncDebugController Vm
+@inject IUserDataState<UserDataDto> UserStateDto
+@inject IUserDataOptimisticPatcher Patcher
+
+<AuthorizeView Policy="Full">
+    <div class="card">
+        <h2 class="page-title">@Loc["Page_SyncDebugPanel_Title"]</h2>
+
+        <p class="small la-muted">
+            Online: <b>@(Network.IsOnline? Loc["Common_Actions_Yes"] : Loc["Common_Actions_No"])</b><br />
+            Auth: <b>@(AuthService.IsLoggedIn? Loc["Page_SyncDebugPanel_LoggedIn_Text"] : Loc["Page_SyncDebugPanel_LoggedOut_Text"])</b><br />
+            UserId: <b>@(AuthService.Uid ?? Loc["Page_SyncDebugPanel_Missing_Text"])</b>
+        </p>
+
+        <SyncDebug_NetworkPanel />
+
+        <div class="form-actions" style="display:flex; gap:.5rem; flex-wrap:wrap;">
+            <button class="btn" @onclick="OnRefresh">@Loc["Common_Actions_Refresh"]</button>
+            <button class="btn primary" @onclick="OnSyncNow" disabled="@(!AuthService.IsLoggedIn)">@Loc["Page_SyncDebugPanel_SyncNow_Button"]</button>
+            <button class="btn" @onclick="OnClearQueue">@Loc["Page_SyncDebugPanel_ClearQueue_Button"]</button>
+            <button class="btn" @onclick="ToggleAutoRefresh">
+                @(Vm.AutoRefresh? Loc["Page_SyncDebugPanel_StopAutoRefreash_Button"] : Loc["Page_SyncDebugPanel_AutoRefreash_Button"])
+            </button>
+        </div>
+
+        <hr />
+
+        <SyncDebug_PostOpsPanel Vm="Vm" />
+
+        @if (!string.IsNullOrWhiteSpace(Vm.Message))
+        {
+            <p class="form-message">@Vm.Message</p>
+        }
+
+        <hr />
+
+        <SyncDebug_QueueItemsList Vm="Vm" />
+    </div>
+</AuthorizeView>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await Vm.InitializeAsync();
+        Vm.Attach();
+        await Vm.RefreshQueueOnlyAsync();
+        Network.OnlineChanged += OnOnlineChanged;
+    }
+    private void OnOnlineChanged(bool online)
+        => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        Vm.Detach();
+        Network.OnlineChanged -= OnOnlineChanged;
+    }
+
+    private async Task OnRefresh()
+    {
+        await Vm.RefreshQueueOnlyAsync();
+        StateHasChanged();
+    }
+
+    private async Task OnSyncNow()
+    {
+        await Vm.SyncNowAsync();
+        StateHasChanged();
+    }
+
+    private async Task OnClearQueue()
+    {
+        await Vm.ClearQueueAsync();
+        StateHasChanged();
+    }
+
+    private void ToggleAutoRefresh()
+    {
+        Vm.SetAutoRefresh(!Vm.AutoRefresh);
+        StateHasChanged();
+    }
+}

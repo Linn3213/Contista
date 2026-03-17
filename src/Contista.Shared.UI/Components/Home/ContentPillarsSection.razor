@@ -1,0 +1,134 @@
+﻿@* ContentPillarsSection.razor *@
+@using Contista.Shared.Core.DTO
+@using Contista.Shared.UI.Services
+@using Contista.Shared.UI.Components.Modals.Home
+
+<div class="card cp-card">
+    <div class="card-body cp-body">
+
+        <div class="cp-header">
+            <h3 class="cp-title">@DisplayTitle</h3>
+            @if (!string.IsNullOrWhiteSpace(DisplaySubTitle))
+            {
+                <div class="cp-subtitle">@DisplaySubTitle</div>
+            }
+        </div>
+
+        @if (Pillars is null || !Pillars.Any())
+        {
+            <div class="cp-empty">
+                @DisplayEmptyText
+            </div>
+        }
+        else
+        {
+            var list = Pillars
+            .OrderBy(p => p.Order)
+            .ToList();
+
+            var hasMore = list.Count > MaxCollapsedItems;
+
+            <ul class="cp-list" role="list">
+                @foreach (var p in list.Take(MaxCollapsedItems))
+                {
+                    @PillarRow(p)
+                }
+
+                @if (hasMore)
+                {
+                    <li class="cp-more @(IsExpanded ? "is-open" : "")">
+                        <div class="cp-more__inner" role="list">
+                            @foreach (var p in list.Skip(MaxCollapsedItems))
+                            {
+                                @PillarRow(p)
+                            }
+                    </div>
+                </li>
+
+                <li class="cp-expand">
+                    <button type="button"
+                            class="cp-expand__btn"
+                            aria-expanded="@IsExpanded"
+                            @onclick="ToggleExpanded">
+                        <i class="bi @(IsExpanded ? "bi-chevron-up" : "bi-chevron-down")" aria-hidden="true"></i>
+
+                        <span class="cp-expand__text">
+                            @(IsExpanded
+                                                    ? Loc?.GetOr("Common_Actions_ShowLess", "Show less")
+                                                    : Loc?.GetOr("Common_Actions_ShowMore", "Show more"))
+                            </span>
+
+                            <span class="cp-expand__count">
+                                +@(list.Count - MaxCollapsedItems)
+                            </span>
+                        </button>
+                    </li>
+                }
+            </ul>
+        }
+
+    </div>
+</div>
+
+<ContentPillarsModal IsOpen="@_isOpen"
+                     IsOpenChanged="@OnOpenChanged"
+                     Pillar="@_selected" />
+
+@code {
+    [CascadingParameter] public ILocalizationService? Loc { get; set; }
+
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public string? EmptyText { get; set; }
+
+    [Parameter] public IEnumerable<ContentPillar>? Pillars { get; set; }
+
+    // ✅ Samma idé som Upcoming: styr hur många som syns innan "Show more"
+    [Parameter] public int MaxItems { get; set; } = 3;
+
+    private int MaxCollapsedItems => Math.Max(1, MaxItems);
+    private bool IsExpanded;
+
+    private bool _isOpen;
+    private ContentPillar? _selected;
+
+    private string DisplayTitle =>
+        Title ?? (Loc?.GetOr("Page_ContentPillarsSection_Title", "Content pillars")) ?? "Content pillars";
+
+    private string DisplaySubTitle =>
+        Subtitle ?? (Loc?.GetOr("Page_ContentPillarsSection_SubTitle", "Your key themes")) ?? "Your key themes";
+
+    private string DisplayEmptyText =>
+        EmptyText ?? (Loc?.GetOr("Page_ContentPillarsSection_Empty", "No content pillars yet.")) ?? "No content pillars yet.";
+
+    private void ToggleExpanded() => IsExpanded = !IsExpanded;
+
+    private void OpenPillar(ContentPillar p)
+    {
+        _selected = p;
+        _isOpen = true;
+    }
+
+    private Task OnOpenChanged(bool open)
+    {
+        _isOpen = open;
+        if (!open) _selected = null;
+        return Task.CompletedTask;
+    }
+
+    private string ResolvePillarTitle(ContentPillar p)
+        => string.IsNullOrWhiteSpace(p.Title)
+            ? (Loc?.GetOr("Page_ContentPillarsSection_Untitled", "Untitled") ?? "Untitled")
+            : p.Title.Trim();
+
+    private RenderFragment PillarRow(ContentPillar p) => @<li class="cp-item">
+        <button type="button"
+                class="cp-rowBtn"
+                @onclick="() => OpenPillar(p)">
+            <div class="cp-item__titleRow">
+                <div class="cp-item__title">@ResolvePillarTitle(p)</div>
+                <i class="bi bi-chevron-right cp-item__chev" aria-hidden="true"></i>
+            </div>
+        </button>
+    </li>;
+}

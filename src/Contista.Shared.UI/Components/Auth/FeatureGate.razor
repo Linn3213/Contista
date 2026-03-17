@@ -1,0 +1,340 @@
+﻿@* FeatureGate.razor component *@
+@using Contista.Shared.Core.Models.Auth
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IFeatureAccessService Features
+@inject AuthenticationStateProvider AuthProvider
+@inject INetworkStatus Network
+@inject NavigationManager Nav
+@implements IDisposable
+
+@if (!_evaluated)
+{
+    @if (WhileLoading is not null)
+    {
+        @WhileLoading
+    }
+    @* default = rendera inget under loading *@
+}
+else if (_allowed)
+{
+    @ChildContent
+}
+else
+{
+    if (Mode == FeatureGateMode.Hide)
+    {
+        @* rendera inget *@
+    }
+    else
+    {
+        if (Fallback is not null)
+        {
+            @Fallback
+        }
+        else
+        {
+            @DefaultFallback()
+        }
+    }
+}
+
+@code {
+    [CascadingParameter] public ILocalizationService Loc { get; set; } = default!;
+    [Parameter, EditorRequired] public FeatureKey Feature { get; set; }
+    [Parameter, EditorRequired] public RenderFragment ChildContent { get; set; } = default!;
+
+    /// <summary>
+    /// Hide = rendera inget om ej tillåtet (perfekt för meny)
+    /// Fallback = visa fallback (perfekt för sidor)
+    /// </summary>
+    [Parameter] public FeatureGateMode Mode { get; set; } = FeatureGateMode.Hide;
+
+    /// <summary>Visas medan vi väntar på auth/claims + CanAsync.</summary>
+    [Parameter] public RenderFragment? WhileLoading { get; set; }
+
+    /// <summary>Om du vill override:a fallback per call-site.</summary>
+    [Parameter] public RenderFragment? Fallback { get; set; }
+
+    [Parameter] public string BackHref { get; set; } = "/app/home";
+    [Parameter] public string UpgradeHref { get; set; } = "/app/settings";
+
+    [Parameter] public string? OfflineTitle { get; set; }
+    [Parameter] public string? OfflineMessage { get; set; }
+
+    [Parameter] public string? NoAccessTitle { get; set; }
+    [Parameter] public string? NoAccessMessage { get; set; }
+
+    [Parameter] public string? NotLoggedInTitle { get; set; }
+    [Parameter] public string? NotLoggedInMessage { get; set; }
+
+    /// <summary>Compact påverkar bara default-fallbackens layout.</summary>
+    [Parameter] public bool Compact { get; set; } = true;
+
+    private bool _allowed;
+    private bool _evaluated;
+    private FeatureRequirement? _req;
+    private bool _isAuth;
+    private int _attempt;
+    private static readonly int MaxAttempts = 25; // ~25 renders
+
+    private string DisplayOfflineTitle => OfflineTitle ?? (Loc?["Page_Home_FeatureGate_OfflineTitle"] ?? "You are offline");
+    private string DisplayOfflineMessage => OfflineMessage ?? (Loc?["Page_Home_FeatureGate_OfflineMessage"] ?? "This feature requires internet. Turn on the internet and try again.");
+
+    private string DisplayNoAccessTitle => NoAccessTitle ?? (Loc?["Page_Home_FeatureGate_NoAccessTitle"] ?? "Not available in your plan");
+    private string DisplayNoAccessMessage => NoAccessMessage ?? (Loc?["Page_Home_FeatureGate_NoAccessMessage"] ?? "Upgrade to unlock this feature.");
+
+    private string DisplayNotLoggedInTitle => NotLoggedInTitle ?? (Loc?["Page_Home_FeatureGate_NotLoggedInTitle"] ?? "Sign in");
+    private string DisplayNotLoggedInMessage => NotLoggedInMessage ?? (Loc?["Page_Home_FeatureGate_NotLoggedInMessage"] ?? "You need to be logged in to use this feature.");
+
+
+    protected override void OnInitialized()
+    {
+        AuthProvider.AuthenticationStateChanged += OnAuthStateChanged;
+        Network.OnlineChanged += OnOnlineChanged;
+    }
+
+    protected override async Task OnParametersSetAsync()
+        => await EvaluateAsync();
+
+    private async Task EvaluateAsync()
+    {
+        _evaluated = false;
+        _allowed = false;
+
+        _req = FeatureRequirements.Map.TryGetValue(Feature, out var r) ? r : null;
+        if (_req is null)
+        {
+            _evaluated = true;
+            return;
+        }
+
+        var state = await AuthProvider.GetAuthenticationStateAsync();
+        var user = state.User;
+        _isAuth = user?.Identity?.IsAuthenticated == true;
+
+        // ✅ Om inloggad men claims inte redo ännu: vänta/visa WhileLoading
+        if (_isAuth && RequiresEntitlementClaims(_req) && !HasEntitlementClaims(user))
+        {
+            _attempt++;
+
+            // låt UI få en chans att rendera WhileLoading
+            await Task.Yield();
+
+            // prova igen några gånger (AuthStateChanged brukar komma, men detta tar bort "blink")
+            if (_attempt <= MaxAttempts)
+                return;
+
+            // om det ändå aldrig kommer claims: fall back till vanlig CanAsync efter en stund
+            // (så vi inte fastnar)
+        }
+
+        _attempt = 0;
+
+        _allowed = await Features.CanAsync(Feature);
+        _evaluated = true;
+    }
+
+    private static bool HasEntitlementClaims(ClaimsPrincipal user)
+    {
+        // admin eller planlevel eller permanent => "redo"
+        if (user.IsInRole("Admin") || user.HasClaim(ClaimTypes.Role, "Admin") || user.HasClaim("role", "Admin") || user.HasClaim("roles", "Admin"))
+            return true;
+
+        if (user.FindFirst("la.planLevel") is not null)
+            return true;
+
+        if (string.Equals(user.FindFirst("la.permanent")?.Value, "true", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        // membershipType kan också räcka om du använder den
+        if (!string.IsNullOrWhiteSpace(user.FindFirst("la.membershipType")?.Value))
+            return true;
+
+        return false;
+    }
+
+    private static bool RequiresEntitlementClaims(FeatureRequirement req)
+    {
+        // Only All (public) behöver inget.
+        if (req.Allowed.HasFlag(Entitlement.All))
+            return false;
+
+        // Free/Standard/Premium/Permanent/Admin kräver att vi vet något om entitlement
+        return req.Allowed.HasFlag(Entitlement.Free)
+            || req.Allowed.HasFlag(Entitlement.Standard)
+            || req.Allowed.HasFlag(Entitlement.Premium)
+            || req.Allowed.HasFlag(Entitlement.Permanent)
+            || req.Allowed.HasFlag(Entitlement.Admin);
+    }
+
+
+    private async void OnAuthStateChanged(Task<AuthenticationState> _)
+    {
+        try
+        {
+            await EvaluateAsync();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch { }
+    }
+
+    private async void OnOnlineChanged(bool _)
+    {
+        try
+        {
+            await EvaluateAsync();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch { }
+    }
+
+    private RenderFragment DefaultFallback() => builder =>
+    {
+        // okänd feature -> rendera inget
+        if (_req is null)
+            return;
+
+        // 1) Offline-fall
+        if (_req.OnlineRequired && !Network.IsOnline)
+        {
+            builder.OpenElement(0, "div");
+            builder.AddAttribute(1, "class", $"la-online-required {(Compact ? "compact" : "")}");
+            builder.AddAttribute(2, "role", "alert");
+            builder.AddAttribute(3, "aria-live", "polite");
+
+            builder.OpenElement(4, "div");
+            builder.AddAttribute(5, "class", "la-online-required__left");
+
+            builder.OpenElement(6, "span");
+            builder.AddAttribute(7, "class", "la-online-required__dot");
+            builder.AddAttribute(8, "aria-hidden", "true");
+            builder.CloseElement();
+
+            builder.OpenElement(9, "div");
+            builder.AddAttribute(10, "class", "la-online-required__text");
+
+            builder.OpenElement(11, "div");
+            builder.AddAttribute(12, "class", "la-online-required__title");
+            builder.AddContent(13, OfflineTitle);
+            builder.CloseElement();
+
+            builder.OpenElement(14, "div");
+            builder.AddAttribute(15, "class", "la-online-required__msg");
+            builder.AddContent(16, OfflineMessage);
+            builder.CloseElement();
+
+            builder.CloseElement(); // text
+            builder.CloseElement(); // left
+
+            if (!Compact)
+            {
+                builder.OpenElement(17, "div");
+                builder.AddAttribute(18, "class", "la-online-required__right");
+
+                builder.OpenElement(19, "button");
+                builder.AddAttribute(20, "type", "button");
+                builder.AddAttribute(21, "class", "btn btn-sm btn-outline-primary");
+                builder.AddAttribute(22, "onclick", EventCallback.Factory.Create(this, () => Nav.NavigateTo(BackHref, replace: true)));
+                builder.AddContent(23, "Tillbaka");
+                builder.CloseElement();
+
+                builder.OpenElement(24, "button");
+                builder.AddAttribute(25, "type", "button");
+                builder.AddAttribute(26, "class", "btn btn-sm btn-outline-secondary ms-2");
+                builder.AddAttribute(27, "onclick", EventCallback.Factory.Create(this, () => Nav.NavigateTo(Nav.Uri, forceLoad: true)));
+                builder.AddContent(28, "Ladda om");
+                builder.CloseElement();
+
+                builder.CloseElement(); // right
+            }
+
+            builder.CloseElement(); // wrapper
+            return;
+        }
+
+        // 2) Ej inloggad
+        if (!_isAuth && !_req.Allowed.HasFlag(Entitlement.All))
+        {
+            builder.OpenElement(30, "div");
+            builder.AddAttribute(31, "class", "la-gate la-gate--login");
+            builder.AddAttribute(32, "role", "note");
+
+            builder.OpenElement(33, "div");
+            builder.AddAttribute(34, "class", "la-gate__title");
+            builder.AddContent(35, NotLoggedInTitle);
+            builder.CloseElement();
+
+            builder.OpenElement(36, "div");
+            builder.AddAttribute(37, "class", "la-gate__msg");
+            builder.AddContent(38, NotLoggedInMessage);
+            builder.CloseElement();
+
+            if (!Compact)
+            {
+                builder.OpenElement(39, "button");
+                builder.AddAttribute(40, "type", "button");
+                builder.AddAttribute(41, "class", "btn btn-sm btn-outline-primary mt-2");
+                builder.AddAttribute(42, "onclick", EventCallback.Factory.Create(this, () => Nav.NavigateTo("/", replace: true)));
+                builder.AddContent(43, "Till startsidan");
+                builder.CloseElement();
+            }
+
+            builder.CloseElement();
+            return;
+        }
+
+        // 3) Inloggad men saknar access
+        builder.OpenElement(50, "div");
+        builder.AddAttribute(51, "class", "la-gate la-gate--upgrade");
+        builder.AddAttribute(52, "role", "note");
+
+        builder.OpenElement(53, "div");
+        builder.AddAttribute(54, "class", "la-gate__title");
+        builder.AddContent(55, NoAccessTitle);
+        builder.CloseElement();
+
+        builder.OpenElement(56, "div");
+        builder.AddAttribute(57, "class", "la-gate__msg");
+        builder.AddContent(58, NoAccessMessage);
+        builder.CloseElement();
+
+        if (!Compact)
+        {
+            builder.OpenElement(59, "div");
+            builder.AddAttribute(60, "class", "d-flex gap-2 mt-2");
+
+            builder.OpenElement(61, "button");
+            builder.AddAttribute(62, "type", "button");
+            builder.AddAttribute(63, "class", "btn btn-sm btn-outline-primary");
+            builder.AddAttribute(64, "onclick", EventCallback.Factory.Create(this, () => Nav.NavigateTo(UpgradeHref)));
+            builder.AddContent(65, "Uppgradera");
+            builder.CloseElement();
+
+            builder.OpenElement(66, "button");
+            builder.AddAttribute(67, "type", "button");
+            builder.AddAttribute(68, "class", "btn btn-sm btn-outline-secondary");
+            builder.AddAttribute(69, "onclick", EventCallback.Factory.Create(this, () => Nav.NavigateTo(BackHref, replace: true)));
+            builder.AddContent(70, "Tillbaka");
+            builder.CloseElement();
+
+            builder.CloseElement();
+        }
+
+        builder.CloseElement();
+    };
+
+    public void Dispose()
+    {
+        AuthProvider.AuthenticationStateChanged -= OnAuthStateChanged;
+        Network.OnlineChanged -= OnOnlineChanged;
+    }
+}
+
+@code{
+    public enum FeatureGateMode
+    {
+        Hide = 0,
+        Fallback = 1
+    }
+}
+

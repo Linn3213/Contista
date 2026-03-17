@@ -1,0 +1,11 @@
+﻿@* StatsGrid.razor component *@
+<div class="stats-grid row g-4">
+    @if (ChildContent is not null)
+    {
+        @ChildContent
+    }
+</div>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

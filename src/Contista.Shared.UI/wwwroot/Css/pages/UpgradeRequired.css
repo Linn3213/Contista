@@ -1,0 +1,5 @@
+﻿.plan-card {
+    border: 1px solid var(--color-border-default);
+    border-radius: 16px;
+    background: var(--color-bg-loader-overlay);
+}

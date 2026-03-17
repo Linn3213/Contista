@@ -1,0 +1,181 @@
+﻿@* UpcomingContentSection.razor *@
+
+<div class="card upcoming-card">
+    <div class="card-body">
+
+        <div class="upcoming-card__header">
+            <div class="upcoming-card__headerLeft">
+                <h3 class="upcoming-card__title">@DisplayTitle</h3>
+
+                @if (!string.IsNullOrWhiteSpace(DisplaySubTitle))
+                {
+                    <div class="upcoming-card__subtitle">@DisplaySubTitle</div>
+                }
+            </div>
+
+            @if (OnOpenLibrary.HasDelegate)
+            {
+                <button type="button"
+                        class="upcoming-card__actionBtn"
+                        @onclick="OnOpenLibrary"
+                        title="@(Loc?["Common_Actions_ViewAll"] ?? "View all")"
+                        aria-label="@(Loc?["Common_Actions_ViewAll"] ?? "View all")">
+                    <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                </button>
+            }
+        </div>
+
+        @if (Items is null || Items.Count == 0)
+        {
+            <div class="upcoming-card__empty text-muted">
+                @DisplayEmptyText
+            </div>
+        }
+        else
+        {
+            var hasMore = Items.Count > MaxCollapsedItems;
+
+            <ul class="upcoming-list" role="list">
+
+                @foreach (var post in Items.Take(MaxCollapsedItems))
+                {
+                    @UpcomingRow(post)
+                }
+
+                @if (hasMore)
+                {
+                    <li class="upcoming-more @(IsExpanded ? "is-open" : "")">
+                        <div class="upcoming-more__inner" role="list">
+                            @foreach (var post in Items.Skip(MaxCollapsedItems))
+                            {
+                                @UpcomingRow(post)
+                            }
+                    </div>
+                </li>
+
+                <li class="upcoming-expand">
+                    <button type="button"
+                            class="upcoming-expand__btn"
+                            aria-expanded="@IsExpanded"
+                            @onclick="ToggleExpanded">
+                        <i class="bi @(IsExpanded ? "bi-chevron-up" : "bi-chevron-down")" aria-hidden="true"></i>
+
+                        <span class="upcoming-expand__text">
+                            @(IsExpanded
+                                                    ? (Loc?["Common_Actions_ShowLess"] ?? "Show less")
+                                                    : (Loc?["Common_Actions_ShowMore"] ?? "Show more"))
+                            </span>
+
+                            <span class="upcoming-expand__count">
+                                +@(Items.Count - MaxCollapsedItems)
+                            </span>
+                        </button>
+                    </li>
+                }
+            </ul>
+        }
+
+    </div>
+</div>
+
+@code {
+    [CascadingParameter] public ILocalizationService? Loc { get; set; }
+
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public string? EmptyText { get; set; }
+
+    [Parameter] public IReadOnlyList<ContentPost> Items { get; set; } = Array.Empty<ContentPost>();
+
+    [Parameter] public EventCallback OnOpenLibrary { get; set; }
+    [Parameter] public EventCallback<ContentPost> OnSelect { get; set; }
+
+    // Visar kollapsat antal (som TodaysFocus)
+    [Parameter] public int MaxItems { get; set; } = 3;
+
+    private int MaxCollapsedItems => Math.Max(1, MaxItems);
+    private bool IsExpanded;
+
+    private string DisplayTitle =>
+        Title ?? (Loc?["Page_UpcomingContentSection_Title"] ?? "Upcoming Content");
+
+    private string DisplaySubTitle =>
+        Subtitle ?? (Loc?["Page_UpcomingContentSection_SubTitle"] ?? "Your latest drafts");
+
+    private string DisplayEmptyText =>
+        EmptyText ?? (Loc?["Page_UpcomingContentSection_Empty"] ?? "No content yet. Create one to get started.");
+
+    private void ToggleExpanded() => IsExpanded = !IsExpanded;
+
+    private string SafeTitle(ContentPost p)
+        => string.IsNullOrWhiteSpace(p.Title)
+            ? (Loc?["Page_UpcomingContentSection_Untitled_Text"] ?? "(untitled)")
+            : p.Title.Trim();
+
+    private string GetStatusText(ContentPost p)
+        => string.IsNullOrWhiteSpace(p.Status)
+            ? (Loc?["Common_Status_Draft"] ?? "Draft")
+            : p.Status;
+
+    private static string GetStatusClass(ContentPost p)
+    {
+        var s = (p.Status ?? "").Trim().ToLowerInvariant();
+        return s switch
+        {
+            "published" => "is-published",
+            "archived" => "is-archived",
+            _ => "is-draft"
+        };
+    }
+
+    private string GetMetaLine(ContentPost p)
+    {
+        var status = GetStatusText(p);
+
+        var dt = p.UpdatedDate != default ? p.UpdatedDate
+               : p.CreatedDate != default ? p.CreatedDate
+               : (DateTime?)null;
+
+        if (dt is null)
+            return status;
+
+        var dateText = dt.Value.ToLocalTime().ToString("yyyy-MM-dd");
+
+        // OBS: om din Loc returnerar key när den saknas, använd helpern vi gjorde för fallback
+        var updatedWord = Loc?["Common_Actions_Updated"] ?? "Updated";
+        return $"{status} • {updatedWord} {dateText}";
+    }
+
+    private async Task RowClickAsync(ContentPost post)
+    {
+        if (OnSelect.HasDelegate)
+            await OnSelect.InvokeAsync(post);
+    }
+
+    private async Task OnRowKeyDownAsync(KeyboardEventArgs e, ContentPost post)
+    {
+        if (e.Key is "Enter" or " ")
+            await RowClickAsync(post);
+    }
+
+    private RenderFragment UpcomingRow(ContentPost post) => @<li class="upcoming-item">
+        <button type="button"
+                class="upcoming-rowBtn"
+                @onclick="() => RowClickAsync(post)"
+                @onkeydown="(e) => OnRowKeyDownAsync(e, post)">
+            <div class="upcoming-item__main">
+                <div class="upcoming-item__titleRow">
+                    <span class="upcoming-item__title">@SafeTitle(post)</span>
+
+                    <span class="upcoming-badge @(GetStatusClass(post))">
+                        @GetStatusText(post)
+                    </span>
+                </div>
+
+                <div class="upcoming-item__meta">
+                    @GetMetaLine(post)
+                </div>
+            </div>
+        </button>
+    </li>;
+}

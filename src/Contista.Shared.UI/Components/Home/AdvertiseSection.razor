@@ -1,0 +1,149 @@
+﻿@* AdvertiseSection.razor *@
+@using Contista.Shared.Core.Models.Auth
+@using Microsoft.AspNetCore.Components.Web
+@inject NavigationManager Nav
+@inject IFeatureAccessService Features
+
+<div class="ad-section @(IsClickable ? "is-clickable" : "")"
+     role="@(IsClickable ? "button" : null)"
+     tabindex="@(IsClickable ? "0" : null)"
+     title="@TooltipTitle"
+     @onclick="HandleClick"
+     @onkeydown="OnKeyDown">
+
+    <div class="ad-inner">
+        <div class="ad-left">
+            <h2 class="ad-title">
+                <i class="bi bi-stars ad-icon" aria-hidden="true"></i>
+                @DisplayTitle
+
+                @if (ShowLock)
+                {
+                    <span class="ad-lock" aria-label="Requires Premium">
+                        <i class="bi bi-lock-fill" aria-hidden="true"></i>
+                    </span>
+                }
+            </h2>
+
+            <p class="ad-subtitle muted">@DisplaySubtitle</p>
+
+            <div class="ad-badges">
+                @foreach (var b in DisplayBadges)
+                {
+                    <span class="ad-badge">@b</span>
+                }
+            </div>
+        </div>
+
+        <div class="ad-right" aria-hidden="true">
+            <i class="bi bi-@RightIcon ad-right-icon"></i>
+        </div>
+    </div>
+</div>
+
+@code {
+    [CascadingParameter] public ILocalizationService Loc { get; set; } = default!;
+
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public IReadOnlyList<string>? Badges { get; set; }
+    [Parameter] public string RightIcon { get; set; } = "rocket-takeoff";
+
+    // Feature koppling
+    [Parameter] public FeatureKey? Feature { get; set; }
+
+    // Fallback route om du vill hårdkoda
+    [Parameter] public string? NavigateTo { get; set; }
+
+    [Parameter] public EventCallback OnClick { get; set; }
+
+    private bool _can = true;
+    private bool _checked;
+
+    private bool IsClickable => OnClick.HasDelegate || Feature is not null || !string.IsNullOrWhiteSpace(NavigateTo);
+
+    private string DisplayTitle =>
+        Title ?? (Loc?["Page_Home_AdvertisSection_Title"] ?? "Premium Feature");
+
+    private string DisplaySubtitle =>
+        Subtitle ?? (Loc?["Page_Home_AdvertisSection_Text"] ?? "Unlock more with Premium");
+
+    private IReadOnlyList<string> DisplayBadges =>
+        Badges ?? new[]
+        {
+            Loc?["Page_Home_AdvertisSection_Ad_1"] ?? "💾 Save & Schedule",
+            Loc?["Page_Home_AdvertisSection_Ad_2"] ?? "📚 Templates",
+            "💫 Hooks"
+        };
+
+    private bool ShowLock => _checked && !_can && Feature is not null;
+
+    private string? TooltipTitle =>
+        (_checked && !_can && Feature is not null)
+            ? (Loc?["Common_Tooltip_RequiresPremium"] ?? "Requires Premium")
+            : null;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Feature is null)
+        {
+            _checked = true;
+            _can = true;
+            return;
+        }
+
+        try
+        {
+            _can = await Features.CanAsync(Feature.Value);
+        }
+        catch
+        {
+            // Fail-open i UI
+            _can = true;
+        }
+        finally
+        {
+            _checked = true;
+        }
+    }
+
+    private async Task HandleClick()
+    {
+        if (!IsClickable)
+            return;
+
+        if (OnClick.HasDelegate)
+        {
+            await OnClick.InvokeAsync();
+            return;
+        }
+
+        if (Feature is not null)
+        {
+            Nav.NavigateTo(FeatureToRoute(Feature.Value));
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(NavigateTo))
+            Nav.NavigateTo(NavigateTo);
+    }
+
+    private static string FeatureToRoute(FeatureKey feature) => feature switch
+    {
+        FeatureKey.HooksAndCtas => "/app/uc/resources",
+        FeatureKey.CreateContent => "/app/uc/creator",
+        FeatureKey.Calendar => "/app/calendar",
+        FeatureKey.TrendScouting => "/app/uc/trends",
+        FeatureKey.Avatars => "/app/uc/avatars",
+        _ => "/app/home"
+    };
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (!IsClickable)
+            return;
+
+        if (e.Key is "Enter" or " ")
+            await HandleClick();
+    }
+}

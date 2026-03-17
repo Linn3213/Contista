@@ -1,0 +1,148 @@
+﻿@* WeekAtAGlanceSection.razor *@
+
+<div class="card wag-card">
+    <div class="card-body">
+
+        <div class="wag-header">
+            <div class="wag-headerLeft">
+                <h3 class="wag-title">@DisplayTitle</h3>
+
+                @if (!string.IsNullOrWhiteSpace(DisplaySubTitle))
+                {
+                    <div class="wag-subtitle">@DisplaySubTitle</div>
+                }
+            </div>
+        </div>
+
+        <div class="wag-week" role="group" aria-label="@DisplayTitle">
+            <div class="wag-dowRow" aria-hidden="true">
+                @foreach (var d in WeekDays)
+                {
+                    <div class="wag-dow">@d</div>
+                }
+            </div>
+
+            <div class="wag-sep" aria-hidden="true"></div>
+
+            <div class="wag-dateRow">
+                @foreach (var day in WeekDates)
+                {
+                    var isToday = IsSameDate(day, TodayLocal);
+                    var hasAgenda = HasAgenda(day);
+
+                    <button type="button"
+                            class="wag-day @(isToday ? "is-today" : "") @(hasAgenda ? "has-agenda" : "")"
+                            aria-label="@GetAriaLabel(day, isToday, hasAgenda)"
+                            @onclick="() => HandleDayClickedAsync(day)">
+                        <span class="wag-dayNum">@day.Day</span>
+                        @* pricken görs via CSS (has-agenda) *@
+                    </button>
+                }
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(FooterHint))
+        {
+            <div class="wag-hint text-muted">@FooterHint</div>
+        }
+    </div>
+</div>
+
+@code {
+    [CascadingParameter] public ILocalizationService? Loc { get; set; }
+
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Subtitle { get; set; }
+
+    [Parameter] public IReadOnlyList<WeekAgendaItem> AgendaItems { get; set; } = Array.Empty<WeekAgendaItem>();
+
+    [Parameter] public bool WeekStartsOnMonday { get; set; } = true;
+
+    [Parameter] public string? FooterHint { get; set; }
+
+    [Parameter] public EventCallback<DateTime> OnDayClicked { get; set; }
+
+    private DateTime _weekStart;
+    private DateTime TodayLocal => DateTime.Now.Date;
+
+    private string DisplayTitle =>
+        Title ?? (Loc?["Page_WeekAtAGlanceSection_Title"] ?? "Week at a Glance");
+
+    private string DisplaySubTitle =>
+        Subtitle ?? (Loc?["Page_WeekAtAGlanceSection_SubTitle"] ?? "Your agendas for this week");
+
+    private IReadOnlyList<string> WeekDays => WeekStartsOnMonday
+        ? new[]
+        {
+            (Loc?["Common_Actions_MondayShort"] ?? "M"),
+            (Loc?["Common_Actions_TuesdayShort"] ?? "T"),
+            (Loc?["Common_Actions_WednesdayShort"] ?? "W"),
+            (Loc?["Common_Actions_ThursdayShort"] ?? "T"),
+            (Loc?["Common_Actions_FridayShort"] ?? "F"),
+            (Loc?["Common_Actions_SaturdayShort"] ?? "S"),
+            (Loc?["Common_Actions_SundayShort"] ?? "S")
+        }
+        : new[]
+        {
+            (Loc?["Common_Actions_SundayShort"] ?? "S"),
+            (Loc?["Common_Actions_MondayShort"] ?? "M"),
+            (Loc?["Common_Actions_TuesdayShort"] ?? "T"),
+            (Loc?["Common_Actions_WednesdayShort"] ?? "W"),
+            (Loc?["Common_Actions_ThursdayShort"] ?? "T"),
+            (Loc?["Common_Actions_FridayShort"] ?? "F"),
+            (Loc?["Common_Actions_SaturdayShort"] ?? "S")
+        };
+
+    private IReadOnlyList<DateTime> WeekDates
+        => Enumerable.Range(0, 7).Select(i => _weekStart.AddDays(i)).ToList();
+
+    protected override void OnInitialized()
+    {
+        _weekStart = GetWeekStart(TodayLocal, WeekStartsOnMonday);
+    }
+
+    private bool HasAgenda(DateTime day)
+        => AgendaItems.Any(x => IsSameDate(x.Date, day));
+
+    private Task HandleDayClickedAsync(DateTime day)
+        => OnDayClicked.InvokeAsync(day.Date);
+
+    private static DateTime GetWeekStart(DateTime date, bool mondayStart)
+    {
+        var dow = date.DayOfWeek;
+        int delta;
+
+        if (mondayStart)
+        {
+            var mondayBased = dow == DayOfWeek.Sunday ? 6 : ((int)dow - 1);
+            delta = -mondayBased;
+        }
+        else
+        {
+            delta = -(int)dow;
+        }
+
+        return date.AddDays(delta).Date;
+    }
+
+    private static bool IsSameDate(DateTime a, DateTime b) => a.Date == b.Date;
+
+    private string GetAriaLabel(DateTime d, bool isToday, bool hasAgenda)
+    {
+        var dateText = d.ToString("yyyy-MM-dd");
+        var parts = new List<string> { dateText };
+
+        if (isToday) parts.Add(Loc?["Common_Actions_Today"] ?? "today");
+        if (hasAgenda) parts.Add(Loc?["Page_WeekAtAGlanceSection_HasAgenda_Text"] ?? "has agenda");
+
+        return string.Join(", ", parts);
+    }
+
+    public sealed class WeekAgendaItem
+    {
+        public DateTime Date { get; set; }
+        public string Title { get; set; } = "";
+        public string? TimeText { get; set; }
+        public int SortKey { get; set; }
+    }
+}

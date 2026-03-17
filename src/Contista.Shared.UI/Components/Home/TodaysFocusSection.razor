@@ -1,0 +1,283 @@
+﻿@using Contista.Shared.UI.Components.Common
+@using Contista.Shared.UI.Components.Modals.Home
+@* TodaysFocusSection.razor *@
+
+<div class="card focus-card">
+    <div class="card-body">
+
+        <div class="focus-card__header">
+            <div class="focus-card__headerLeft">
+                <h2 class="focus-card__title">@DisplayTitle</h2>
+
+                @if (!string.IsNullOrWhiteSpace(Subtitle))
+                {
+                    <div class="focus-card__subtitle">@Subtitle</div>
+                }
+            </div>
+
+            <IconButton IconClass="bi bi-plus-lg"
+                    Title="@(Loc?["Page_TodaysFocusSection_Add_Title"] ?? "Add task")"
+                    AriaLabel="@(Loc?["Page_TodaysFocusSection_Add_Aria"] ?? "Add a new focus task")"
+                    Size="md"
+                    Tone="ghost"
+                    Class="focus-addBtn"
+                    OnClick="@(e => { OpenAddModal(); return Task.CompletedTask; })" />
+        </div>
+
+        @if (Items is null || Items.Count == 0)
+        {
+            <div class="focus-card__empty text-muted">
+                @DisplayEmptyText
+            </div>
+        }
+        else
+        {
+            var hasMore = Items.Count > MaxCollapsedItems;
+
+            <ul class="focus-list" role="list">
+                @foreach (var item in Items.Take(MaxCollapsedItems))
+                {
+                    @FocusRow(item)
+                }
+
+                @if (hasMore)
+                {
+                    <li class="focus-more @(IsExpanded ? "is-open" : "")">
+                        <div class="focus-more__inner" role="list">
+                            @foreach (var item in Items.Skip(MaxCollapsedItems))
+                            {
+                                @FocusRow(item)
+                            }
+                    </div>
+                </li>
+
+                <li class="focus-expand">
+                    <button type="button"
+                            class="focus-expand__btn"
+                            aria-expanded="@IsExpanded"
+                            @onclick="ToggleExpanded">
+                        <i class="bi @(IsExpanded ? "bi-chevron-up" : "bi-chevron-down")" aria-hidden="true"></i>
+                        <span class="focus-expand__text">
+                            @(IsExpanded
+                                                    ? (Loc?["Common_Actions_ShowLess"] ?? "Show less")
+                                                    : (Loc?["Common_Actions_ShowMore"] ?? "Show more"))
+                            </span>
+                            <span class="focus-expand__count">
+                                +@(Items.Count - MaxCollapsedItems)
+                            </span>
+                        </button>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</div>
+
+<FocusItemModal IsOpen="@_isModalOpen"
+                IsOpenChanged="@HandleModalOpenChanged"
+                Mode="@_modalMode"
+                InitialItem="@_editingItem"
+                IconExamples="@IconExamples"
+                DefaultIconClass="bi-check2-circle"
+                OnSave="@HandleModalSaveAsync" />
+
+@code {
+    [CascadingParameter] public ILocalizationService Loc { get; set; } = default!;
+
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public string? EmptyText { get; set; }
+
+    [Parameter] public List<FocusItem> Items { get; set; } = new();
+
+    [Parameter] public EventCallback<FocusItem> OnToggle { get; set; }
+    [Parameter] public EventCallback<FocusItem> OnNavigate { get; set; }
+    [Parameter] public EventCallback<FocusItem> OnRowClick { get; set; }
+
+    [Parameter] public EventCallback<FocusItem> OnAdd { get; set; }
+    [Parameter] public EventCallback<(FocusItem OldItem, FocusItem NewItem)> OnEdit { get; set; }
+
+    private const int MaxCollapsedItems = 2;
+    private bool IsExpanded;
+
+    private bool _isModalOpen;
+    private FocusItemModalMode _modalMode = FocusItemModalMode.Add;
+    private FocusItem? _editingItem;
+
+    private string DisplayTitle =>
+        Title ?? (Loc?["Page_TodaysFocusSection_Title"] ?? "Today's Focus");
+
+    private string DisplayEmptyText =>
+        EmptyText ?? (Loc?["Page_TodaysFocusSection_Empty_Text"] ?? "No focus points today.");
+
+    private void ToggleExpanded() => IsExpanded = !IsExpanded;
+
+    private void OpenAddModal()
+    {
+        _modalMode = FocusItemModalMode.Add;
+        _editingItem = null;
+        _isModalOpen = true;
+    }
+
+    private void OpenEditModal(FocusItem item)
+    {
+        _modalMode = FocusItemModalMode.Edit;
+        _editingItem = item;
+        _isModalOpen = true;
+    }
+
+    private Task HandleModalOpenChanged(bool open)
+    {
+        _isModalOpen = open;
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleModalSaveAsync(FocusItemModalResult result)
+    {
+        if (result.Mode == FocusItemModalMode.Add)
+        {
+            if (OnAdd.HasDelegate)
+                await OnAdd.InvokeAsync(result.Item);
+
+            IsExpanded = true;
+            return;
+        }
+
+        if (_editingItem is not null)
+        {
+            if (OnEdit.HasDelegate)
+                await OnEdit.InvokeAsync((_editingItem, result.Item));
+        }
+    }
+
+    private async Task ToggleAsync(FocusItem item)
+    {
+        item.IsDone = !item.IsDone;
+        if (OnToggle.HasDelegate)
+            await OnToggle.InvokeAsync(item);
+    }
+
+    private async Task NavigateAsync(FocusItem item)
+    {
+        if (OnNavigate.HasDelegate)
+            await OnNavigate.InvokeAsync(item);
+    }
+
+    private async Task RowClickAsync(FocusItem item)
+    {
+        if (OnRowClick.HasDelegate)
+            await OnRowClick.InvokeAsync(item);
+
+        if (!string.IsNullOrWhiteSpace(item.Href) && OnNavigate.HasDelegate)
+            await OnNavigate.InvokeAsync(item);
+    }
+
+    private async Task OnRowKeyDownAsync(KeyboardEventArgs e, FocusItem item)
+    {
+        if (e.Key is "Enter" or " ")
+            await RowClickAsync(item);
+    }
+
+    private static readonly string[] IconExamples =
+    {
+        "bi-bullseye",
+        "bi-calendar-week",
+        "bi-check2-circle",
+        "bi-list-check",
+        "bi-lightning-charge",
+        "bi-megaphone",
+        "bi-pencil-square",
+        "bi-journal-text",
+        "bi-chat-dots",
+        "bi-camera",
+        "bi-graph-up",
+        "bi-stars",
+        "bi-rocket-takeoff",
+        "bi-alarm",
+        "bi-clock",
+        "bi-bookmark",
+        "bi-pin-angle",
+        "bi-link-45deg",
+        "bi-globe",
+        "bi-people",
+        "bi-person-heart",
+        "bi-heart",
+        "bi-award"
+    };
+
+    private RenderFragment FocusRow(FocusItem item) => @<li class="focus-item">
+@{
+    var done = item.IsDone;
+}
+    <button type="button"
+            class="focus-toggle"
+            aria-pressed="@done"
+            aria-label="@(done
+                            ? $"{Loc["Page_TodaysFocusSection_MarkAsNotDone_Text1"]} '{item.Title}' {Loc["Page_TodaysFocusSection_MarkAsNotDone_Text2"]}"
+                            : $"{Loc["Page_TodaysFocusSection_MarkAsDone_Text1"]} '{item.Title}' {Loc["Page_TodaysFocusSection_MarkAsDone_Text2"]}")"
+            @onclick="() => ToggleAsync(item)">
+        <span class="focus-check @(done ? "is-done" : "")" aria-hidden="true">
+            <span class="focus-check__inner">
+                @if (done)
+                {
+                    <i class="bi bi-check2"></i>
+                }
+            </span>
+        </span>
+    </button>
+
+    <div class="focus-content">
+        @if (!string.IsNullOrWhiteSpace(item.Href))
+        {
+            <a class="focus-link"
+               href="@item.Href"
+               @onclick:preventDefault="@(OnNavigate.HasDelegate)"
+               @onclick="() => NavigateAsync(item)">
+                <div class="focus-titleRow">
+                    @if (!string.IsNullOrWhiteSpace(item.IconClass))
+                    {
+                        <i class="bi @item.IconClass focus-icon" aria-hidden="true"></i>
+                    }
+                    <span>@item.Title</span>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(item.Description))
+                {
+                    <div class="focus-desc">@item.Description</div>
+                }
+            </a>
+        }
+        else
+        {
+            <div class="focus-static"
+                 role="button"
+                 tabindex="0"
+                 @onclick="() => RowClickAsync(item)"
+                 @onkeydown="(e) => OnRowKeyDownAsync(e, item)">
+                <div class="focus-titleRow">
+                    @if (!string.IsNullOrWhiteSpace(item.IconClass))
+                    {
+                        <i class="bi @item.IconClass focus-icon" aria-hidden="true"></i>
+                    }
+                    <span>@item.Title</span>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(item.Description))
+                {
+                    <div class="focus-desc">@item.Description</div>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- Edit action (inte i länken) -->
+    <button type="button"
+            class="focus-editBtn"
+            title="@(Loc?["Common_Actions_Edit"] ?? "Edit")"
+            aria-label="@((Loc?["Common_Actions_Edit"] ?? "Edit") + $": {item.Title}")"
+            @onclick="() => OpenEditModal(item)">
+        <i class="bi bi-pencil" aria-hidden="true"></i>
+    </button>
+</li>;
+
+}

@@ -1,0 +1,222 @@
+﻿/* =========================================================
+   ContentPostModal (modal + form)
+   ========================================================= */
+
+/* =========================================================
+   Modal shell
+   ========================================================= */
+
+.cp-modalOverlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg-overlay);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-lg);
+    z-index: 1050;
+}
+
+/* Mobil: flytta ner modalen lite + undvik att den hamnar “klistrad” i toppen */
+@media (max-width: 576px) {
+    .cp-modalOverlay {
+        align-items: flex-start;
+        padding-top: calc(var(--space-lg) + 18px);
+        padding-bottom: var(--space-lg);
+    }
+}
+
+.cp-modal {
+    width: 100%;
+    max-width: 720px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-dropdown);
+    overflow: hidden;
+    /* Sans som default i hela modalen */
+    font-family: var(--font-sans);
+    color: var(--text-primary);
+}
+
+    /* Se till att formkontroller alltid får sans även om Bootstrap har annat */
+    .cp-modal input,
+    .cp-modal textarea,
+    .cp-modal select,
+    .cp-modal button,
+    .cp-modal label {
+        font-family: var(--font-sans);
+    }
+
+/* =========================================================
+   Header
+   ========================================================= */
+
+.cp-modal__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding: var(--space-md) var(--space-lg);
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--bg-secondary);
+}
+
+.cp-modal__titleWrap {
+    min-width: 0;
+}
+
+.cp-modal__title {
+    margin: 0;
+    font-size: var(--text-h3);
+    line-height: var(--leading-tight);
+    color: var(--text-primary);
+    /* ✅ Endast rubriken ska INTE vara sans */
+    font-family: var(--font-serif);
+}
+
+.cp-modal__subtitle {
+    margin-top: 2px;
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
+
+/* =========================================================
+   Close button (pixelperfekt centrering)
+   ========================================================= */
+
+.cp-modal__close {
+    appearance: none;
+    background: none;
+    border: 1px solid var(--border-default);
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-md);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    cursor: pointer;
+    /* viktigt för icon-centering */
+    line-height: 0;
+    transition: background var(--transition-fast) var(--ease-default), transform var(--transition-fast) var(--ease-default), box-shadow var(--transition-fast) var(--ease-default);
+}
+
+    /* Bootstrap-icons kan ha baseline/line-height som knuffar – detta låser läget */
+    .cp-modal__close i {
+        display: block;
+        line-height: 1;
+        margin: 0;
+        padding: 0;
+        font-size: 18px;
+        /* ✅ den här är ofta “nyckeln” när ikonen ser lite off ut */
+        transform: translateY(-0.5px);
+    }
+
+    .cp-modal__close:hover {
+        background: var(--bg-hover);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-hover);
+    }
+
+    .cp-modal__close:focus-visible {
+        outline: none;
+        box-shadow: var(--shadow-focus);
+    }
+
+/* =========================================================
+   Body + footer
+   ========================================================= */
+
+.cp-modal__body {
+    padding: var(--space-lg);
+}
+
+.cp-modal__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-sm);
+    padding: var(--space-md) var(--space-lg);
+    border-top: 1px solid var(--border-subtle);
+    background: var(--bg-secondary);
+}
+
+/* Mobil: lite tightare padding i footer */
+@media (max-width: 576px) {
+    .cp-modal__body {
+        padding: var(--space-md);
+    }
+
+    .cp-modal__footer {
+        padding: var(--space-md);
+    }
+}
+
+/* =========================================================
+   Form
+   ========================================================= */
+
+.cp-formRow {
+    margin-bottom: var(--space-md);
+}
+
+.cp-grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+}
+
+@media (max-width: 576px) {
+    .cp-grid2 {
+        grid-template-columns: 1fr;
+    }
+}
+
+.cp-label {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--space-sm);
+    font-weight: var(--font-semibold);
+    font-size: var(--text-sm);
+    color: var(--text-primary);
+    margin-bottom: var(--space-xs);
+}
+
+.cp-required {
+    color: var(--color-error);
+    font-weight: var(--font-bold);
+}
+
+.cp-optional {
+    font-size: var(--text-sm);
+    color: var(--text-disabled);
+    font-weight: var(--font-regular);
+}
+
+.cp-input {
+    border-radius: var(--radius-md);
+}
+
+.cp-textarea {
+    resize: vertical;
+}
+
+.cp-hint {
+    margin-top: var(--space-xs);
+    font-size: var(--text-sm);
+    color: var(--text-disabled);
+}
+
+.cp-error {
+    margin-top: var(--space-xs);
+    font-size: var(--text-sm);
+    color: var(--color-error);
+}
+
+/* =========================================================
+   Bonus: gör select-pilen mindre “off” i vissa browsers
+   ========================================================= */
+
+.cp-modal select.cp-input {
+    background-color: var(--bg-card);
+}

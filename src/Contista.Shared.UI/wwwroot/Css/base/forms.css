@@ -1,0 +1,45 @@
+﻿/* =========================================================
+   Forms 
+   ========================================================= */
+
+.form-control,
+select,
+textarea {
+    color: var(--text-primary);
+    background-color: var(--bg-card);
+    border-color: var(--border-default);
+}
+
+    /* Fokus */
+    .form-control:focus,
+    textarea:focus,
+    input:focus,
+    input[type]:focus,
+    .uneditable-input:focus {
+        color: var(--text-primary);
+        border-color: var(--border-focus);
+        box-shadow: var(--shadow-focus);
+        outline: 0 none;
+    }
+
+    /* Gemensam fokus för knappar + inputs */
+    .btn:focus,
+    .btn:active:focus,
+    .btn-link.nav-link:focus,
+    .form-control:focus,
+    .form-check-input:focus {
+        box-shadow: var(--shadow-focus);
+    }
+
+/* Validation */
+.invalid {
+    outline: 1px solid var(--color-error);
+}
+
+.validation-message {
+    color: var(--color-error);
+}
+
+.valid.modified:not([type=checkbox]) {
+    outline: 1px solid var(--color-success);
+}

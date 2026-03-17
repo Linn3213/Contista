@@ -1,0 +1,126 @@
+﻿/* =========================================================
+   DreamCustomerModal 
+   ========================================================= */
+
+.dc-modalOverlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg-overlay);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-lg);
+    z-index: 1050;
+}
+
+@media (max-width: 576px) {
+    .dc-modalOverlay {
+        align-items: flex-start;
+        padding-top: calc(var(--space-lg) + 18px);
+        padding-bottom: var(--space-lg);
+    }
+}
+
+.dc-modal {
+    width: 100%;
+    max-width: 520px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-dropdown);
+    overflow: hidden;
+    font-family: var(--font-sans);
+}
+
+.dc-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding: var(--space-md) var(--space-lg);
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--bg-secondary);
+}
+
+.dc-modal__titleWrap {
+    min-width: 0;
+}
+
+.dc-modal__title {
+    margin: 0;
+    font-size: var(--text-h3);
+    line-height: var(--leading-tight);
+    color: var(--text-primary);
+    font-family: var(--font-serif);
+}
+
+.dc-modal__subtitle {
+    margin-top: 2px;
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
+
+.dc-modal__close {
+    appearance: none;
+    background: none;
+    border: 1px solid var(--border-default);
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-md);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    line-height: 0;
+    cursor: pointer;
+    transition: background var(--transition-fast) var(--ease-default), transform var(--transition-fast) var(--ease-default), box-shadow var(--transition-fast) var(--ease-default);
+}
+
+    .dc-modal__close .bi,
+    .dc-modal__close i {
+        margin: 0 !important;
+        padding: 0;
+        display: block; 
+        line-height: 1;
+        font-size: 18px; 
+    }
+
+    .dc-modal__close:hover {
+        background: var(--bg-hover);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-hover);
+    }
+
+    .dc-modal__close:focus-visible {
+        outline: none;
+        box-shadow: var(--shadow-focus);
+    }
+
+.dc-modal__body {
+    padding: var(--space-lg);
+}
+
+.dc-modal__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-sm);
+    padding: var(--space-md) var(--space-lg);
+    border-top: 1px solid var(--border-subtle);
+    background: var(--bg-secondary);
+}
+
+.dc-infoGrid {
+    display: grid;
+    gap: var(--space-md);
+}
+
+.dc-field__label {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+}
+
+.dc-field__value {
+    color: var(--text-primary);
+    line-height: var(--leading-normal);
+}

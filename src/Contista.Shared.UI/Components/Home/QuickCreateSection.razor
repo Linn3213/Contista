@@ -1,0 +1,66 @@
+﻿@* QuickCreateSection.razor *@
+@using Contista.Shared.Core.DTO
+@using Contista.Shared.UI.Components.Modals.Home
+
+<div class="card qc-card">
+    <div class="card-body qc-body">
+
+        <div class="qc-header">
+            <h3 class="qc-title">@DisplayTitle</h3>
+            @if (!string.IsNullOrWhiteSpace(DisplaySubTitle))
+            {
+                <div class="qc-subtitle">@DisplaySubTitle</div>
+            }
+        </div>
+
+        <div class="qc-actions">
+            <button type="button"
+                    class="btn btn-primary qc-primaryBtn w-100"
+                    @onclick="OpenCreate">
+                @(Loc?.GetOr("Common_Actions_New", "New")) @(Loc?.GetOr("Common_Actions_Content", "Content"))
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<ContentPostModal IsOpen="@_isOpen"
+                 IsOpenChanged="@OnOpenChanged"
+                 Mode="@ContentPostModalMode.Create"
+                 InitialPost="@null"
+                 OnSave="@OnModalSaveAsync" />
+
+@code {
+    [CascadingParameter] public ILocalizationService? Loc { get; set; }
+
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Subtitle { get; set; }
+
+    // Parent kopplar detta till offline-queue/create-op (optimistic patch + enqueue)
+    [Parameter] public EventCallback<ContentPost> OnCreate { get; set; }
+
+    private bool _isOpen;
+
+    private string DisplayTitle =>
+        Title ?? (Loc?.GetOr("Page_QuickCreateSection_Title", "Quick Create")) ?? "Quick Create";
+
+    private string DisplaySubTitle =>
+    Subtitle ?? (Loc?.GetOr("Page_QuickCreateSection_SubTitle", "Create a new content post")) ?? "Create a new content post";
+
+    private void OpenCreate() => _isOpen = true;
+
+    private Task OnOpenChanged(bool open)
+    {
+        _isOpen = open;
+        return Task.CompletedTask;
+    }
+
+    private async Task OnModalSaveAsync(ContentPostModalResult result)
+    {
+        // Create-mode (vi skickar upp posten; parent gör temp-id/opId/queue)
+        if (OnCreate.HasDelegate)
+            await OnCreate.InvokeAsync(result.Post);
+
+        _isOpen = false;
+    }
+}

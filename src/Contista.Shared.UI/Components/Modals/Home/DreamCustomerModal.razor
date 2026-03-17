@@ -1,0 +1,116 @@
+﻿@* DreamCustomerModal.razor *@
+@using Contista.Shared.Core.DTO
+@using Contista.Shared.UI.Services
+
+@if (IsOpen)
+{
+    <div class="dc-modalOverlay" role="dialog" aria-modal="true" @onclick="OnOverlayClick">
+        <div class="dc-modal" @onclick:stopPropagation="true">
+
+            <div class="dc-modal__header">
+                <div class="dc-modal__titleWrap">
+                    <h3 class="dc-modal__title">
+                        @HeaderTitle
+                    </h3>
+
+                    @if (!string.IsNullOrWhiteSpace(HeaderSubtitle))
+                    {
+                        <div class="dc-modal__subtitle">@HeaderSubtitle</div>
+                    }
+                </div>
+
+                <button type="button"
+                        class="dc-modal__close"
+                        @onclick="Close"
+                        aria-label="@Loc?.GetOr("Common_Actions_Close", "Close")">
+                    <i class="bi bi-x-lg" aria-hidden="true"></i>
+                </button>
+            </div>
+
+            <div class="dc-modal__body">
+                @if (Client is null)
+                {
+                    <div class="text-muted">
+                        @Loc?.GetOr("Common_Actions_Empty", "Empty")
+                    </div>
+                }
+                else
+                {
+                    <div class="dc-infoGrid">
+
+                        @if (!string.IsNullOrWhiteSpace(Client.RoleOrPersona))
+                        {
+                            <div class="dc-field">
+                                <div class="dc-field__label">@Loc?.GetOr("Page_DreamCustomerModal_Persona_Label", "Persona")</div>
+                                <div class="dc-field__value">@Client.RoleOrPersona</div>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(Client.Goals))
+                        {
+                            <div class="dc-field">
+                                <div class="dc-field__label">@Loc?.GetOr("Page_DreamCustomerModal_Goals_Label", "Goals")</div>
+                                <div class="dc-field__value">@Client.Goals</div>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(Client.Challenges))
+                        {
+                            <div class="dc-field">
+                                <div class="dc-field__label">@Loc?.GetOr("Page_DreamCustomerModal_Challenges_Label", "Challenges")</div>
+                                <div class="dc-field__value">@Client.Challenges</div>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(Client.Notes))
+                        {
+                            <div class="dc-field">
+                                <div class="dc-field__label">@Loc?.GetOr("Page_DreamCustomerModal_Notes_Label", "Notes")</div>
+                                <div class="dc-field__value">@Client.Notes</div>
+                            </div>
+                        }
+
+                    </div>
+                }
+            </div>
+
+            <div class="dc-modal__footer">
+                <button type="button"
+                        class="btn btn-secondary"
+                        @onclick="Close">
+                    @Loc?.GetOr("Common_Actions_Close", "Close")
+                </button>
+            </div>
+
+        </div>
+    </div>
+}
+
+@code {
+    [CascadingParameter] public ILocalizationService? Loc { get; set; }
+
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public EventCallback<bool> IsOpenChanged { get; set; }
+
+    // ✅ Anpassa typen vid behov
+    [Parameter] public DreamCustomer? Client { get; set; }
+
+    private string HeaderTitle
+    {
+        get
+        {
+            if (Client is null) return Loc?.GetOr("Page_DreamCustomerModal_Title", "Dream customer") ?? "Dream customer";
+            var name = Client.Name ?? Loc?.GetOr("Common_Errors_Unknown", "Unknown") ?? "Unknown";
+            var age = Client.Age is > 0 ? $", {Client.Age}" : "";
+            return $"{name}{age}";
+        }
+    }
+
+    private string HeaderSubtitle
+        => Client?.Tagline ?? Client?.RoleOrPersona ?? "";
+
+    private Task Close() => IsOpenChanged.InvokeAsync(false);
+
+    private Task OnOverlayClick() => Close();
+}
+

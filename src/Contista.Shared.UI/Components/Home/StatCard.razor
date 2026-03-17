@@ -1,0 +1,33 @@
+﻿@* StatCard.razor *@
+<div class="@ColClass">
+    <div class="@CardClass"
+         role="@(IsClickable ? "button" : null)"
+         tabindex="@(IsClickable ? "0" : null)"
+         aria-disabled="@(!IsClickable)"
+         @onclick="HandleClick"
+         @onkeydown="HandleKeyDown">
+        <div class="stat-number">@Value</div>
+        <div class="stat-label">@Label</div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Value { get; set; } = "0";
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string? AdditionalClass { get; set; }
+    [Parameter] public EventCallback OnClick { get; set; }
+    [Parameter] public string ColClass { get; set; } = "col-12 col-sm-6 col-md-4 col-lg-2";
+
+    private bool IsClickable => OnClick.HasDelegate;
+
+    private string CardClass =>
+        $"stat-card{(IsClickable ? " stat-card-clickable" : "")}{(string.IsNullOrWhiteSpace(AdditionalClass) ? "" : " " + AdditionalClass)}";
+
+    private Task HandleClick()
+        => IsClickable ? OnClick.InvokeAsync() : Task.CompletedTask;
+
+    private Task HandleKeyDown(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+        => (IsClickable && (e.Key is "Enter" or " "))
+            ? OnClick.InvokeAsync()
+            : Task.CompletedTask;
+}

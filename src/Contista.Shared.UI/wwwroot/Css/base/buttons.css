@@ -1,0 +1,237 @@
+﻿/* =========================================================
+   🔘 BUTTONS (THEME) – one source of truth
+   ========================================================= */
+
+/* Bas för alla .btn */
+.btn {
+    border-radius: var(--radius-sm);
+    font-weight: var(--font-semibold);
+    transition: background-color var(--transition-fast) var(--ease-default), border-color var(--transition-fast) var(--ease-default), color var(--transition-fast) var(--ease-default), transform var(--transition-fast) var(--ease-default), box-shadow var(--transition-fast) var(--ease-default);
+}
+
+    .btn:active {
+        transform: translateY(0.5px);
+    }
+
+/* Primary (neutral, mörk) */
+.btn-primary {
+    background-color: var(--ui-focus);
+    border-color: var(--ui-focus);
+    color: var(--bg-card);
+    box-shadow: var(--shadow-card);
+}
+
+    .btn-primary:hover {
+        background-color: var(--text-primary);
+        border-color: var(--text-primary);
+        box-shadow: var(--shadow-hover);
+    }
+
+/* Secondary (outline/neutral variant) */
+.btn-secondary {
+    background-color: transparent;
+    border: 2px solid var(--ui-primary);
+    color: var(--text-primary);
+}
+
+    .btn-secondary:hover {
+        background-color: var(--bg-secondary);
+        border-color: var(--ui-focus);
+        color: var(--text-primary);
+    }
+
+/* Success / Info / Warning / Danger (WCAG-par) */
+.btn-success {
+    background-color: var(--color-success);
+    border-color: var(--color-success);
+    color: var(--bg-card);
+    box-shadow: var(--shadow-card);
+}
+
+    .btn-success:hover {
+        filter: brightness(0.95);
+        box-shadow: var(--shadow-hover);
+    }
+
+.btn-info {
+    background-color: var(--color-info);
+    border-color: var(--color-info);
+    color: var(--bg-card);
+    box-shadow: var(--shadow-card);
+}
+
+    .btn-info:hover {
+        filter: brightness(0.95);
+        box-shadow: var(--shadow-hover);
+    }
+
+.btn-warning {
+    background-color: var(--color-warning);
+    border-color: var(--color-warning);
+    color: var(--bg-card);
+    box-shadow: var(--shadow-card);
+}
+
+    .btn-warning:hover {
+        filter: brightness(0.95);
+        box-shadow: var(--shadow-hover);
+    }
+
+.btn-danger {
+    background-color: var(--color-error);
+    border-color: var(--color-error);
+    color: var(--bg-card);
+    box-shadow: var(--shadow-card);
+}
+
+    .btn-danger:hover {
+        filter: brightness(0.95);
+        box-shadow: var(--shadow-hover);
+    }
+
+/* “Surface” buttons */
+.btn-light {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-default);
+    color: var(--text-primary);
+}
+
+    .btn-light:hover {
+        background-color: var(--bg-card);
+    }
+
+.btn-dark {
+    background-color: var(--text-primary);
+    border-color: var(--text-primary);
+    color: var(--bg-card);
+}
+
+    .btn-dark:hover {
+        filter: brightness(1.05);
+    }
+
+/* Fokus – samma för alla knappar */
+.btn:focus,
+.btn:focus-visible {
+    outline: 3px solid var(--ui-primary);
+    outline-offset: 2px;
+    box-shadow: var(--shadow-focus);
+}
+
+/* Disabled */
+.btn:disabled,
+.btn.disabled {
+    background-color: var(--bg-secondary);
+    color: var(--text-disabled);
+    border-color: var(--border-muted);
+    cursor: not-allowed;
+    opacity: 0.65;
+    box-shadow: none;
+}
+
+/* =========================================================
+   ⚙️ OUTLINE BUTTONS
+   ========================================================= */
+
+.btn-outline-primary {
+    color: var(--ui-focus);
+    border: 2px solid var(--ui-focus);
+    background: transparent;
+}
+
+    .btn-outline-primary:hover {
+        background-color: var(--ui-focus);
+        border-color: var(--ui-focus);
+        color: var(--bg-card);
+    }
+
+.btn-outline-secondary {
+    color: var(--text-primary);
+    border: 2px solid var(--ui-primary);
+    background: transparent;
+}
+
+    .btn-outline-secondary:hover {
+        background-color: var(--bg-secondary);
+        border-color: var(--ui-focus);
+        color: var(--text-primary);
+    }
+
+.btn-outline-success {
+    color: var(--color-success);
+    border: 2px solid var(--color-success);
+    background: transparent;
+}
+
+    .btn-outline-success:hover {
+        background-color: var(--color-success-bg);
+        color: var(--color-success);
+    }
+
+.btn-outline-info {
+    color: var(--color-info);
+    border: 2px solid var(--color-info);
+    background: transparent;
+}
+
+    .btn-outline-info:hover {
+        background-color: var(--color-info-bg);
+        color: var(--color-info);
+    }
+
+.btn-outline-warning {
+    color: var(--color-warning);
+    border: 2px solid var(--color-warning);
+    background: transparent;
+}
+
+    .btn-outline-warning:hover {
+        background-color: var(--color-warning-bg);
+        color: var(--color-warning);
+    }
+
+.btn-outline-danger {
+    color: var(--color-error);
+    border: 2px solid var(--color-error);
+    background: transparent;
+}
+
+    .btn-outline-danger:hover {
+        background-color: var(--color-error-bg);
+        color: var(--color-error);
+    }
+
+        /* Icons inherit currentColor */
+        .btn-outline-primary:hover .bi,
+        .btn-outline-secondary:hover .bi,
+        .btn-outline-success:hover .bi,
+        .btn-outline-info:hover .bi,
+        .btn-outline-warning:hover .bi,
+        .btn-outline-danger:hover .bi {
+            color: currentColor;
+        }
+
+/* =========================================================
+   🔗 LINK BUTTON
+   ========================================================= */
+
+.btn-link {
+    font-weight: var(--font-semibold);
+    color: var(--ui-focus);
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    padding: 0.5rem 1rem;
+    background: transparent;
+}
+
+    .btn-link:hover {
+        color: var(--text-primary);
+        background-color: var(--bg-secondary);
+        text-decoration: none;
+    }
+
+    .btn-link:disabled,
+    .btn-link.disabled {
+        opacity: 0.6;
+        pointer-events: none;
+    }

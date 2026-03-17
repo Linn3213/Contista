@@ -1,0 +1,45 @@
+﻿<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <ResourcePreloader />
+    <title>Content System</title>
+
+    @* Bootstrap CSS *@
+    <link rel="stylesheet" href="_content/Contista.Shared.UI/css/bootstrap/bootstrap.min.css" />
+    <link rel="stylesheet" href="_content/Contista.Shared.UI/css/bootstrap/bootstrap-icons.css" />
+   
+    
+    @* Global CSS *@
+    <link rel="stylesheet" href="_content/Contista.Shared.UI/css/app.css" />
+    
+
+    @* Web Specific CSS *@
+    <link rel="stylesheet" href="css/web.css">
+
+    <ImportMap />
+    <HeadOutlet @rendermode="InteractiveAuto" />
+</head>
+
+<body>
+    @* <Routes @rendermode="InteractiveAuto" /> *@
+    <Routes @rendermode="@(new InteractiveWebAssemblyRenderMode(prerender: false))" />
+
+
+    <ReconnectModal />
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
+    @* Bootstrap js *@
+    <script src="_content/Contista.Shared.UI/js/bootstrap/bootstrap.bundle.min.js"></script>
+    <script src="_content/Contista.Shared.UI/js/bootstrap/bootstrapModalHelper.js"></script>
+    
+    @* Global js *@
+    <script type="module" src="_content/Contista.Shared.UI/js/app.js"></script>
+
+    <script src="laStorage.js"></script>
+    <script src="laIndexedDb.js"></script>
+    <script src="networkStatus.js"></script>
+
+</body>
+</html>

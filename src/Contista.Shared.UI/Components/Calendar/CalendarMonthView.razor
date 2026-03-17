@@ -1,0 +1,336 @@
+﻿@* CalendarMonthView.razor *@
+@using Contista.Shared.Core.DTO.Calendar
+@using Contista.Shared.Core.Models.Calendar
+@using Contista.Shared.UI.Components.Modals.Calendar
+@using Contista.Shared.UI.Components.Calendar
+@using Contista.Shared.UI.Components.Common
+@using Contista.Shared.UI.Utils
+@using System.Globalization
+
+@inject ICalendarState CalendarState
+
+<div class="cal-month">
+    <div class="cal-monthTop">
+        <button type="button" class="cal-navBtn" @onclick="PrevMonth"
+                aria-label="@Loc.GetOr("Page_Calendar_MonthView_PrevMonth", "Previous month")">‹</button>
+
+        <div class="cal-monthLabel">@MonthLabel</div>
+
+        @if (ShowTodayButton)
+        {
+            <button type="button"
+                    class="btn btn-sm btn-ghost cal-todayBtn"
+                    @onclick="GoToCurrentMonth"
+                    title="@Loc.GetOr("Common_Actions_Today", "Today")"
+                    aria-label="@Loc.GetOr("Common_Actions_Today", "Today")">
+                <i class="bi bi-calendar3" aria-hidden="true"></i>
+            </button>
+        }
+
+        <button type="button" class="cal-navBtn" @onclick="NextMonth"
+                aria-label="@Loc.GetOr("Page_Calendar_MonthView_NextMonth", "Next month")">›</button>
+    </div>
+
+    <div class="cal-dowRow cal-dowRowWithWeeks" aria-hidden="true">
+        <div class="cal-weekHdr">@Loc.GetOr("Common_WeekShort", "w")</div>
+        @foreach (var d in Dow)
+        {
+            <div class="cal-dow">@d</div>
+        }
+    </div>
+
+    <div class="cal-grid">
+        @foreach (var week in Cells.Chunk(7))
+        {
+            var weekStart = week[0].Day.Date; // ska vara måndag om din Cells-lista startar på måndag
+            var weekNo = ISOWeek.GetWeekOfYear(weekStart);
+
+            <div class="cal-weekNum" aria-hidden="true">@weekNo</div>
+
+            @foreach (var cell in week)
+            {
+                var day = cell.Day.Date;
+                var items = EventsForDay(day);
+                var isToday = day == DateTime.Now.Date;
+                var inMonth = cell.InMonth;
+
+                <div class="cal-cell @(isToday ? "is-today" : "") @(inMonth ? "" : "is-outside")"
+                    @onmouseenter="() => HoverDay = day"
+                    @onmouseleave="() => HoverDay = null">
+
+                    <button type="button"
+                        class="cal-cellHit"
+                        @onclick="() => OnCellClicked(day)">
+                    </button>
+
+                    <span class="cal-dayNum">@day.Day</span>
+
+                    @* Plus: öppnar alltid create-modal *@
+                    @if (HoverDay == day)
+                    {
+                        <IconButton IconClass="bi bi-plus-lg"
+                                    Title="@Loc.GetOr("Common_Actions_Add", "Add")"
+                                    AriaLabel="@Loc.GetOr("Common_Actions_Add", "Add")"
+                                    Size="sm"
+                                    Tone="ghost"
+                                    Class="cal-addBtn is-abs"
+                                    StopPropagation="true"
+                                    OnClick="@(e => OnAddClicked.InvokeAsync(day))" />
+                    }
+
+                    @{
+                        var visibleItems = items
+                        .Where(e => EffectiveVisibility(e) != CalendarVisibility.Private)
+                        .ToList();
+                    }
+
+                    <div class="cal-items is-month">
+                        @foreach (var ev in visibleItems.Take(3))
+                        {
+                            var hex = ResolveCalendarHex(ev.CalendarId);
+
+                            <CalendarEventCard Ev="ev"
+                                               Variant="month"
+                                               AccentHex="@hex"
+                                               SpacedRange="false"
+                                               CurrentUserId="@CurrentUserId"
+                                               OnClick="EventCallback.Factory.Create(this, () => OnCellClicked(day))" />
+                        }
+
+                        @if (visibleItems.Count > 3)
+                        {
+                            <div class="cal-more"
+                                 role="button"
+                                 tabindex="0"
+                                 title="@Loc.GetOr("Page_Calendar_MonthView_MoreEvents", "Open day list")"
+                                 @onclick="() => OnCellClicked(day)"
+                                 @onkeydown="(e) => OnCellItemKeyDown(e, day)">
+                                +@(@visibleItems.Count - 3)
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+        }
+    </div>
+
+</div>
+
+@* Daglista-modal: öppnas när man klickar på en dag med events *@
+<CalendarDayEventsModal IsOpen="@_isDayModalOpen"
+                        IsOpenChanged="OnDayModalOpenChanged"
+                        DateLocal="@_dayModalDateLocal"
+                        Events="@(_isDayModalOpen ? EventsForDay(_dayModalDateLocal) : new List<CalendarEventDto>())"
+                        CalendarIdToHex="CalendarIdToHex"
+                        CalendarIdToName="CalendarIdToName"
+                        UserIdToName="@ResolveUserName"
+                        AllEvents="@CalendarState.Current.Events"
+                        SeriesIdToRecurrence="(seriesId) => CalendarState.Current?.Events?.FirstOrDefault(x => x.Recurrence?.SeriesId == seriesId)?.Recurrence"
+                        OnChecklistToggled="OnChecklistToggled"
+                        OnAddRequested="DayModalAddRequested"
+                        OnEditRequested="OnEditRequested"
+                        OnEditSeriesRequested="OnEditSeriesRequested"
+                        OnDeleteRequested="OnDeleteRequested"
+                        CurrentUserId="@CurrentUserId"
+                        CanSeeDetailsForCalendar="@CanSeeDetailsForCalendar" />
+
+@code {
+    [CascadingParameter] public ILocalizationService Loc { get; set; } = default!;
+    [Inject] public IUserDirectoryState Users { get; set; } = default!;
+
+    [Parameter] public DateTime CurrentMonth { get; set; }
+    [Parameter] public List<CalendarEventDto> Events { get; set; } = new();
+
+    // Parent ansvarar för “create” (öppna CalendarEventManageModal)
+    [Parameter] public EventCallback<DateTime> OnDayClicked { get; set; }   // används bara när dagen saknar events (auto-create)
+    [Parameter] public EventCallback<DateTime> OnAddClicked { get; set; }   // plus-knappen
+
+    [Parameter] public EventCallback<DateTime> OnMonthChanged { get; set; }
+
+    // Parent ansvarar för edit/delete (t.ex. OpenEdit / ConfirmDelete...)
+    [Parameter] public EventCallback<CalendarEventDto> OnEditRequested { get; set; }
+    [Parameter] public EventCallback<CalendarEventDto> OnEditSeriesRequested { get; set; }
+    [Parameter] public EventCallback<CalendarEventDto> OnDeleteRequested { get; set; }
+    [Parameter] public EventCallback<(CalendarEventDto Ev, int Order, bool Done)> OnChecklistToggled { get; set; }
+
+    // Resolver för kalender-färg (CalendarId -> Hex). Parent skickar in GetCalendarHex.
+    [Parameter] public Func<string?, string>? CalendarIdToHex { get; set; }
+
+    // Valfritt: resolver för kalendernamn (CalendarId -> Name), för att visa i dag-modalen
+    [Parameter] public Func<string?, string?>? CalendarIdToName { get; set; }
+    [Parameter] public string CurrentUserId { get; set; } = "";
+
+    [Parameter] public Func<string?, bool>? CanSeeDetailsForCalendar { get; set; }
+
+    private bool ViewerCanSeeDetails(string? calendarId)
+    => CanSeeDetailsForCalendar?.Invoke(calendarId) == true;
+
+    private DateTime? HoverDay;
+
+    // Daglista-modal state
+    private bool _isDayModalOpen;
+    private DateTime _dayModalDateLocal;
+
+    private string MonthLabel => CurrentMonth.ToString("MMMM yyyy");
+    private bool ShowTodayButton =>
+        CurrentMonth.Year != DateTime.Now.Year || CurrentMonth.Month != DateTime.Now.Month;
+
+    private string[] Dow =>
+    [
+        Loc.GetOr("Common_Actions_MondayShort", "Mon"),
+        Loc.GetOr("Common_Actions_TuesdayShort", "Tue"),
+        Loc.GetOr("Common_Actions_WednesdayShort", "Wed"),
+        Loc.GetOr("Common_Actions_ThursdayShort", "Thu"),
+        Loc.GetOr("Common_Actions_FridayShort", "Fri"),
+        Loc.GetOr("Common_Actions_SaturdayShort", "Sat"),
+        Loc.GetOr("Common_Actions_SundayShort", "Sun")
+    ];
+
+    private string? ResolveUserName(string? uid)
+    {
+        if (string.IsNullOrWhiteSpace(uid)) return null;
+
+        return Users.TryGetName(uid);
+    }
+
+    private List<(DateTime Day, bool InMonth)> Cells
+    {
+        get
+        {
+            var first = new DateTime(CurrentMonth.Year, CurrentMonth.Month, 1);
+            var start = StartOfWeek(first, DayOfWeek.Monday);
+            var last = first.AddMonths(1).AddDays(-1);
+            var end = StartOfWeek(last, DayOfWeek.Monday).AddDays(6);
+
+            var list = new List<(DateTime, bool)>();
+            for (var d = start; d <= end; d = d.AddDays(1))
+                list.Add((d, d.Month == CurrentMonth.Month));
+
+            return list;
+        }
+    }
+
+    private static DateTime StartOfWeek(DateTime date, DayOfWeek startDay)
+    {
+        var diff = (7 + (date.DayOfWeek - startDay)) % 7;
+        return date.AddDays(-diff).Date;
+    }
+
+    private List<CalendarEventDto> EventsForDay(DateTime dayLocal)
+    {
+        var start = dayLocal.Date;
+        var end = dayLocal.Date.AddDays(1);
+
+        // Events-listan här ska redan vara filtrerad till “markerade kalendrar” av parent.
+        return Events
+            .Where(e =>
+                DateTimes.ToLocalFromUtc(e.StartUtc) < end &&
+                DateTimes.ToLocalFromUtc(e.EndUtc) > start)
+            .OrderBy(e => DateTimes.AsUtc(e.StartUtc))
+            .ToList();
+    }
+
+    private string GetTimeText(CalendarEventDto ev)
+    {
+        if (ev.IsAllDay) return Loc.GetOr("Common_Actions_AllDay", "All day");
+        var start = DateTimes.ToLocalFromUtc(ev.StartUtc);
+        var end = DateTimes.ToLocalFromUtc(ev.EndUtc);
+        return $"{start:HH:mm}-{end:HH:mm}";
+    }
+
+    private string ResolveCalendarHex(string? calendarId)
+    {
+        if (CalendarIdToHex is null)
+            return "#2B2622"; // fallback
+
+        var hex = CalendarIdToHex(calendarId);
+        return string.IsNullOrWhiteSpace(hex) ? "#2B2622" : hex;
+    }
+
+    private async Task OnCellClicked(DateTime dayLocal)
+    {
+        var items = EventsForDay(dayLocal);
+
+        // Private => ska inte påverka om vi “har events”
+        var visible = items
+            .Where(IsVisibleForViewer)
+            .ToList();
+
+        // Regel: om inga synliga events -> öppna create-modal direkt
+        if (visible.Count == 0)
+        {
+            await OnDayClicked.InvokeAsync(dayLocal);
+            return;
+        }
+
+        // Annars: öppna lista-modal
+        _dayModalDateLocal = dayLocal.Date;
+        _isDayModalOpen = true;
+    }
+
+    private Task OnDayModalOpenChanged(bool open)
+    {
+        _isDayModalOpen = open;
+        if (!open)
+            _dayModalDateLocal = default;
+
+        return Task.CompletedTask;
+    }
+
+    private void OnCellItemKeyDown(KeyboardEventArgs e, DateTime day)
+    {
+        // Enter / Space should act like click.
+        if (e.Key == "Enter" || e.Key == " " || e.Code == "Space")
+        {
+            OnCellClicked(day);
+        }
+    }
+
+    private bool ViewerIsCreator(CalendarEventDto ev) =>
+    !string.IsNullOrWhiteSpace(CurrentUserId)
+    && !string.IsNullOrWhiteSpace(ev?.CreatedById)
+    && string.Equals(ev.CreatedById, CurrentUserId, StringComparison.Ordinal);
+
+    private bool ViewerIsPrivileged(CalendarEventDto ev) =>
+        ViewerCanSeeDetails(ev.CalendarId) || ViewerIsCreator(ev);
+
+    private CalendarVisibility EffectiveVisibility(CalendarEventDto ev)
+    {
+        if (ev is null) return CalendarVisibility.Private;
+
+        var isCreator = ViewerIsCreator(ev);
+
+        if (ev.Visibility == CalendarVisibility.Private)
+            return isCreator ? CalendarVisibility.Details : CalendarVisibility.Private;
+
+        if (ev.Visibility == CalendarVisibility.BusyOnly)
+            return isCreator ? CalendarVisibility.Details : CalendarVisibility.BusyOnly;
+
+        if (ev.Visibility == CalendarVisibility.Details)
+            return CalendarVisibility.Details;
+
+        return ev.Visibility;
+    }
+
+    private bool IsVisibleForViewer(CalendarEventDto e)
+        => EffectiveVisibility(e) != CalendarVisibility.Private;
+
+    private async Task DayModalAddRequested(DateTime dayLocal)
+    {
+        // Plus i list-modal: öppna create (parent)
+        //_isDayModalOpen = false;
+        await OnAddClicked.InvokeAsync(dayLocal);
+    }
+
+    private Task PrevMonth()
+        => OnMonthChanged.InvokeAsync(CurrentMonth.AddMonths(-1));
+
+    private Task NextMonth()
+        => OnMonthChanged.InvokeAsync(CurrentMonth.AddMonths(1));
+
+    private Task GoToCurrentMonth()
+        => OnMonthChanged.InvokeAsync(new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1));
+
+
+}

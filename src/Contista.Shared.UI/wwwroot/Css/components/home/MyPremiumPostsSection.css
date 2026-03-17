@@ -1,0 +1,26 @@
+﻿/* =========================================================
+   ✨ My Premium Posts Section
+   ========================================================= */
+
+.my-posts {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+}
+
+    .my-posts .section-title {
+        color: var(--text-primary);
+        font-weight: var(--font-semibold);
+    }
+
+    .my-posts .text-muted {
+        color: var(--text-secondary);
+    }
+
+/* Empty state */
+.my-posts__empty {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+}

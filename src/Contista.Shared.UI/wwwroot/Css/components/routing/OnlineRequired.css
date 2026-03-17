@@ -1,0 +1,81 @@
+﻿/* =========================================================
+   🌐 ONLINE REQUIRED
+   ========================================================= */
+
+.online-required {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-strong);
+    background: var(--bg-secondary);
+    box-shadow: var(--shadow-card);
+    margin: var(--space-md) 0;
+}
+
+.online-required-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    min-width: 0;
+}
+
+.online-required-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: var(--radius-full);
+    background: var(--ui-focus);
+    flex: 0 0 auto;
+    animation: online-required-pulse 1.8s ease-out infinite;
+}
+
+.online-required-text {
+    min-width: 0;
+}
+
+.online-required-title {
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    line-height: var(--leading-tight);
+}
+
+.online-required-msg {
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    margin-top: var(--space-xs);
+}
+
+.online-required-right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+}
+
+/* Compact */
+.online-required.compact {
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    box-shadow: none;
+}
+
+    .online-required.compact .online-required-right {
+        display: none;
+    }
+
+/* Subtle pulse */
+@keyframes online-required-pulse {
+    0% {
+        opacity: 1;
+    }
+
+    70% {
+        opacity: 0.4;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}

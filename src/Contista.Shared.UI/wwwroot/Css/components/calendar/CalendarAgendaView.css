@@ -1,0 +1,302 @@
+﻿/* =========================================================
+   CalendarAgendaView
+   ========================================================= */
+
+.cal-agenda {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+/* =========================================================
+   Day cards grid
+   ========================================================= */
+
+.cal-agendaDayGrid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-md);
+    align-items: start;
+}
+
+.cal-agendaDayCard {
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    background: var(--bg-card);
+    overflow: hidden;
+    min-width: 0;
+}
+
+/* =========================================================
+   Day card header
+   ========================================================= */
+
+.cal-agendaDayHeader {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    padding: var(--space-md);
+    border-bottom: 1px solid var(--border-divider);
+}
+
+.cal-agendaDayHeaderMain {
+    appearance: none;
+    -webkit-appearance: none;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    min-width: 0;
+    flex: 1 1 auto;
+    text-align: left;
+    cursor: pointer;
+}
+
+    .cal-agendaDayHeaderMain:focus-visible {
+        outline: none;
+        box-shadow: var(--shadow-focus);
+        border-radius: var(--radius-sm);
+    }
+
+.cal-agendaDayHeaderLeft {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.cal-agendaDayDow {
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    line-height: 1.1;
+}
+
+.cal-agendaDayDate {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.cal-agendaDayMeta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    margin-top: 2px;
+}
+
+.cal-agendaBadge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 0 10px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-divider);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    font-size: var(--text-xs);
+    font-weight: var(--font-medium);
+}
+
+    .cal-agendaBadge.is-today {
+        border-color: var(--border-info);
+        background: var(--color-info-bg);
+        color: var(--color-info);
+    }
+
+    .cal-agendaBadge.is-tomorrow {
+        border-color: var(--border-success);
+        background: var(--color-success-bg);
+        color: var(--color-success);
+    }
+
+.cal-agendaAddBtn {
+    flex: 0 0 auto;
+}
+
+/* =========================================================
+   Day card body
+   ========================================================= */
+
+.cal-agendaDayBody {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    padding: var(--space-md);
+    min-height: 72px;
+}
+
+.cal-agendaRows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+/* =========================================================
+   Event rows inside day cards
+   ========================================================= */
+
+.cal-agendaRow {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 100%;
+    border: 1px solid var(--border-divider);
+    border-radius: var(--radius-md);
+    background: var(--bg-card);
+    padding: var(--space-sm2);
+    text-align: left;
+    cursor: pointer;
+    min-width: 0;
+}
+
+    .cal-agendaRow:hover {
+        background: var(--bg-secondary);
+    }
+
+    .cal-agendaRow:focus-visible {
+        outline: none;
+        box-shadow: inset 0 0 0 2px var(--border-focus);
+    }
+
+    /* Availability backgrounds */
+    .cal-agendaRow.avail-free {
+        background: color-mix(in srgb, var(--cal-accent) 8%, var(--bg-card));
+    }
+
+    .cal-agendaRow.avail-busy {
+        background: color-mix(in srgb, var(--cal-accent) 16%, var(--bg-secondary));
+    }
+
+    .cal-agendaRow.avail-ooo {
+        background: color-mix(in srgb, var(--color-error-bg) 55%, var(--bg-card));
+    }
+
+    .cal-agendaRow.avail-tentative {
+        background: repeating-linear-gradient( -45deg, transparent 0px, transparent 8px, color-mix(in srgb, var(--ui-secondary) 20%, transparent) 8px, color-mix(in srgb, var(--ui-secondary) 20%, transparent) 12px ), color-mix(in srgb, var(--cal-accent) 8%, var(--bg-card));
+    }
+
+.cal-agendaMore {
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(calc(var(--space-sm) * -1));
+    overflow: hidden;
+    transition: max-height var(--transition-medium) var(--ease-default), opacity var(--transition-medium) var(--ease-default), transform var(--transition-medium) var(--ease-default);
+}
+
+.cal-agendaMoreInner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    padding-top: var(--space-sm);
+}
+
+.cal-agendaMore.is-open {
+    max-height: 800px;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.cal-agendaDesc {
+    margin-top: var(--space-sm);
+    margin-left: calc(92px + var(--space-sm2));
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    line-height: var(--leading-normal);
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.cal-agendaExpandBtn {
+    appearance: none;
+    -webkit-appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    align-self: center;
+    border: 0;
+    background: none;
+    color: var(--text-secondary);
+    padding: var(--space-xs) var(--space-md);
+    margin-top: var(--space-xs);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    line-height: var(--leading-tight);
+    cursor: pointer;
+    transition: background var(--transition-fast) var(--ease-default), transform var(--transition-fast) var(--ease-default), box-shadow var(--transition-fast) var(--ease-default);
+}
+
+    .cal-agendaExpandBtn:hover {
+        background: var(--bg-hover);
+        transform: translateY(-1px);
+    }
+
+    .cal-agendaExpandBtn:focus-visible {
+        outline: none;
+        box-shadow: var(--shadow-focus);
+    }
+
+    .cal-agendaExpandBtn .bi {
+        display: block;
+        line-height: 1;
+        font-size: 16px;
+    }
+
+.cal-agendaExpandCount {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--text-disabled);
+}
+
+/* =========================================================
+   Empty states
+   ========================================================= */
+
+.cal-agendaEmptyDay {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 100%;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    padding: var(--space-sm2);
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+}
+
+    .cal-agendaEmptyDay:hover {
+        background: var(--bg-secondary);
+    }
+
+.cal-agendaGlobalEmpty {
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    background: var(--bg-card);
+    padding: var(--space-lg);
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+/* =========================================================
+   Responsive
+   ========================================================= */
+
+@media (max-width: 992px) {
+    .cal-agendaDayGrid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 575.98px) {
+    .cal-agendaDayGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .cal-agendaDayHeader,
+    .cal-agendaDayBody {
+        padding: var(--space-sm2);
+    }
+}

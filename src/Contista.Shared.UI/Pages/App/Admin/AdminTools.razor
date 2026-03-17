@@ -1,0 +1,129 @@
+﻿@* AdminTools.razor *@
+@attribute [Feature(FeatureKey.AdminTools)]
+@attribute [Authorize(Policy = "AdminOnly")]
+@page "/app/admin/adminTools"
+@using Contista.Shared.UI.Components.AdminTools
+@using Contista.Shared.UI.Components.Routing
+
+
+@inherits AppPageBase
+@inject IFirebaseAuthService AuthService
+@inject IOfflineWriteService OfflineWrite
+@inject ISyncRunner SyncRunner
+
+<OnlineRequired BackHref="/app/home" Enabled="@(!IsOfflineTesting)" > 
+        @if (CommonState.Current is not null)
+        {
+            <div class="mt-3 small la-muted">
+                Common version: <b>@CommonState.Version</b>
+                <div>Cached at: @CommonState.CachedAtUtc?.ToString("u")</div>
+            </div>
+
+            <SyncDebugPanel />
+
+            <hr />
+
+            <h2 class="page-title">Content Posts</h2>
+
+            @if (UserState.Current?.ContentPostList is null)
+            {
+            <p>@Loc["Common_Messages_Loading"]</p>
+            }
+            else if (!UserState.Current.ContentPostList.Any())
+            {
+            <p>@Loc["Page_AdminTools_NoPosts_Text"]</p>
+            }
+            else
+            {
+                <ul>
+                    @foreach (var post in UserState.Current.ContentPostList)
+                    {
+                        <li>
+                            <strong>@post.Title</strong><br />
+                            <span class="small">@post.Status</span>
+                        </li>
+                    }
+                </ul>
+            }
+
+            <CreateRole Roles="Roles" />
+            <CreateMembership Memberships="Memberships" />
+        }
+        else
+        {
+        <p>@Loc["Page_AdminTools_LoadingCommonData_Text"]</p>
+        }
+    
+
+</OnlineRequired>
+
+
+@code {
+    private List<Role> Roles = new();
+    private List<Membership> Memberships = new();
+
+    private bool IsOfflineTesting =>
+#if DEBUG
+        true;
+#else
+        false;
+#endif
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!AuthService.IsLoggedIn)
+        {
+            Nav.NavigateTo($"/?returnUrl={Uri.EscapeDataString("/app/admin/adminTools")}", replace: true);
+            return;
+        }
+
+        CommonState.Changed += OnCommonChanged;
+
+        // ✅ Hämta från cache/state (som fylls av orchestratorn)
+        if (CommonState.Current?.Roles is not null)
+            Roles = CommonState.Current.Roles.ToList();
+
+        if (CommonState.Current?.Memberships is not null)
+            Memberships = CommonState.Current.Memberships.ToList();
+
+        await Task.CompletedTask;
+    }
+
+    private void OnCommonChanged()
+    {
+        // När CommonState uppdateras, plocka ut listorna igen
+        if (CommonState.Current?.Roles is not null)
+            Roles = CommonState.Current.Roles.ToList();
+
+        if (CommonState.Current?.Memberships is not null)
+            Memberships = CommonState.Current.Memberships.ToList();
+
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        CommonState.Changed -= OnCommonChanged;
+    }
+
+    private async Task TestCreatePost()
+    {
+        var dto = new CreatePostOperationDto
+        {
+            Title = "Testpost från Web",
+            Body = "Skapad via offline sync",
+            Status = "Draft"
+        };
+
+        var envelope = new SyncOperationEnvelope
+        {
+            UserId = UserState?.Current?.UserId ?? "",   // om du har UserState i AppPageBase
+            OperationType = SyncOperationType.CreatePost,
+            Payload = JsonSerializer.SerializeToElement(dto)
+        };
+
+        await OfflineWrite.EnqueueAsync(envelope);
+        await SyncRunner.RunOnceAsync();
+    }
+}

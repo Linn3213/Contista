@@ -1,0 +1,40 @@
+﻿/* =========================================================
+   🌙 DARK MODE EXTRAS
+   ========================================================= */
+[data-bs-theme="dark"] {
+    --bg-glass: rgba(28, 22, 16, 0.55);
+    --bg-glass-strong: rgba(28, 22, 16, 0.62);
+}
+
+[data-bs-theme="dark"] .tabbar-container {
+    border-top: 1px solid var(--border-default);
+}
+
+[data-bs-theme="dark"] .overlay {
+    background-color: var(--bg-overlay);
+}
+
+[data-bs-theme="dark"] .mini-loader-box {
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-default);
+}
+
+/* Inputs */
+[data-bs-theme="dark"] .form-control,
+[data-bs-theme="dark"] select,
+[data-bs-theme="dark"] textarea {
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+    border-color: var(--border-default);
+}
+
+    [data-bs-theme="dark"] .form-control:focus,
+    [data-bs-theme="dark"] textarea:focus,
+    [data-bs-theme="dark"] input:focus,
+    [data-bs-theme="dark"] select:focus {
+        border-color: var(--border-focus);
+        box-shadow: var(--shadow-focus);
+    }
+
+

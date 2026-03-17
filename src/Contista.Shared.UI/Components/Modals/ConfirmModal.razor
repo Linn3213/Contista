@@ -1,0 +1,134 @@
+﻿@* ConfirmModal.razor *@
+@inject IJSRuntime JS
+
+<div class="modal fade confirm-modal mx-2" id="@ModalId" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header @GetHeaderClass()">
+                <h5 class="modal-title d-flex align-items-center gap-2">
+                    @if (!string.IsNullOrWhiteSpace(IconClass))
+                    {
+                        <i class="@IconClass fs-5"></i>
+                    }
+                    @Title
+                </h5>
+
+                <button type="button"
+                        class="btn-close btn-close-white"
+                        aria-label="@CloseAriaLabel"
+                        @onclick="CancelAsync">
+                </button>
+
+            </div>
+
+            <div class="modal-body">
+                @if (MessageContent is not null)
+                {
+                    @MessageContent
+                }
+                else
+                {
+                    <p class="mb-0">@((MarkupString)(Message ?? ""))</p>
+                }
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" disabled="@IsBusy" @onclick="CancelAsync">
+                    @CancelText
+                </button>
+                <button type="button" class="btn @GetButtonClass()" disabled="@IsBusy" @onclick="ConfirmAsync">
+                    @ConfirmText
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string ModalId { get; set; } = $"confirm_{Guid.NewGuid():N}";
+
+    [Parameter] public string Title { get; set; } = "Confirm";
+    [Parameter] public string? Message { get; set; } = "Are you sure?";
+    [Parameter] public RenderFragment? MessageContent { get; set; }
+
+    [Parameter] public object? ModalOptions { get; set; }
+
+    // "warning|danger|info|success|primary|secondary"
+    [Parameter] public string Variant { get; set; } = "warning";
+
+    // valfritt, annars sätts default per Variant
+    [Parameter] public string? IconClass { get; set; }
+
+    [Parameter] public string CancelText { get; set; } = "Cancel";
+    [Parameter] public string ConfirmText { get; set; } = "OK";
+
+    [Parameter] public bool IsBusy { get; set; }
+
+    // enkel callback: true=confirm, false=cancel
+    [Parameter] public EventCallback<bool> OnClosed { get; set; }
+
+    [Parameter] public EventCallback OnConfirm { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    [Parameter] public string CloseAriaLabel { get; set; } = "Close";
+
+    public async Task ShowAsync(string? title = null, string? message = null, object? options = null)
+    {
+        if (!string.IsNullOrWhiteSpace(title)) Title = title!;
+        if (message is not null) Message = message;
+
+        options ??= ModalOptions ?? new { backdrop = true, keyboard = false };
+
+        await JS.InvokeVoidAsync("contista.bootstrapModal.show", $"#{ModalId}", options);
+    }
+
+    public Task HideAsync()
+    => JS.InvokeVoidAsync("contista.bootstrapModal.hide", $"#{ModalId}").AsTask();
+
+    private async Task ConfirmAsync()
+    {
+        if (OnConfirm.HasDelegate) await OnConfirm.InvokeAsync();
+        if (OnClosed.HasDelegate) await OnClosed.InvokeAsync(true);
+        await HideAsync();
+    }
+
+    private async Task CancelAsync()
+    {
+        if (OnCancel.HasDelegate) await OnCancel.InvokeAsync();
+        if (OnClosed.HasDelegate) await OnClosed.InvokeAsync(false);
+        await HideAsync();
+    }
+
+    private string GetHeaderClass() => Variant switch
+    {
+        "danger" => "bg-danger",
+        "info" => "bg-info",
+        "success" => "bg-success",
+        "primary" => "bg-primary",
+        "secondary" => "bg-secondary",
+        _ => "bg-warning"
+    };
+
+    private string GetButtonClass() => Variant switch
+    {
+        "danger" => "btn-danger white",
+        "info" => "btn-info",
+        "success" => "btn-success",
+        "primary" => "btn-primary",
+        "secondary" => "btn-secondary",
+        _ => "btn-warning"
+    };
+
+    private string GetDefaultIcon() => Variant switch
+    {
+        "danger" => "bi bi-exclamation-octagon-fill",
+        "info" => "bi bi-info-circle-fill",
+        "success" => "bi bi-check-circle-fill",
+        _ => "bi bi-exclamation-triangle-fill"
+    };
+
+    protected override void OnParametersSet()
+    {
+        IconClass ??= GetDefaultIcon();
+    }
+}

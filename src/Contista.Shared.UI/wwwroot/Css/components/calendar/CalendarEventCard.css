@@ -1,0 +1,271 @@
+﻿/* =========================================================
+   CalendarEventCard CSS
+   ========================================================= */
+
+/* =========================================================
+   Shared availability badge
+   ========================================================= */
+
+.cal-availBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 20px;
+    padding: 1px 7px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-default);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    font-size: var(--text-xs);
+    line-height: 1.2;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.cal-availBadge--inline {
+    margin: 0;
+}
+
+/* =========================================================
+   Month card
+   ========================================================= */
+
+.cal-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    min-height: 18px;
+    padding: 1px var(--space-sm);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--cal-accent);
+    background: color-mix(in srgb, var(--cal-accent) 8%, var(--bg-card));
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.cal-itemTime {
+    flex: 0 0 auto;
+    min-width: 34px;
+    color: var(--text-secondary);
+    font-size: var(--text-xs);
+    font-weight: var(--font-regular);
+    line-height: var(--leading-tight);
+    white-space: nowrap;
+}
+
+.cal-itemTitle {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-primary);
+    font-size: var(--text-xs);
+    font-weight: var(--font-regular);
+    line-height: var(--leading-tight);
+}
+
+/* Month availability */
+.cal-item.avail-free {
+    border-left: 3px solid var(--cal-accent);
+    background: color-mix(in srgb, var(--cal-accent) 8%, var(--bg-card));
+}
+
+.cal-item.avail-busy {
+    border-left: 3px solid var(--cal-accent);
+    background: color-mix(in srgb, var(--cal-accent) 16%, var(--bg-secondary));
+}
+
+.cal-item.avail-ooo {
+    border-left: 3px solid var(--cal-accent);
+    background: color-mix(in srgb, var(--color-error-bg) 55%, var(--bg-card));
+}
+
+.cal-item.avail-tentative {
+    border-left: 3px solid var(--cal-accent);
+    background: repeating-linear-gradient( -45deg, transparent 0px, transparent 8px, color-mix(in srgb, var(--ui-secondary) 20%, transparent) 8px, color-mix(in srgb, var(--ui-secondary) 20%, transparent) 12px ), color-mix(in srgb, var(--cal-accent) 8%, var(--bg-card));
+}
+
+/* =========================================================
+   Week card
+   ========================================================= */
+
+.cal-block {
+    position: absolute;
+    overflow: hidden;
+}
+
+    .cal-block.avail-free {
+        opacity: 0.88;
+    }
+
+    .cal-block.avail-busy {
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 8%, transparent);
+    }
+
+    .cal-block.avail-ooo {
+        box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--text-primary) 12%, transparent);
+    }
+
+    .cal-block.avail-tentative::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background-image: repeating-linear-gradient( -45deg, color-mix(in srgb, var(--text-primary) 10%, transparent) 0px, color-mix(in srgb, var(--text-primary) 10%, transparent) 6px, transparent 6px, transparent 12px );
+    }
+
+.cal-blockAvail {
+    margin-top: 4px;
+    font-size: var(--text-xs);
+    line-height: 1.1;
+    opacity: 0.85;
+}
+
+/* =========================================================
+   Day modal / list row content
+   ========================================================= */
+
+.cal-dayEventInfo {
+    display: grid;
+    grid-template-columns: 104px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    column-gap: var(--space-md);
+    row-gap: 2px;
+    align-items: start;
+    min-width: 0;
+}
+
+.cal-dayEventTimeCol {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    display: grid;
+    grid-template-rows: auto auto;
+    align-content: start;
+    justify-items: start;
+    row-gap: 2px;
+    min-width: 104px;
+    width: 104px;
+}
+
+.cal-dayEventTitleCol {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+    padding-top: 1px;
+}
+
+.cal-dayRowTime {
+    display: block;
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    line-height: 1.2;
+    font-weight: var(--font-regular);
+    white-space: nowrap;
+}
+
+.cal-dayRowTitle {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-primary);
+    font-size: var(--text-sm);
+    line-height: 1.2;
+    font-weight: var(--font-semibold);
+}
+
+.cal-dayEventTimeCol .cal-availBadge {
+    margin: 6px 0 0 0;
+    min-height: 18px;
+    padding: 0 7px;
+    line-height: 1.1;
+}
+
+    /* Day list title availability states */
+    .cal-dayRowTitle.avail-free {
+        opacity: 0.95;
+    }
+
+    .cal-dayRowTitle.avail-busy {
+        font-weight: var(--font-semibold);
+    }
+
+    .cal-dayRowTitle.avail-ooo {
+        font-weight: var(--font-semibold);
+    }
+
+    .cal-dayRowTitle.avail-tentative {
+        padding-inline: 4px;
+        border-radius: var(--radius-sm);
+        background-image: repeating-linear-gradient( -45deg, transparent 0px, transparent 8px, color-mix(in srgb, var(--ui-secondary) 18%, transparent) 8px, color-mix(in srgb, var(--ui-secondary) 18%, transparent) 12px );
+    }
+
+/* =========================================================
+   Agenda row content
+   ========================================================= */
+
+.cal-agendaEventInfo {
+    display: grid;
+    grid-template-columns: 92px minmax(0, 1fr);
+    column-gap: var(--space-sm2);
+    align-items: start;
+    min-width: 0;
+    position: relative;
+    padding-left: var(--space-sm2);
+}
+
+    .cal-agendaEventInfo::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 2px;
+        bottom: 2px;
+        width: 4px;
+        border-radius: var(--radius-full);
+        background: var(--cal-accent);
+    }
+
+.cal-agendaEventTimeCol {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    min-width: 92px;
+}
+
+.cal-agendaEventTime {
+    display: block;
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    line-height: 1.2;
+    font-weight: var(--font-regular);
+    white-space: nowrap;
+}
+
+.cal-agendaEventTitleCol {
+    min-width: 0;
+    padding-top: 1px;
+}
+
+.cal-agendaEventTitle {
+    display: block;
+    min-width: 0;
+    color: var(--text-primary);
+    font-size: var(--text-sm);
+    line-height: 1.25;
+    font-weight: var(--font-semibold);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cal-agendaEventTimeCol .cal-availBadge {
+    margin: 0;
+    min-height: 18px;
+    padding: 0 7px;
+    line-height: 1.1;
+}

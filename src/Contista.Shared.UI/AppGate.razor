@@ -1,0 +1,392 @@
+﻿@* AppGate.razor *@
+@using System.Security.Claims
+@using Contista.Shared.Core.DTO.Calendar
+@using Contista.Shared.Core.Interfaces.Calendar
+@using Contista.Shared.Core.Interfaces.Sync
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Authorization
+@using Contista.Shared.UI.Components.Loader
+@using Contista.Shared.UI.State
+
+@implements IDisposable
+@inherits AppPageBase
+@inject IAppSessionOrchestrator Offline
+@inject ISyncRunner SyncRunner
+@inject INetworkStatus Network
+@inject ISyncQueue Queue
+@inject AppBusyService Busy
+@inject AppReadyState AppReady
+@inject ICalendarQuotaService Quota
+@inject ISyncUxNotifier SyncUx
+@inject ICalendarState CalendarState
+@inject IReminderScheduler ReminderScheduler
+@inject IReminderStartupService RemindersStartup
+
+@if (!AppReady.IsReady)
+{
+    <Loader Visible="true" Message="@Loc["Common_Messages_Loading"]" />
+}
+else
+{
+    @ChildContent
+}
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private PeriodicTimer? _timer;
+    private CancellationTokenSource? _cts;
+    private bool _timerStarted;
+
+    private bool _calendarBootstrapped;
+
+    // Endast för "post-auth redirect" (efter login / session-resume)
+    private bool _postAuthRedirectPending;
+
+    // Fallback: kör sällan (det mesta triggas av kö + online)
+    private static readonly TimeSpan SyncInterval = TimeSpan.FromSeconds(120);
+
+    // Skydd mot att flera init/auth-händelser triggar parallellt
+    private readonly SemaphoreSlim _initGate = new(1, 1);
+
+    protected override async Task OnInitializedAsync()
+    {
+        AuthState.AuthenticationStateChanged += OnAuthChanged;
+
+        // ✅ Reminder-wiring ska leva globalt
+        CalendarState.Changed += OnCalendarStateChanged;
+
+        AppReady.Reset(); // ✅ starta alltid som "not ready"
+        await BootstrapAsync(forceUserRefresh: false);
+    }
+
+    private async Task BootstrapAsync(bool forceUserRefresh)
+    {
+        await _initGate.WaitAsync();
+        try
+        {
+            // Best effort: resume session
+            if (!Auth.IsLoggedIn)
+            {
+                try
+                {
+                    var resumed = await Auth.TryResumeSessionAsync();
+                    if (resumed)
+                        await AuthState.RefreshAsync();
+                }
+                catch { }
+            }
+
+            var state = await AuthState.GetAuthenticationStateAsync();
+            var isAuth = state.User?.Identity?.IsAuthenticated == true;
+
+            if (!isAuth)
+            {
+                
+                // 🔒 Anonymous: markera redo (så landing kan renderas)
+                AppReady.SetReady(true);
+                BounceIfAppPath();
+                return;
+            }
+
+            // ✅ Ladda grunddata innan något UI renderas
+            await CommonState.EnsureLoadedAsync();
+
+            // ✅ Uid från principal först (sanningen), fallback Auth.Uid
+            var uid =
+                state.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? Auth.Uid;
+
+            if (!string.IsNullOrWhiteSpace(uid))
+            {
+                if (forceUserRefresh)
+                    await UserState.RefreshAsync(uid, force: true);
+                else
+                    await UserState.EnsureLoadedAsync(uid);
+            }
+
+            await EnsureCalendarBootstrappedForRemindersAsync(uid!);
+
+            var membershipId = UserState.Current?.MembershipId;
+
+            var maxQuota =
+                CommonState.Current?.Memberships?
+                    .FirstOrDefault(m => m.MembershipId == membershipId)
+                    ?.MaxEventQuota
+                ?? 100; // fallback
+
+            var quotaResult = await Quota.EnforceQuotaAsync(uid!, maxQuota, CancellationToken.None);
+
+            if (quotaResult.IsOverLimit)
+            {
+                var text = Loc?.GetOr("Page_AppGate_EventQuotaExceeded_Text", "Event quota exceeded") ?? "Event quota exceeded";
+                var message = $"{text} ({quotaResult.TotalEvents}/{quotaResult.MaxAllowed}).";
+                SyncUx.Set(new Contista.Shared.Core.Models.Sync.SyncUxState(
+                    FailedCount: 0,
+                    SessionExpired: false,
+                    Message: message
+                ));
+            }
+            else
+            {
+                // valfritt: rensa quota-varning
+                // SyncUx.Set(new SyncUxState(Message: null));
+            }
+
+
+
+            // ✅ Redirect efter auth/resume/login: basera på UserState + CommonState (INTE claims)
+            if (_postAuthRedirectPending)
+            {
+                _postAuthRedirectPending = false;
+
+                var target = ResolvePostAuthTargetFromUserState();
+
+                if (!string.IsNullOrWhiteSpace(target))
+                {
+                    var currentPath = "/" + (Nav.ToBaseRelativePath(Nav.Uri) ?? "")
+                        .Split('?', '#')[0]
+                        .Trim('/');
+
+                    if (!currentPath.Equals(target, StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Viktigt: håll kvar loader tills nya sidan laddas
+                        Nav.NavigateTo(target, replace: true);
+                        return;
+                    }
+                }
+            }
+
+            RemindersStartup.Start();
+            // ✅ Nu är appen "ready" => Layout + Topbar + Sidebar kan visas
+            AppReady.SetReady(true);
+        }
+        finally
+        {
+            _initGate.Release();
+        }
+    }
+
+    private async void OnAuthChanged(Task<AuthenticationState> task)
+    {
+        try
+        {
+            // Vid auth-change: lås UI tills bootstrap klart
+            AppReady.Reset();
+            await InvokeAsync(StateHasChanged);
+
+            var state = await task;
+            var isAuth = state.User?.Identity?.IsAuthenticated == true;
+
+            if (!isAuth)
+            {
+                // ✅ reset så nästa login pre-loadar kalendern igen
+                _calendarBootstrapped = false;
+
+                // ✅ stäng av reminders när man loggar ut
+                ReminderScheduler.UpdateEvents(null);
+
+                UserState.Clear();
+                CommonState.Clear();
+                RemindersStartup.Stop();
+                AppReady.SetReady(true);
+                BounceIfAppPath();
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
+            // ✅ vi vill redirecta EN gång efter login/resume
+            _postAuthRedirectPending = true;
+
+            await BootstrapAsync(forceUserRefresh: true);
+            await InvokeAsync(StateHasChanged);
+        }
+        catch { }
+    }
+
+    private void OnCalendarStateChanged()
+    {
+        // Global wiring: varje gång kalender-state ändras -> uppdatera reminders
+        ReminderScheduler.UpdateEvents(CalendarState.Current?.Events);
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>
+    /// Admin -> AdminTools, annars Dashboard.
+    /// Bygger på UserState + CommonState (stabilt) istället för claims (bråkigt).
+    /// </summary>
+    private string ResolvePostAuthTargetFromUserState()
+    {
+        // Om du redan är på en "riktig" sida vill vi INTE tvinga redirect.
+        // Vi redirectar typiskt bara när man landar på app-root eller home.
+        if (!ShouldAutoRedirectFromHere())
+            return "";
+
+        var isAdmin = IsAdminFromUserState();
+        return isAdmin
+            ? "/app/admin/adminTools"
+            : "/app/home";
+    }
+
+    private bool IsAdminFromUserState()
+    {
+        var dto = UserState.Current;
+        if (dto is null) return false;
+
+        var roleId = dto.RoleId;
+        if (string.IsNullOrWhiteSpace(roleId)) return false;
+
+        var roles = CommonState.Current?.Roles;
+        if (roles is null || roles.Count == 0) return false;
+
+        var role = roles.FirstOrDefault(r => r.RoleId == roleId);
+        var roleName = role?.RoleName ?? "";
+
+        return string.Equals(roleName, "Admin", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task EnsureCalendarBootstrappedForRemindersAsync(string uid)
+    {
+        // Kör bara en gång per “inloggad session” i AppGate
+        if (_calendarBootstrapped)
+            return;
+
+        _calendarBootstrapped = true;
+
+        // ✅ Vi vill ha tillräckligt med events för kommande reminders.
+        // Month ger 1 månad. (Du kan byta till Week/Agenda om du vill.)
+        var anchorLocal = DateTime.Now.Date;
+
+        try
+        {
+            await CalendarState.RefreshAsync(
+                userId: uid,
+                view: CalendarViewMode.Month,
+                anchorLocal: anchorLocal,
+                force: true,
+                activeCalendarIdsOverride: null,
+                ct: CancellationToken.None);
+
+            // After refresh: CalendarState.Changed körs och då UpdateEvents via handlern.
+            // Men vi kan också “säkerhets-pusha” här:
+            ReminderScheduler.UpdateEvents(CalendarState.Current?.Events);
+        }
+        catch
+        {
+            // Ska inte blocka login om kalenderload failar.
+            // LastError hanteras redan av CalendarState.
+        }
+    }
+
+    /// <summary>
+    /// Auto-redirecta bara när det är rimligt (direkt efter login/resume).
+    /// Förhindrar att du "kastas" till admin/home när du redan navigerat vidare.
+    /// </summary>
+    private bool ShouldAutoRedirectFromHere()
+    {
+        var path = (Nav.ToBaseRelativePath(Nav.Uri) ?? "")
+            .Split('?', '#')[0]
+            .Trim('/')
+            .ToLowerInvariant();
+
+        // Tillåt redirect från root/landing eller "app"-baser.
+        // Lägg till/ta bort efter smak.
+        if (path == "") return true;
+        if (path == "app") return true;
+
+        // Om du ofta hamnar på /app/home efter login är det ok att byta till admin.
+        if (path == "app/home") return true;
+
+        // Om du loggar in och hamnar på /app (eller /app/...) kan du välja att tillåta:
+        if (path == "app/") return true;
+
+        // Är du redan i admin eller i någon UC-sida: rör inte.
+        return false;
+    }
+
+    private void BounceIfAppPath()
+    {
+        var path = (Nav.ToBaseRelativePath(Nav.Uri) ?? "").TrimStart('/');
+        if (path.StartsWith("app", StringComparison.OrdinalIgnoreCase))
+            Nav.NavigateTo("/", replace: true);
+    }
+
+    private void StartTimer()
+    {
+        if (_timerStarted) return;
+        _timerStarted = true;
+
+        _cts = new CancellationTokenSource();
+        _timer = new PeriodicTimer(SyncInterval);
+        _ = TickLoopAsync(_cts.Token);
+    }
+
+    private async Task TickLoopAsync(CancellationToken ct)
+    {
+        try
+        {
+            while (_timer is not null && await _timer.WaitForNextTickAsync(ct))
+            {
+                await TrySyncOnceAsync(ct);
+            }
+        }
+        catch
+        {
+            // swallow (dispose/cancel)
+        }
+    }
+
+    private async Task TrySyncOnceAsync(CancellationToken ct = default)
+    {
+        // Guard 1: måste vara inloggad
+        if (!Auth.IsLoggedIn) return;
+
+        // Guard 2: måste vara online
+        if (!Network.IsOnline) return;
+
+        // Guard 3: måste finnas pending
+        int pending;
+        try
+        {
+            pending = await Queue.CountAsync(SyncQueueStatus.Pending, ct);
+        }
+        catch
+        {
+            return;
+        }
+
+        if (pending <= 0) return;
+
+        try
+        {
+            await SyncRunner.RunOnceAsync(ct);
+        }
+        catch
+        {
+            // SyncRunner ska inte krascha UI
+        }
+    }
+
+    private void StopTimer()
+    {
+        _cts?.Cancel();
+        _timer?.Dispose();
+        _cts?.Dispose();
+        _timer = null;
+        _cts = null;
+        _timerStarted = false;
+    }
+
+    public void Dispose()
+    {
+        AuthState.AuthenticationStateChanged -= OnAuthChanged;
+        CalendarState.Changed -= OnCalendarStateChanged;
+        RemindersStartup.Stop();
+
+        _cts?.Cancel();
+        _timer?.Dispose();
+        _cts?.Dispose();
+
+        _initGate.Dispose();
+    }
+}

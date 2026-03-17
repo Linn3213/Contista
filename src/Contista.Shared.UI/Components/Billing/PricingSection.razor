@@ -1,0 +1,111 @@
+﻿@* PricingSection.razor component *@
+
+@using Contista.Shared.Core.Models.Auth
+
+<div class="card p-4">
+    <h2 class="mb-1">Planer & funktioner</h2>
+    <div class="la-muted mb-3">
+        Det här är en automatisk lista baserad på FeatureRequirements.Map.
+    </div>
+
+    <div class="row g-3">
+        <div class="col-12 col-lg-3">
+            <div class="card p-3 h-100">
+                <div class="fw-bold">Free</div>
+                <div class="small la-muted mb-2">Inloggad krävs</div>
+                @RenderList(_free)
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-3">
+            <div class="card p-3 h-100">
+                <div class="fw-bold">Standard</div>
+                <div class="small la-muted mb-2">Plan ≥ 1</div>
+                @RenderList(_standard)
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-3">
+            <div class="card p-3 h-100">
+                <div class="fw-bold">Premium</div>
+                <div class="small la-muted mb-2">Plan ≥ 2</div>
+                @RenderList(_premium)
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-3">
+            <div class="card p-3 h-100">
+                <div class="fw-bold">Permanent</div>
+                <div class="small la-muted mb-2">Engångsköp</div>
+                @RenderList(_permanent)
+            </div>
+        </div>
+    </div>
+
+    <hr class="h-line my-4" />
+
+    <details>
+        <summary class="fw-bold">Admin (internt)</summary>
+        <div class="mt-2">
+            @RenderList(_admin)
+        </div>
+    </details>
+</div>
+
+@code {
+    private List<FeatureKey> _free = new();
+    private List<FeatureKey> _standard = new();
+    private List<FeatureKey> _premium = new();
+    private List<FeatureKey> _permanent = new();
+    private List<FeatureKey> _admin = new();
+
+    protected override void OnInitialized()
+    {
+        // Bygg listor utifrån Map
+        foreach (var kv in FeatureRequirements.Map)
+        {
+            var key = kv.Key;
+            var req = kv.Value;
+
+            if (req.Allowed.HasFlag(Entitlement.Admin))
+                _admin.Add(key);
+
+            // Free/Standard/Premium/Permanent kan kombineras
+            if (req.Allowed.HasFlag(Entitlement.Free))
+                _free.Add(key);
+
+            if (req.Allowed.HasFlag(Entitlement.Standard))
+                _standard.Add(key);
+
+            if (req.Allowed.HasFlag(Entitlement.Premium))
+                _premium.Add(key);
+
+            if (req.Allowed.HasFlag(Entitlement.Permanent))
+                _permanent.Add(key);
+        }
+
+        // Sortera alfabetiskt för stabil UI
+        _free.Sort();
+        _standard.Sort();
+        _premium.Sort();
+        _permanent.Sort();
+        _admin.Sort();
+    }
+
+    private RenderFragment RenderList(List<FeatureKey> keys) => builder =>
+    {
+        if (keys.Count == 0)
+        {
+            builder.AddMarkupContent(0, "<div class='la-muted small'>Inga</div>");
+            return;
+        }
+
+        builder.AddMarkupContent(1, "<ul class='mb-0 small'>");
+        var seq = 2;
+        foreach (var k in keys)
+        {
+            builder.AddMarkupContent(seq++, $"<li><code>{k}</code></li>");
+        }
+        builder.AddMarkupContent(seq++, "</ul>");
+    };
+}

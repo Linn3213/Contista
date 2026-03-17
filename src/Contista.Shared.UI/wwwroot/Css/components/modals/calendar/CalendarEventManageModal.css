@@ -1,0 +1,480 @@
+﻿/* =========================================================
+   CalendarEventManageModal extras
+   ========================================================= */
+
+/* -------------------------
+   Modal sizing + scroll body
+   ------------------------- */
+.cal-eventModal {
+    max-width: 680px;
+    max-height: min(86vh, 820px);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    color-scheme: light;
+}
+
+    .cal-eventModal .cal-modalBody {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .cal-eventModal .cal-modalHeader,
+    .cal-eventModal .cal-modalFooter {
+        flex: 0 0 auto;
+        flex-shrink: 0;
+    }
+
+    /* Färga native kalender/time-highlight */
+    .cal-eventModal input[type="date"],
+    .cal-eventModal input[type="datetime-local"],
+    .cal-eventModal input[type="time"] {
+        accent-color: var(--ui-primary);
+    }
+
+        .cal-eventModal input[type="date"]:focus,
+        .cal-eventModal input[type="datetime-local"]:focus {
+            border-color: var(--ui-primary) !important;
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-primary) 25%, transparent) !important;
+            outline: none;
+        }
+
+/* -------------------------
+   Section container
+   ------------------------- */
+.cal-section {
+    border: 1px solid var(--border-divider);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--bg-secondary) 30%, var(--bg-card));
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+    .cal-section.is-open {
+        background: color-mix(in srgb, var(--bg-secondary) 45%, var(--bg-card));
+        border-color: var(--border-strong);
+    }
+
+
+/* -------------------------
+   Section header (label + switch)
+   ------------------------- */
+.cal-sectionHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    margin-bottom: 6px;
+}
+
+.cal-sectionHeaderLeft {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+
+.cal-sectionTitle {
+    font-weight: var(--font-regular);
+    font-size: var(--text-sm);
+    color: var(--text-primary);
+    min-width: 0;
+}
+
+.cal-sectionSwitch {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+}
+
+
+/* -------------------------
+   Field wrapper / dropdown menu
+   ------------------------- */
+.cal-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.cal-selectBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-xs);
+    width: 100%;
+}
+
+    .cal-selectBtn .text-truncate {
+        min-width: 0;
+        max-width: 100%;
+    }
+
+.cal-selectMenu {
+    width: 100%;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+
+/* -------------------------
+   Make inputs inside sections look like normal inputs
+   (this is the "pink fields should match yellow fields" fix)
+   ------------------------- */
+.cal-eventModal .cal-section input.cal-input,
+.cal-eventModal .cal-section textarea.cal-input,
+.cal-eventModal .cal-section select.cal-input,
+.cal-eventModal .cal-section .form-control,
+.cal-eventModal .cal-section .form-select,
+.cal-eventModal .cal-section button.cal-input {
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-default) !important;
+}
+
+    /* Placeholder */
+    .cal-eventModal .cal-section input.cal-input::placeholder,
+    .cal-eventModal .cal-section textarea.cal-input::placeholder,
+    .cal-eventModal .cal-section .form-control::placeholder {
+        color: var(--text-muted);
+    }
+
+    /* Focus */
+    .cal-eventModal .cal-section input.cal-input:focus,
+    .cal-eventModal .cal-section textarea.cal-input:focus,
+    .cal-eventModal .cal-section select.cal-input:focus,
+    .cal-eventModal .cal-section button.cal-input:focus,
+    .cal-eventModal .cal-section .form-control:focus,
+    .cal-eventModal .cal-section .form-select:focus,
+    .cal-eventModal .cal-section input.cal-input:focus-visible,
+    .cal-eventModal .cal-section textarea.cal-input:focus-visible,
+    .cal-eventModal .cal-section select.cal-input:focus-visible,
+    .cal-eventModal .cal-section button.cal-input:focus-visible,
+    .cal-eventModal .cal-section .form-control:focus-visible,
+    .cal-eventModal .cal-section .form-select:focus-visible {
+        border-color: var(--border-focus) !important;
+        box-shadow: var(--shadow-focus) !important;
+        outline: none;
+    }
+
+
+/* -------------------------
+   Mini lists/rows inside sections
+   ------------------------- */
+.cal-miniList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.cal-miniRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+}
+
+.cal-miniInput {
+    width: auto;
+    flex: 0 0 auto;
+}
+
+.cal-miniMinutes {
+    width: 88px;
+    max-width: 88px;
+}
+
+.cal-miniActions {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+
+/* -------------------------
+   Chips
+   ------------------------- */
+.cal-chipRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.cal-chip {
+    appearance: none;
+    border: 1px solid var(--border-divider);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    padding: 6px 10px;
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    cursor: pointer;
+}
+
+    .cal-chip.is-on {
+        border-color: var(--border-strong);
+        color: var(--text-primary);
+        background: color-mix(in srgb, var(--bg-secondary) 45%, var(--bg-card));
+    }
+
+
+/* -------------------------
+   Time row layout + All-day pill
+   ------------------------- */
+.cal-timeRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 10px;
+    align-items: end;
+}
+
+.cal-alldayField {
+    display: flex;
+    align-items: flex-end;
+    padding-bottom: 0;
+}
+
+.cal-alldayPill {
+    width: 100%;
+    height: var(--input-height);
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    padding: var(--space-sm) var(--space-md);
+    font-size: var(--text-sm);
+    font-weight: var(--font-regular);
+    line-height: 1;
+    transition: background var(--transition-fast) var(--ease-default), border-color var(--transition-fast) var(--ease-default), box-shadow var(--transition-fast) var(--ease-default), color var(--transition-fast) var(--ease-default);
+}
+
+    .cal-alldayPill:hover {
+        background: var(--bg-hover);
+        box-shadow: var(--shadow-hover);
+    }
+
+    .cal-alldayPill:focus-visible {
+        outline: none;
+        box-shadow: var(--shadow-focus);
+        border-color: var(--border-focus);
+    }
+
+    .cal-alldayPill.is-on {
+        background: var(--ui-primary);
+        border-color: var(--ui-primary);
+        color: var(--text-inverse, #fff);
+        box-shadow: var(--shadow-focus);
+    }
+
+
+/* -------------------------
+   Switch (design tokens only)
+   ------------------------- */
+.cal-switch {
+    --switch-w: 44px;
+    --switch-h: 24px;
+    --switch-pad: 3px;
+    appearance: none;
+    -webkit-appearance: none;
+    width: var(--switch-w);
+    height: var(--switch-h);
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-default);
+    background: var(--bg-secondary);
+    position: relative;
+    outline: none;
+    cursor: pointer;
+    transition: background var(--transition-fast) var(--ease-default), border-color var(--transition-fast) var(--ease-default), box-shadow var(--transition-fast) var(--ease-default);
+}
+
+    .cal-switch::after {
+        content: "";
+        position: absolute;
+        top: var(--switch-pad);
+        left: var(--switch-pad);
+        width: calc(var(--switch-h) - (var(--switch-pad) * 2));
+        height: calc(var(--switch-h) - (var(--switch-pad) * 2));
+        border-radius: var(--radius-full);
+        background: var(--bg-card);
+        box-shadow: var(--shadow-card);
+        transition: transform var(--transition-fast) var(--ease-default);
+    }
+
+    .cal-switch:checked {
+        background: var(--ui-primary);
+        border-color: var(--ui-primary);
+    }
+
+        .cal-switch:checked::after {
+            transform: translateX(calc(var(--switch-w) - var(--switch-h)));
+        }
+
+    .cal-switch:focus-visible {
+        box-shadow: var(--shadow-focus);
+        border-color: var(--border-focus);
+    }
+
+
+/* -------------------------
+   Checklist layout: always one row
+   ------------------------- */
+.cal-miniRowChecklist {
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.cal-checklistBox {
+    flex: 0 0 auto;
+    margin: 0;
+}
+
+.cal-checklistInput {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.cal-checklistTrash {
+    flex: 0 0 auto;
+}
+
+
+/* Full width plus button under list */
+.cal-checklistAddBtn {
+    width: 100%;
+    min-height: 40px;
+    justify-content: center;
+}
+
+.cal-dayRowIconBtn.cal-checklistAddBtn {
+    width: 100%;
+}
+
+
+/* -------------------------
+   Reminders row layout (time + text + remove btn)
+   ------------------------- */
+.cal-remRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.cal-remRemoveBtn {
+    width: 34px;
+    height: 34px;
+}
+
+/* Reminders row layout */
+.cal-reminderRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr; /* channel, preset, custom */
+    gap: 10px;
+    width: 100%;
+}
+
+.cal-reminderCol {
+    min-width: 0;
+}
+
+.cal-reminderCustomWrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.cal-reminderMinutes {
+    width: 100%;
+}
+
+.cal-reminderUnit {
+    flex: 0 0 auto;
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+/* Location row layout */
+.cal-locationRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.cal-locationInput {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.cal-locationIconLink {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    color: inherit;
+    flex: 0 0 auto;
+}
+
+.cal-locationIconBtn {
+    flex: 0 0 auto;
+}
+
+.cal-locationMapPreview {
+    margin-top: var(--space-sm);
+    border: 1px solid var(--border-divider);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--bg-card);
+    height: 180px;
+}
+
+    .cal-locationMapPreview iframe {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border: 0;
+    }
+
+/* -------------------------
+   Responsive (mobile)
+   ------------------------- */
+@media (max-width: 575.98px) {
+    .cal-sectionHeaderLeft {
+        width: 100%;
+    }
+
+    .cal-timeRow {
+        grid-template-columns: 1fr;
+        align-items: stretch;
+    }
+
+    .cal-alldayField {
+        align-items: stretch;
+    }
+
+    .cal-alldayPill {
+        width: 100%;
+    }
+
+    .cal-miniRowChecklist {
+        gap: var(--space-xs);
+    }
+
+    .cal-reminderRow {
+        grid-template-columns: 1fr;
+    }
+
+    .cal-locationMapPreview {
+        height: 160px;
+    }
+}

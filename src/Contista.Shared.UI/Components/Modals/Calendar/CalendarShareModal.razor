@@ -1,0 +1,390 @@
+﻿@* CalendarShareModal *@
+
+@using Contista.Shared.Core.DTO.Calendar
+@using Contista.Shared.Core.Exceptions.Calendar
+@using Contista.Shared.Core.Http
+@using Contista.Shared.Core.Interfaces.Calendar
+@using Contista.Shared.Core.Models.Calendar
+@using Contista.Shared.Core.Offline.Interfaces
+@inject ICalendarInvitesService CalendarInvites
+@inject INetworkStatus Network
+
+@if (IsOpen)
+{
+    <div class="cal-modalOverlay cal-shareOverlay">
+        <div class="cal-modal cal-shareModal" tabindex="0"
+             @onkeydown="HandleKeyDown"
+             @onclick:stopPropagation="true">
+            <div class="cal-modalHeader">
+                <div>
+                    <div class="cal-modalTitle">@Loc.GetOr("Page_CalendarShareModal_Title", "Share calendar")</div>
+                    <div class="cal-modalSub">@Loc.GetOr("Page_CalendarShareModal_SubTitle", "Invite someone by email")</div>
+                </div>
+
+                <button type="button" class="cal-modalClose" @onclick="CloseAsync" aria-label="@Loc.GetOr("Common_Actions_Close", "Close")">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+
+            <div class="cal-modalBody">
+                @if (!Network.IsOnline)
+                {
+                    <div class="alert alert-info my-2">
+                        <div class="small">@Loc.GetOr("Page_CalendarShareModal_Offline", "You must be online to share calendars.")</div>
+                    </div>
+                }
+
+                <div class="cal-formRow">
+                    <label class="cal-label">@Loc.GetOr("Page_CalendarShareModal_Calendar_Label", "Calendar")</label>
+
+                    <div class="dropdown w-100 cal-dd">
+                        <button type="button"
+                                class="cal-input dropdown-toggle w-100 d-flex align-items-center justify-content-between"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false"
+                                disabled="@(!Network.IsOnline || IsSending || ShareableCalendars.Count == 0)"
+                                data-testid="calendar-share-calendar-select">
+                            <span class="text-truncate">@GetSelectedCalendarLabel()</span>
+                        </button>
+
+                        <ul class="dropdown-menu w-100 p-1 cal-dd-menu">
+                            @foreach (var c in ShareableCalendars)
+                            {
+                                var isActive = string.Equals(c.CalendarId, SelectedCalendarId, StringComparison.Ordinal);
+
+                                <li>
+                                    <button type="button"
+                                            class="dropdown-item d-flex align-items-center justify-content-between @(isActive ? "active" : "")"
+                                            @onclick="() => SelectCalendar(c.CalendarId)">
+                                        <span class="text-truncate">@c.Name</span>
+
+                                        @if (isActive)
+                                        {
+                                            <i class="bi bi-check2"></i>
+                                        }
+                                    </button>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="cal-formRow">
+                    <label class="cal-label" for="calendar-share-email">@Loc.GetOr("Page_CalendarShareModal_Email_Label", "Email")</label>
+                    <input id="calendar-share-email" class="cal-input" placeholder="@Loc.GetOr("Page_CalendarShareModal_Email_Placeholder", "name@email.com")" @bind="Email" data-testid="calendar-share-email-input" />
+                    <div class="small text-muted mt-1">@Loc.GetOr("Page_CalendarShareModal_Email_Hint", "The recipient must already have an account.")</div>
+                </div>
+
+                <div class="cal-formRow">
+                    <label class="cal-label">@Loc.GetOr("Page_CalendarShareModal_Role_Label", "Role")</label>
+
+                    <div class="dropdown w-100 cal-dd">
+                        <button type="button"
+                                class="cal-input dropdown-toggle w-100 d-flex align-items-center justify-content-between"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false"
+                                disabled="@(!Network.IsOnline || IsSending)"
+                                data-testid="calendar-share-role-select">
+                            <span class="text-truncate">@GetRoleLabel(Role)</span>
+                        </button>
+
+                        <ul class="dropdown-menu w-100 p-1 cal-dd-menu">
+                            <li>
+                                <button type="button"
+                                        class="dropdown-item d-flex align-items-center justify-content-between @(Role == CalendarMemberRole.Reader ? "active" : "")"
+                                        @onclick="() => SelectRole(CalendarMemberRole.Reader)">
+                                    <span class="text-truncate">@GetRoleLabel(CalendarMemberRole.Reader)</span>
+                                    @if (Role == CalendarMemberRole.Reader)
+                                    {
+                                        <i class="bi bi-check2"></i>
+                                    }
+                                </button>
+                            </li>
+
+                            <li>
+                                <button type="button"
+                                        class="dropdown-item d-flex align-items-center justify-content-between @(Role == CalendarMemberRole.Editor ? "active" : "")"
+                                        @onclick="() => SelectRole(CalendarMemberRole.Editor)">
+                                    <span class="text-truncate">@GetRoleLabel(CalendarMemberRole.Editor)</span>
+                                    @if (Role == CalendarMemberRole.Editor)
+                                    {
+                                        <i class="bi bi-check2"></i>
+                                    }
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="cal-formRow cal-inline">
+                    <label class="cal-check">
+                        <input type="checkbox" @bind="CanShare" data-testid="calendar-share-can-share" />
+                        @Loc.GetOr("Page_CalendarShareModal_CanShare", "Can share")
+                    </label>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(InlineInfo))
+                {
+                    <div class="alert alert-info my-2">
+                        <div class="small">@InlineInfo</div>
+                    </div>
+                }
+            </div>
+
+            <div class="cal-modalFooter">
+                <button type="button" class="btn btn-ghost" data-testid="calendar-share-cancel" @onclick="CloseAsync">@Loc.GetOr("Common_Cancel", "Cancel")</button>
+                <div style="flex:1"></div>
+
+                <button type="button"
+                        class="btn btn-primary"
+                        data-testid="calendar-share-send"
+                        disabled="@(!CanSend)"
+                        @onclick="SendInviteAsync">
+                    @(IsSending ? Loc.GetOr("Common_Sending", "Sending…") : Loc.GetOr("Page_CalendarShareModal_SendInvite", "Send invite"))
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [CascadingParameter] public ILocalizationService Loc { get; set; } = default!;
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public EventCallback<bool> IsOpenChanged { get; set; }
+
+    // Skicka in bara de kalendrar som user får dela (owner eller canShare)
+    [Parameter] public List<CalendarDto> ShareableCalendars { get; set; } = new();
+    [Parameter] public EventCallback<string> OnInviteSent { get; set; }
+
+    private string? SelectedCalendarId;
+    private string Email = "";
+
+    private CalendarMemberRole _role = CalendarMemberRole.Reader;
+    private CalendarMemberRole Role
+    {
+        get => _role;
+        set
+        {
+            if (_role == value) return;
+            _role = value;
+            ApplyRoleDefaults(_role);
+        }
+    }
+
+    private bool CanEdit;
+    private bool CanShare;
+    private bool CanSeeDetails;
+
+    private string? InlineInfo;
+
+    private bool IsSending;
+    private int _sendVersion;
+
+    private bool CanSend =>
+        Network.IsOnline &&
+        !string.IsNullOrWhiteSpace(SelectedCalendarId) &&
+        IsValidEmail(Email) &&
+        !IsSending;
+
+    protected override void OnParametersSet()
+    {
+        if (!IsOpen) return;
+
+        InlineInfo = null;
+        CanShare = false;
+
+        var firstShareableId = ShareableCalendars?.FirstOrDefault()?.CalendarId;
+        if (string.IsNullOrWhiteSpace(firstShareableId))
+        {
+            SelectedCalendarId = null;
+        }
+        else if (string.IsNullOrWhiteSpace(SelectedCalendarId)
+            || ShareableCalendars.All(c => !string.Equals(c.CalendarId, SelectedCalendarId, StringComparison.Ordinal)))
+        {
+            SelectedCalendarId = firstShareableId;
+        }
+
+        ApplyRoleDefaults(Role);
+    }
+
+    private void SelectRole(CalendarMemberRole role)
+    {
+        if (!Network.IsOnline || IsSending)
+            return;
+
+        if (Role == role)
+            return;
+
+        Role = role;                 // behåller din setter-logik (ApplyRoleDefaults)
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private string GetRoleLabel(CalendarMemberRole role)
+        => role switch
+        {
+            CalendarMemberRole.Editor => Loc.GetOr("Page_CalendarShareModal_Role_Editor", "Editor"),
+            _ => Loc.GetOr("Page_CalendarShareModal_Role_Reader", "Reader")
+        };
+
+
+    private void ApplyRoleDefaults(CalendarMemberRole role)
+    {
+        if (role == CalendarMemberRole.Editor)
+        {
+            CanEdit = true;
+            CanSeeDetails = true;
+        }
+        else
+        {
+            CanEdit = false;
+            CanSeeDetails = true;
+        }
+    }
+
+    private string GetSelectedCalendarLabel()
+    {
+        var cal = ShareableCalendars?.FirstOrDefault(c =>
+            string.Equals(c.CalendarId, SelectedCalendarId, StringComparison.Ordinal));
+
+        return cal?.Name ?? Loc.GetOr("Common_Calendars", "Calendars");
+    }
+
+    private void SelectCalendar(string? calendarId)
+    {
+        if (!Network.IsOnline || IsSending)
+            return;
+
+        if (string.IsNullOrWhiteSpace(calendarId))
+            return;
+
+        if (string.Equals(SelectedCalendarId, calendarId, StringComparison.Ordinal))
+            return;
+
+        SelectedCalendarId = calendarId;
+
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SendInviteAsync()
+    {
+        if (IsSending)
+            return;
+
+        var sendVersion = ++_sendVersion;
+        InlineInfo = null;
+
+        if (!Network.IsOnline)
+        {
+            InlineInfo = Loc.GetOr("Page_CalendarShareModal_Offline", "You must be online to share calendars.");
+            return;
+        }
+
+        var calId = (SelectedCalendarId ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(calId)) return;
+
+        var email = (Email ?? "").Trim().ToLowerInvariant();
+        if (!IsValidEmail(email))
+        {
+            InlineInfo = Loc.GetOr("Page_CalendarShareModal_Email_Invalid", "Enter a valid email address.");
+            return;
+        }
+
+        var req = new InviteCalendarMemberRequest
+        {
+            Email = email,
+            Role = Role,
+            CanEdit = CanEdit,
+            CanShare = CanShare,
+            CanSeeDetails = CanSeeDetails
+        };
+
+        IsSending = true;
+
+        try
+        {
+            await CalendarInvites.InviteMemberAsync(calId, req, CancellationToken.None);
+
+            if (sendVersion != _sendVersion || !IsOpen)
+                return;
+
+            InlineInfo = Loc.GetOr("Page_CalendarShareModal_Invite_Sent", "Invite sent.");
+            Email = "";
+            await OnInviteSent.InvokeAsync(email);
+            await CloseAsync();
+        }
+        catch (ApiFailureException afx)
+        {
+            if (sendVersion == _sendVersion && IsOpen)
+                InlineInfo = ToFriendlyInviteError(afx.Failure);
+        }
+        catch
+        {
+            if (sendVersion == _sendVersion && IsOpen)
+                InlineInfo = Loc.GetOr("Page_CalendarShareModal_Invite_GenericError", "Could not send invite right now. Please try again.");
+        }
+        finally
+        {
+            if (sendVersion == _sendVersion)
+                IsSending = false;
+        }
+    }
+
+    private string ToFriendlyInviteError(ApiFailure failure)
+    {
+        if (failure.Kind == ApiFailureKind.Forbidden)
+            return Loc.GetOr("Page_CalendarShareModal_Invite_Forbidden", "You do not have permission to share this calendar.");
+
+        if (failure.Kind == ApiFailureKind.Unauthorized)
+            return Loc.GetOr("Page_CalendarShareModal_Invite_Unauthorized", "Your session has expired. Please sign in again.");
+
+        var code = failure.Code;
+        if (string.Equals(code, CalendarInviteErrorCodes.SelfInvite, StringComparison.OrdinalIgnoreCase))
+            return Loc.GetOr("Page_CalendarShareModal_Invite_Self", "You cannot invite yourself.");
+
+        if (string.Equals(code, CalendarInviteErrorCodes.UserNotFound, StringComparison.OrdinalIgnoreCase))
+            return Loc.GetOr("Page_CalendarShareModal_Invite_UserNotFound", "No user found with that email address.");
+
+        return failure.Kind switch
+        {
+            ApiFailureKind.Offline or ApiFailureKind.Timeout => Loc.GetOr("Page_CalendarShareModal_Offline", "You must be online to share calendars."),
+            ApiFailureKind.ServerError => Loc.GetOr("Page_CalendarShareModal_Invite_GenericError", "Could not send invite right now. Please try again."),
+            _ => Loc.GetOr("Page_CalendarShareModal_Invite_GenericError", "Could not send invite right now. Please try again.")
+        };
+    }
+
+
+    private static bool IsValidEmail(string? email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return false;
+
+        var value = email.Trim();
+        var at = value.IndexOf('@');
+        if (at <= 0 || at != value.LastIndexOf('@'))
+            return false;
+
+        var dot = value.LastIndexOf('.');
+        if (dot <= at + 1 || dot >= value.Length - 1)
+            return false;
+
+        if (value.Any(char.IsWhiteSpace))
+            return false;
+
+        return true;
+    }
+
+    private async Task CloseAsync()
+    {
+        _sendVersion++;
+        IsSending = false;
+        IsOpen = false;
+        InlineInfo = null;
+        await IsOpenChanged.InvokeAsync(false);
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+            await CloseAsync();
+    }
+}

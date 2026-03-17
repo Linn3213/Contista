@@ -1,0 +1,179 @@
+﻿:root { 
+    /* ========================================================= 
+        🎨 Brand/Accent 
+     ========================================================= */
+    --color-primary: #d4a574; /* huvudaccent */
+    --color-primary-hover: #b8956a;
+    --color-primary-soft: rgba(212,165,116,0.25);
+    --color-primary-weak: rgba(212,165,116,0.15);
+    --color-primary-dark: #b8956a; 
+    
+    /* ========================================================= 
+        🧱 Backgrounds
+     ========================================================= */
+    --color-bg-page: #fdfbf7;
+    --color-bg-page-gradient-1: #fdfbf7;
+    --color-bg-page-gradient-2: #f5f0e8;
+    --color-bg-page-gradient-3: #ede4d9;
+    --color-bg-page-gradient-4: rgba(184, 149, 106, 0.03);
+    --color-bg-loader: #f8fafc;
+    --color-bg-loader-circle: #3A80BA;
+    --color-bg-mini-loader: rgba(255, 255, 255, 0.9);
+    --color-bg-loader-overlay: rgba(255,255,255,0.7);
+    --color-bg-table-scrollbar: #adb5bd;
+    --color-bg-table-responsive-after: rgba(255,255,255,0.8);
+    --color-bg-surface: rgba(255,255,255,0.95); /* cards, sections */
+    --color-bg-surface-glass: rgba(255,255,255,0.4); /* main-content */
+    --color-bg-surface-hover: #f5f1eb;
+    --color-bg: var(--color-bg-page);
+    --color-bg-secondary: var(--color-bg-surface-hover);
+    --color-main-bg: var(--color-bg-page); 
+    
+    /* ========================================================= 
+        🧱 Accent colors (Pillars) 
+     ========================================================= */
+    --accent-1: #90c695; /* green */
+    --accent-2: #d4a574; /* gold */
+    --accent-3: #a8dadc; /* teal */
+    --accent-4: #ff8e53; /* coral */
+    --bg-strong: 0.13;
+    --bg-soft: 0.07; 
+    
+    /* ========================================================= 
+        📚 Sidebar/Nav 
+     ========================================================= */
+    --color-nav-bg: rgba(61,51,38,0.98);
+    --color-nav-bg-alt: rgba(74,63,50,0.98);
+    --color-nav-text: #ffffff;
+    --color-nav-text-active: #f4d4a0;
+    --color-nav-text-muted: #c9b299;
+    --color-nav-item-hover: rgba(212,165,116,0.15);
+    --color-nav-item-active: rgba(212,165,116,0.25);
+    --color-nav-box-active-1: rgba(212,165,116,0.30);
+    --color-nav-box-active-2: rgba(212,165,116,0.20); 
+    
+    /* ========================================================= 
+        ✍️ Text 
+     ========================================================= */
+    --color-text-primary: #2c2416;
+    --color-text-secondary: #6b5d4f;
+    --color-text-muted: #9b8f7e;
+    --color-text-inverse: #ffffff;
+    --color-text-validation: #e50000;
+    --color-text-validation-modified-not: #26b050;
+    --color-text-table-scroll-indicator: #6c757d;
+    --color-text-disable: rgba(44,36,22,0.35);
+    --color-text: var(--color-text-secondary);
+    --color-text-light: var(--color-text-inverse);
+    --color-text-dark: var(--color-text-primary); 
+    
+    /* ========================================================= 
+        🧩 Borders & Dividers 
+     ========================================================= */
+    --color-border-default: rgba(212,165,116,0.15);
+    --color-border-strong: rgba(212,165,116,0.3);
+    --color-border-top: #ccc; 
+    
+    /* ========================================================= 
+        🌫️ Shadows 
+     ========================================================= */
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 20px rgba(0,0,0,0.06);
+    --shadow-lg: 0 12px 40px rgba(0,0,0,0.1);
+    --shadow-accent: 0 8px 24px rgba(212,165,116,0.3);
+    --shadow-form-control-1: 0 1px 1px rgba(229, 103, 23, 0.075);
+    --shadow-form-control-2: 0 0 8px rgba(229, 103, 23, 0.6);
+    --shadow-form-control-focus: rgba(255,255,255,0.10); 
+    
+    /* ========================================================= 
+        📐 Radius 
+    ========================================================= */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 20px; 
+    
+    /* ========================================================= 
+        ⚡ Motion 
+     ========================================================= */
+    --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: 0.2s;
+    --transition-medium: 0.3s; 
+    
+    /* ========================================================= 
+        ✅ Status Colors 
+     ========================================================= */
+    --color-secondary: #6b5d4f; /* neutral/secondary text-ton */
+    --color-secondary-dark: #56493e;
+    --color-green: #90c695; /* success (lånar accent-1) */
+    --color-green-dark: #6fae7f;
+    --color-blue: #a8dadc; /* info (lånar accent-3) */
+    --color-blue-dark: #7fb8ba;
+    --color-pink: #ff6b6b; /* danger */
+    --color-pink-dark: #ee5555;
+    --color-accent: #d4a574; /* warning -> samma som brand */
+    --color-accent-dark: #b8956a; 
+    
+    /* ========================================================= 
+        Blazor-error 
+     ========================================================= */
+    --color-blazor-bg-error: #2b1f1f;
+    --color-blazor-text-error: #ffdada; 
+    
+    /* ========================================================= 
+        🧱 Pillers (Generic slots) 
+     ========================================================= */ 
+    /* Valfritt: semantiska alias (så UI kan prata “meaning”, inte färg) */
+    --pillar-1: var(--accent-1);
+    --pillar-2: var(--accent-2);
+    --pillar-3: var(--accent-3);
+    --pillar-4: var(--accent-4);
+    --pillar-self-help: var(--pillar-1);
+    --pillar-self-care: var(--pillar-2);
+    --pillar-self-growth: var(--pillar-3);
+    --pillar-my-story: var(--pillar-4); /* Smarta RGBA-varianter (för pillarbakgrunder, borders) */
+    --pillar-bg-strong: 0.13;
+    --pillar-bg-soft: 0.07;
+}
+
+/* ========================================================= 
+    🌙 Dark mode (Bootstrap 5.3+) Slår på när du sätter data-bs-theme="dark" på <html> eller <body> 
+ ========================================================= */
+
+[data-bs-theme="dark"] { /* Page + surfaces */
+    --color-bg-page: #14110c;
+    --color-bg-page-gradient-1: #14110c;
+    --color-bg-page-gradient-2: #18140e;
+    --color-bg-page-gradient-3: #1d1710;
+    --color-bg-loader-1: #1E1E1E;
+    --color-bg-loader-2: rgba(20, 17, 12, 0.92);
+    --color-bg-loader-circle: #FFB84D;
+    --color-bg-input: rgba(255,255,255,0.04);
+    --color-bg-surface: rgba(28, 22, 16, 0.96);
+    --color-bg-surface-glass: rgba(28, 22, 16, 0.55);
+    --color-bg-surface-hover: rgba(212,165,116,0.10);
+    --color-main-bg: var(--color-bg-page); /* Text */
+    --color-text-primary: #f5efe6;
+    --color-text-secondary: rgba(245,239,230,0.82);
+    --color-text-muted: rgba(245,239,230,0.62);
+    --color-text-disable: rgba(245,239,230,0.35); /* Borders + shadows */
+    --color-border-default: rgba(212,165,116,0.18);
+    --color-border-strong: rgba(212,165,116,0.32);
+    --color-border-tabbar: rgba(255,255,255,0.08);
+    --color-border-input-focus: rgba(212,165,116,0.45);
+    --shadow-sm: 0 2px 10px rgba(0,0,0,0.35);
+    --shadow-md: 0 6px 24px rgba(0,0,0,0.45);
+    --shadow-lg: 0 16px 48px rgba(0,0,0,0.55);
+    --shadow-accent: 0 10px 30px rgba(212,165,116,0.22); /* Sidebar */
+    --color-nav-bg: rgba(18, 14, 10, 0.98);
+    --color-nav-bg-alt: rgba(24, 19, 14, 0.98);
+    --color-nav-text: #f5efe6;
+    --color-nav-text-muted: rgba(245,239,230,0.70);
+    --color-nav-item-hover: rgba(212,165,116,0.12);
+    --color-nav-item-active: rgba(212,165,116,0.20); /* Brand accent (håll din guldiga identitet även i dark) */
+    --color-primary: #d4a574;
+    --color-primary-hover: #c49563;
+    --color-primary-soft: rgba(212,165,116,0.22);
+    --color-primary-weak: rgba(212,165,116,0.14);
+    --color-primary-dark: #c49563;
+}

@@ -1,0 +1,168 @@
+﻿@* Register.razor *@
+@page "/register"
+
+@inherits FormPageBase
+@inject IFirebaseAuthService AuthService
+@inject AppAuthStateProvider AuthState
+@inject IUserDataState<UserDataDto> UserState
+@inject IRegisterApi RegisterApi
+
+<div class="container my-4">
+    <div class="header h-line-accent mb-3">
+        <h1 class="page-title">@Loc["Page_Register_Title"]</h1>
+        <p class="page-subtitle text-muted">@Loc["Page_Register_SubTitle"]</p>
+    </div>
+
+    <div class="card p-4">
+        <EditForm Model="@Model" OnValidSubmit="HandleRegister" FormName="register">
+            <DataAnnotationsValidator />
+
+            <div class="row g-3">
+                <div class="col-12">
+                    <ValidationSummary class="text-danger" />
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label" for="email">@Loc["Page_Register_Email_Label"]</label>
+                    <InputText id="email"
+                               class="form-control"
+                               type="email"
+                               @bind-Value="Model.Email"
+                               autocomplete="email" />
+                    <ValidationMessage For="@(() => Model.Email)" class="text-danger small" />
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label" for="firstname">@Loc["Page_Register_FirstName_Label"]</label>
+                    <InputText id="firstname"
+                               class="form-control"
+                               @bind-Value="Model.FirstName"
+                               autocomplete="given-name" />
+                    <ValidationMessage For="@(() => Model.FirstName)" class="text-danger small" />
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label" for="lastname">@Loc["Page_Register_LastName_Label"]</label>
+                    <InputText id="lastname"
+                               class="form-control"
+                               @bind-Value="Model.LastName"
+                               autocomplete="family-name" />
+                    <ValidationMessage For="@(() => Model.LastName)" class="text-danger small" />
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label" for="password">@Loc["Page_Register_Password_Label"]</label>
+                    <InputText id="password"
+                               class="form-control"
+                               type="password"
+                               @bind-Value="Model.Password"
+                               autocomplete="new-password" />
+                    <div class="small text-muted mt-1">@Loc["Page_Register_PasswordMinLength_Message"]</div>
+                    <ValidationMessage For="@(() => Model.Password)" class="text-danger small" />
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label" for="confirm">@Loc["Page_Register_ConfirmPassword_Label"]</label>
+                    <InputText id="confirm"
+                               class="form-control"
+                               type="password"
+                               @bind-Value="Model.ConfirmPassword"
+                               autocomplete="new-password" />
+                    <ValidationMessage For="@(() => Model.ConfirmPassword)" class="text-danger small" />
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(Message))
+                {
+                    <div class="col-12">
+                        <div class="alert @(IsError ? "alert-danger" : "alert-success") mb-0" role="alert">
+                            @Message
+                        </div>
+                    </div>
+                }
+
+                <div class="col-12 d-flex gap-2 flex-wrap mt-2 register-actions">
+                    <button class="btn btn-primary"
+                            type="submit"
+                            disabled="@IsBusy">
+                        @(IsBusy? Loc["Page_Register_CreatingAccount_Loader"] : Loc["Page_Register_Register_Loader"])
+                    </button>
+
+                    <button class="btn btn-secondary"
+                            type="button"
+                            @onclick="GoToLogin"
+                            disabled="@IsBusy">
+                        @Loc["Page_Register_IAlreadyHaveAnAccount_Button"]
+                    </button>
+                </div>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private bool IsBusy;
+    private string? Message;
+    private bool IsError;
+
+    private RegisterModel Model = new();
+
+    protected override Task OnInitializedAsync()
+    {
+#if DEBUG
+        Model.Email = "linda06@test.com";
+        Model.FirstName = "Linda";
+        Model.LastName = "Johansson";
+        Model.Password = "123456lt!";
+        Model.ConfirmPassword = "123456lt!";
+#endif
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleRegister()
+    {
+        IsError = false;
+        Message = null;
+
+        if (Model.Password != Model.ConfirmPassword)
+        {
+            IsError = true;
+            Message = Loc["Page_Register_PasswordDoNotMatch_Message"];
+            return;
+        }
+
+        IsBusy = true;
+
+        try
+        {
+            var req = new RegisterRequest(
+                Email: Model.Email.Trim(),
+                Password: Model.Password,
+                FirstName: Model.FirstName.Trim(),
+                LastName: Model.LastName.Trim()
+            );
+
+            var ok = await RegisterApi.RegisterAsync(req);
+            if (!ok)
+                throw new InvalidOperationException(Loc["Page_Register_CouldNotCreateAccount_Message"]);
+
+            await AuthService.LogoutAsync();
+
+            UserState.Clear();
+            await AuthState.RefreshAsync(isLogout: true);
+
+            Nav.NavigateTo("/", replace: true);
+        }
+        catch (Exception ex)
+        {
+            IsError = true;
+            Message = ex.Message;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void GoToLogin() => Nav.NavigateTo("/");
+
+}

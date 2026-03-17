@@ -1,0 +1,192 @@
+﻿/* =========================================================
+   🧩 CARDS
+   ========================================================= */
+
+.card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-xs);
+    color: var(--text-secondary);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+    padding: var(--space-sm);
+    transition: box-shadow var(--transition-fast) var(--ease-default);
+}
+
+    .card:hover {
+        box-shadow: var(--shadow-hover);
+    }
+
+/* “Tone” cards (använd sparsamt; text är alltid högkontrast) */
+.card-primary {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+}
+
+.card-secondary {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-default);
+    color: var(--text-primary);
+}
+
+/* Feedback cards */
+.card-success {
+    background-color: var(--color-success-bg);
+    border-color: var(--border-success);
+    color: var(--color-success);
+}
+
+.card-danger {
+    background-color: var(--color-error-bg);
+    border-color: var(--border-error);
+    color: var(--color-error);
+}
+
+.card-warning {
+    background-color: var(--color-warning-bg);
+    border-color: var(--border-warning);
+    color: var(--color-warning);
+}
+
+.card-info {
+    background-color: var(--color-info-bg);
+    border-color: var(--border-info);
+    color: var(--color-info);
+}
+
+.card-light {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-default);
+    color: var(--text-secondary);
+}
+
+.card-dark {
+    background-color: var(--ui-focus);
+    border-color: var(--border-focus);
+    color: var(--bg-card);
+}
+
+/* Header */
+.card-header {
+    color: var(--text-primary);
+    font-weight: var(--font-semibold);
+    font-size: var(--text-base);
+    border-bottom: 1px solid var(--border-divider);
+    padding: 0.75rem 1rem;
+}
+
+.card-header-primary {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.card-header-secondary {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.card-header-success {
+    background-color: var(--color-success-bg);
+    color: var(--color-success);
+    border-bottom-color: var(--border-success);
+}
+
+.card-header-warning {
+    background-color: var(--color-warning-bg);
+    color: var(--color-warning);
+    border-bottom-color: var(--border-warning);
+}
+
+.card-header-danger {
+    background-color: var(--color-error-bg);
+    color: var(--color-error);
+    border-bottom-color: var(--border-error);
+}
+
+.card-header-info {
+    background-color: var(--color-info-bg);
+    color: var(--color-info);
+    border-bottom-color: var(--border-info);
+}
+
+.card-header-light {
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+}
+
+.card-header-dark {
+    background-color: var(--ui-focus);
+    color: var(--bg-card);
+    border-bottom-color: var(--border-focus);
+}
+
+/* Title */
+.card-title {
+    color: var(--text-primary);
+    font-weight: var(--font-semibold);
+    font-size: var(--text-h3);
+    margin: 0;
+}
+
+    .card-title small {
+        color: var(--text-secondary);
+        font-weight: var(--font-medium);
+        font-size: var(--text-sm);
+    }
+
+/* Body */
+.card-body {
+    color: var(--text-secondary);
+    background-color: var(--bg-card);
+    padding: 1rem;
+}
+
+.card-body-primary {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.card-body-secondary {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.card-body-success {
+    background-color: var(--color-success-bg);
+    color: var(--color-success);
+}
+
+.card-body-danger {
+    background-color: var(--color-error-bg);
+    color: var(--color-error);
+}
+
+.card-body-warning {
+    background-color: var(--color-warning-bg);
+    color: var(--color-warning);
+}
+
+.card-body-info {
+    background-color: var(--color-info-bg);
+    color: var(--color-info);
+}
+
+.card-body-light {
+    background-color: var(--bg-secondary);
+    color: var(--text-secondary);
+}
+
+.card-body-dark {
+    background-color: var(--ui-focus);
+    color: var(--bg-card);
+}
+
+/* Footer */
+.card-footer {
+    background-color: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    border-top: 1px solid var(--border-divider);
+    padding: 0.75rem 1rem;
+}

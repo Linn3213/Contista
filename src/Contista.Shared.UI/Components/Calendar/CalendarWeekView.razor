@@ -1,0 +1,440 @@
+﻿@* CalendarWeekView.razor *@
+@using System.Globalization
+@using Contista.Shared.Core.DTO.Calendar
+@using Contista.Shared.Core.Models.Calendar
+@using Contista.Shared.UI.Components.Common
+@using Contista.Shared.UI.Utils
+@using Contista.Shared.UI.Components.Calendar
+@using System.Timers
+@implements IDisposable
+
+<div class="cal-week">
+    <div class="cal-monthTop">
+        <button type="button"
+                class="cal-navBtn"
+                @onclick="PrevWeek"
+                aria-label="@Loc.GetOr("Page_Calendar_WeekView_PrevWeek", "Previous week")">
+            ‹
+        </button>
+
+        <div class="cal-monthLabel">@WeekLabel</div>
+
+        @if (ShowTodayButton)
+        {
+            <button type="button"
+                    class="btn btn-sm btn-ghost cal-todayBtn"
+                    @onclick="GoToCurrentWeek"
+                    title="@Loc.GetOr("Common_Actions_Today", "Today")"
+                    aria-label="@Loc.GetOr("Common_Actions_Today", "Today")">
+                <i class="bi bi-calendar-date" aria-hidden="true"></i>
+            </button>
+        }
+
+        <button type="button"
+                class="cal-navBtn"
+                @onclick="NextWeek"
+                aria-label="@Loc.GetOr("Page_Calendar_WeekView_NextWeek", "Next week")">
+            ›
+        </button>
+    </div>
+
+    <div class="cal-weekGrid">
+        <div class="cal-weekHours" aria-hidden="true">
+            <div class="cal-weekHoursHead">
+                <div class="cal-weekNumber">v. @WeekNumber</div>
+            </div>
+
+            @for (int h = WeekStartHour; h < WeekEndHour; h++)
+            {
+                <div class="cal-hour">@($"{h:00}:00")</div>
+            }
+        </div>
+
+        @foreach (var day in Days)
+        {
+            var allDayEvents = AllDayEventsForDay(day);
+            var timedLayouts = LayoutEventsForDay(day);
+
+            <div class="cal-weekCol">
+                <div class="cal-weekColHead"
+                     role="button"
+                     tabindex="0"
+                     @onclick="() => OnDayHeaderClicked.InvokeAsync(day)"
+                     @onkeydown="(e) => OnHeaderKeyDown(e, day)">
+
+                    <div class="cal-weekHeadTop">
+                        <div class="cal-weekHeadLeft">
+                            <div class="cal-weekDow">@day.ToString("ddd")</div>
+                            <div class="cal-weekDate">@day.Day</div>
+                        </div>
+
+                        <IconButton IconClass="bi bi-plus-lg"
+                                Title="@Loc.GetOr("Common_Actions_Add", "Add")"
+                                AriaLabel="@Loc.GetOr("Common_Actions_Add", "Add")"
+                                Size="sm"
+                                Tone="ghost"
+                                Class="cal-weekAddBtn"
+                                StopPropagation="true"
+                                OnClick="@(e => OnAddClicked.InvokeAsync(day))" />
+                    </div>
+
+                    <div class="cal-weekHeadAllDay">
+                        @foreach (var ev in allDayEvents)
+                        {
+                            <CalendarEventCard Ev="ev"
+                                               Variant="week-allday"
+                                               AccentHex="@ResolveCalendarHex(ev.CalendarId)"
+                                               CurrentUserId="@CurrentUserId"
+                                               OnClick="EventCallback.Factory.Create(this, () => OnEventClicked.InvokeAsync(ev))" />
+                        }
+                    </div>
+                </div>
+
+                <div class="cal-weekColBody"
+                     @ref="@_dayBodyRefs[day]"
+                     @onclick="(e) => HandleSlotClick(day, e)">
+
+                    @if (ShowCurrentTimeIndicator(day))
+                    {
+                        <div class="cal-nowLine" style="@GetCurrentTimeStyle()"
+                             aria-hidden="true">
+                            <span class="cal-nowDot"></span>
+                        </div>
+                    }
+
+                    @foreach (var item in timedLayouts)
+                    {
+                        <CalendarEventCard Ev="item.Event"
+                                           Variant="week"
+                                           AccentHex="@ResolveCalendarHex(item.Event.CalendarId)"
+                                           CurrentUserId="@CurrentUserId"
+                                           WeekStyle="@item.Style"
+                                           OnClick="EventCallback.Factory.Create(this, () => OnEventClicked.InvokeAsync(item.Event))" />
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [CascadingParameter] public ILocalizationService Loc { get; set; } = default!;
+
+    [Parameter] public DateTime WeekStart { get; set; }
+    [Parameter] public List<CalendarEventDto> Events { get; set; } = new();
+
+    [Parameter] public EventCallback<DateTime> OnTimeSlotClicked { get; set; }
+    [Parameter] public EventCallback<DateTime> OnAddClicked { get; set; }
+    [Parameter] public EventCallback<DateTime> OnWeekChanged { get; set; }
+
+    [Parameter] public string CurrentUserId { get; set; } = "";
+    [Parameter] public EventCallback<DateTime> OnDayHeaderClicked { get; set; }
+    [Parameter] public EventCallback<CalendarEventDto> OnEventClicked { get; set; }
+
+    [Parameter] public Func<string?, string>? CalendarIdToHex { get; set; }
+
+    private const int WeekStartHour = 6;
+    private const int WeekEndHour = 22; // exklusiv
+    private const int HourHeightPx = 56;
+    private const int BodyPaddingPx = 6;
+    private const int MinEventHeightPx = 28;
+    private const int ColumnGapPx = 2;
+
+    private System.Timers.Timer? _nowTimer;
+    private DateTime _nowLocal = DateTime.Now;
+
+    private readonly Dictionary<DateTime, ElementReference> _dayBodyRefs = new();
+
+    private string WeekLabel => $"{WeekStart:dd MMM} – {WeekStart.AddDays(6):dd MMM}";
+    private bool ShowTodayButton => WeekStart.Date != StartOfCurrentWeek();
+
+    private int WeekNumber
+        => ISOWeek.GetWeekOfYear(WeekStart.Date);
+
+    private static DateTime StartOfCurrentWeek()
+    {
+        var today = DateTime.Now.Date;
+        var diff = ((int)today.DayOfWeek + 6) % 7;
+        return today.AddDays(-diff);
+    }
+
+    private List<DateTime> Days =>
+        Enumerable.Range(0, 7)
+            .Select(i => WeekStart.Date.AddDays(i))
+            .ToList();
+
+
+    protected override void OnInitialized()
+    {
+        _nowLocal = DateTime.Now;
+
+        _nowTimer = new System.Timers.Timer(60_000);
+        _nowTimer.Elapsed += OnNowTimerElapsed;
+        _nowTimer.AutoReset = true;
+        _nowTimer.Start();
+    }
+
+    private async void OnNowTimerElapsed(object? sender, ElapsedEventArgs e)
+    {
+        _nowLocal = DateTime.Now;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private bool ShowCurrentTimeIndicator(DateTime day)
+    {
+        if (day.Date != _nowLocal.Date)
+            return false;
+
+        var nowHour = _nowLocal.TimeOfDay.TotalHours;
+        return nowHour >= WeekStartHour && nowHour < WeekEndHour;
+    }
+
+    private string GetCurrentTimeStyle()
+    {
+        var dayStart = _nowLocal.Date.AddHours(WeekStartHour);
+        var minutesFromTop = (_nowLocal - dayStart).TotalMinutes;
+        var topPx = BodyPaddingPx + (minutesFromTop / 60d) * HourHeightPx;
+
+        return $"top:{CssPx(topPx)};";
+    }
+
+    public void Dispose()
+    {
+        if (_nowTimer is not null)
+        {
+            _nowTimer.Elapsed -= OnNowTimerElapsed;
+            _nowTimer.Stop();
+            _nowTimer.Dispose();
+            _nowTimer = null;
+        }
+    }
+    private List<CalendarEventDto> EventsForDay(DateTime dayLocal)
+    {
+        var start = dayLocal.Date;
+        var end = start.AddDays(1);
+
+        return Events
+            .Where(e =>
+                DateTimes.ToLocalFromUtc(e.StartUtc) < end &&
+                DateTimes.ToLocalFromUtc(e.EndUtc) > start)
+            .OrderBy(e => DateTimes.ToLocalFromUtc(e.StartUtc))
+            .ThenBy(e => DateTimes.ToLocalFromUtc(e.EndUtc))
+            .ToList();
+    }
+
+    private List<CalendarEventDto> AllDayEventsForDay(DateTime dayLocal)
+    {
+        return EventsForDay(dayLocal)
+            .Where(e => !CalendarVisibilityPolicy.IsHidden(e, CurrentUserId))
+            .Where(e => e.IsAllDay)
+            .ToList();
+    }
+
+    private List<WeekEventLayout> LayoutEventsForDay(DateTime dayLocal)
+    {
+        var dayStart = dayLocal.Date.AddHours(WeekStartHour);
+        var dayEnd = dayLocal.Date.AddHours(WeekEndHour);
+
+        var blocks = EventsForDay(dayLocal)
+            .Where(e => !CalendarVisibilityPolicy.IsHidden(e, CurrentUserId))
+            .Where(e => !e.IsAllDay)
+            .Select(ev =>
+            {
+                var start = DateTimes.ToLocalFromUtc(ev.StartUtc);
+                var end = DateTimes.ToLocalFromUtc(ev.EndUtc);
+
+                var visibleStart = start < dayStart ? dayStart : start;
+                var visibleEnd = end > dayEnd ? dayEnd : end;
+
+                return new LayoutBlock
+                {
+                    Event = ev,
+                    Start = visibleStart,
+                    End = visibleEnd
+                };
+            })
+            .Where(x => x.End > x.Start)
+            .OrderBy(x => x.Start)
+            .ThenBy(x => x.End)
+            .ToList();
+
+        if (blocks.Count == 0)
+            return new();
+
+        var groups = BuildOverlapGroups(blocks);
+        var result = new List<WeekEventLayout>();
+
+        foreach (var group in groups)
+        {
+            AssignColumns(group);
+
+            foreach (var block in group)
+            {
+                result.Add(new WeekEventLayout
+                {
+                    Event = block.Event,
+                    Style = BuildWeekBlockStyle(block, dayStart)
+                });
+            }
+        }
+
+        return result;
+    }
+
+    private static List<List<LayoutBlock>> BuildOverlapGroups(List<LayoutBlock> blocks)
+    {
+        var groups = new List<List<LayoutBlock>>();
+        if (blocks.Count == 0) return groups;
+
+        var currentGroup = new List<LayoutBlock> { blocks[0] };
+        var currentGroupEnd = blocks[0].End;
+
+        for (var i = 1; i < blocks.Count; i++)
+        {
+            var block = blocks[i];
+
+            if (block.Start < currentGroupEnd)
+            {
+                currentGroup.Add(block);
+                if (block.End > currentGroupEnd)
+                    currentGroupEnd = block.End;
+            }
+            else
+            {
+                groups.Add(currentGroup);
+                currentGroup = new List<LayoutBlock> { block };
+                currentGroupEnd = block.End;
+            }
+        }
+
+        groups.Add(currentGroup);
+        return groups;
+    }
+
+    private static void AssignColumns(List<LayoutBlock> group)
+    {
+        var columnEndTimes = new List<DateTime>();
+
+        foreach (var block in group.OrderBy(x => x.Start).ThenBy(x => x.End))
+        {
+            var placed = false;
+
+            for (var col = 0; col < columnEndTimes.Count; col++)
+            {
+                if (block.Start >= columnEndTimes[col])
+                {
+                    block.Column = col;
+                    columnEndTimes[col] = block.End;
+                    placed = true;
+                    break;
+                }
+            }
+
+            if (!placed)
+            {
+                block.Column = columnEndTimes.Count;
+                columnEndTimes.Add(block.End);
+            }
+        }
+
+        var totalColumns = Math.Max(1, columnEndTimes.Count);
+
+        foreach (var block in group)
+            block.GroupColumnCount = totalColumns;
+    }
+
+    private string BuildWeekBlockStyle(LayoutBlock block, DateTime dayStart)
+    {
+        var minutesFromTop = (block.Start - dayStart).TotalMinutes;
+        var durationMinutes = (block.End - block.Start).TotalMinutes;
+
+        var topPx = BodyPaddingPx + (minutesFromTop / 60d) * HourHeightPx;
+        var heightPx = Math.Max(MinEventHeightPx, (durationMinutes / 60d) * HourHeightPx);
+
+        var totalColumns = Math.Max(1, block.GroupColumnCount);
+
+        var colWidthPercent = 100d / totalColumns;
+        var leftPercent = block.Column * colWidthPercent;
+        var rightPercent = 100d - ((block.Column + 1) * colWidthPercent);
+
+        var leftGapPx = block.Column == 0 ? 0d : ColumnGapPx / 2d;
+        var rightGapPx = block.Column == totalColumns - 1 ? 0d : ColumnGapPx / 2d;
+
+        return string.Concat(
+            "top:", CssPx(topPx), ";",
+            "height:", CssPx(heightPx), ";",
+            "left:calc(", CssPct(leftPercent), " + ", CssPx(leftGapPx), ");",
+            "right:calc(", CssPct(rightPercent), " + ", CssPx(rightGapPx), ");",
+            "width:auto;"
+        );
+    }
+
+    private async Task HandleSlotClick(DateTime dayLocal, Microsoft.AspNetCore.Components.Web.MouseEventArgs e)
+    {
+        // Y är relativ till elementets innehållsyta i Blazor MouseEventArgs.OffsetY
+        var offsetY = e.OffsetY - BodyPaddingPx;
+        if (offsetY < 0) offsetY = 0;
+
+        var minutesFromTop = (offsetY / (double)HourHeightPx) * 60d;
+
+        // Snappa till 30 min
+        var snappedMinutes = (int)(Math.Round(minutesFromTop / 30d) * 30d);
+
+        var clicked = dayLocal.Date.AddHours(WeekStartHour).AddMinutes(snappedMinutes);
+
+        if (clicked.Hour >= WeekEndHour)
+            clicked = dayLocal.Date.AddHours(WeekEndHour - 1).AddMinutes(30);
+
+        await OnTimeSlotClicked.InvokeAsync(clicked);
+    }
+
+    private string ResolveCalendarHex(string? calendarId)
+    {
+        if (CalendarIdToHex is null)
+            return "#2B2622";
+
+        var hex = CalendarIdToHex(calendarId);
+        return string.IsNullOrWhiteSpace(hex) ? "#2B2622" : hex;
+    }
+
+    private Task PrevWeek()
+        => OnWeekChanged.InvokeAsync(WeekStart.AddDays(-7));
+
+    private Task NextWeek()
+        => OnWeekChanged.InvokeAsync(WeekStart.AddDays(7));
+
+    private Task GoToCurrentWeek()
+        => OnWeekChanged.InvokeAsync(StartOfCurrentWeek());
+
+    private static string CssNum(double value)
+=> value.ToString("0.######", CultureInfo.InvariantCulture);
+
+    private static string CssPx(double value)
+        => $"{value.ToString("0.######", CultureInfo.InvariantCulture)}px";
+
+    private static string CssPct(double value)
+        => $"{value.ToString("0.######", CultureInfo.InvariantCulture)}%";
+
+    private Task OnHeaderKeyDown(KeyboardEventArgs e, DateTime day)
+    {
+        if (e.Key == "Enter" || e.Key == " " || e.Code == "Space")
+            return OnDayHeaderClicked.InvokeAsync(day);
+
+        return Task.CompletedTask;
+    }
+
+    private sealed class WeekEventLayout
+    {
+        public required CalendarEventDto Event { get; init; }
+        public required string Style { get; init; }
+    }
+
+    private sealed class LayoutBlock
+    {
+        public required CalendarEventDto Event { get; init; }
+        public required DateTime Start { get; init; }
+        public required DateTime End { get; init; }
+        public int Column { get; set; }
+        public int GroupColumnCount { get; set; } = 1;
+    }
+}

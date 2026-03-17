@@ -1,0 +1,582 @@
+﻿@* Sampels.razor *@
+@attribute [Feature(FeatureKey.Sampels)]
+@attribute [Authorize(Policy = "AdminOnly")]
+@page "/app/admin/sampels"
+@using System.Security.Claims
+@using Contista.Shared.UI.Components.Modals
+@using Contista.Shared.UI.Components.Sampels
+
+@inherits FormPageBase
+@inject AuthenticationStateProvider AuthStateProvider
+
+<div class="container">
+    <div class="header h-line-accent">
+        <h1 class="page-title">@Loc["Page_Samples_Title"]</h1>
+        <p class="page-subtitle">@Loc["Page_Samples_SubTitle"]</p>
+    </div>
+
+    <SamplesNav Title="@Loc["Page_Samples_SampelsNav_Title"]"
+                Items="@NavItems" />
+
+    @* Alerts *@
+    <div id="alerts" class="card mb-3 p-3">
+        <div class="d-flex align-items-center justify-content-between">
+            <h2 class="m-0">@Loc["Page_Samples_SampelsNav_Alerts_Item"]</h2>
+        </div>
+        <hr />
+        <div class="card-body p-0 pt-2">
+            <h3 class="mt-2">@Loc["Page_Samples_Normal_Alerts"]</h3>
+
+            <div class="row g-3">
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <div class="alert alert-primary">
+                        <i class="bi bi-exclamation-octagon me-2" aria-hidden="true"></i>
+                        Div alert-primary
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <div class="alert alert-secondary">
+                        <i class="bi bi-exclamation-octagon me-2" aria-hidden="true"></i>
+                        Div alert-secondary
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <div class="alert alert-success">
+                        <i class="bi bi-exclamation-octagon me-2" aria-hidden="true"></i>
+                        Div alert-success
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <div class="alert alert-info">
+                        <i class="bi bi-exclamation-octagon me-2" aria-hidden="true"></i>
+                        Div alert-info
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-octagon me-2" aria-hidden="true"></i>
+                        Div alert-warning
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-octagon me-2" aria-hidden="true"></i>
+                        Div alert-danger
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <div class="alert alert-light">
+                        <i class="bi bi-exclamation-octagon me-2" aria-hidden="true"></i>
+                        Div alert-light
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <div class="alert alert-dark">
+                        <i class="bi bi-exclamation-octagon me-2" aria-hidden="true"></i>
+                        Div alert-dark
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Badges *@
+    <div id="badges" class="card mb-3 p-3">
+        <div class="d-flex align-items-center justify-content-between">
+            <h2 class="m-0">@Loc["Page_Samples_SampelsNav_Bages_Item"]</h2>
+        </div>
+        <hr />
+        <div class="card-body p-0 pt-2">
+            <h3 class="mt-2">@Loc["Page_Samples_Normal_Badges"]</h3>
+
+            <div class="row g-3">
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <span class="badge bg-primary">
+                        <i class="bi bi-shield-slash me-2" aria-hidden="true"></i>
+                        bg-primary
+                    </span>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <span class="badge bg-secondary">
+                        <i class="bi bi-shield-slash me-2" aria-hidden="true"></i>
+                        bg-secondary
+                    </span>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <span class="badge bg-success">
+                        <i class="bi bi-shield-slash me-2" aria-hidden="true"></i>
+                        bg-success
+                    </span>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <span class="badge bg-info">
+                        <i class="bi bi-shield-slash me-2" aria-hidden="true"></i>
+                        bg-info
+                    </span>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <span class="badge bg-warning">
+                        <i class="bi bi-shield-slash me-2" aria-hidden="true"></i>
+                        bg-warning
+                    </span>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <span class="badge bg-danger">
+                        <i class="bi bi-shield-slash me-2" aria-hidden="true"></i>
+                        bg-danger
+                    </span>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <span class="badge bg-light">
+                        <i class="bi bi-shield-slash me-2" aria-hidden="true"></i>
+                        bg-light
+                    </span>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <span class="badge bg-dark">
+                        <i class="bi bi-shield-slash me-2" aria-hidden="true"></i>
+                        bg-dark
+                    </span>
+                </div>
+            </div>
+
+            <hr class="h-line" />
+
+            <h3 class="mt-2">@Loc["Page_Samples_Outline_Badges"]</h3>
+            <div class="row g-3">
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <span class="badge bg-outline-primary">
+                        <i class="bi bi-shield-slash me-2" aria-hidden="true"></i>
+                        bg-outline-primary
+                    </span>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <span class="badge bg-outline-secondary">
+                        <i class="bi bi-shield-slash me-2" aria-hidden="true"></i>
+                        bg-outline-secondary
+                    </span>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <span class="badge bg-outline-success">
+                        <i class="bi bi-shield-slash me-2" aria-hidden="true"></i>
+                        bg-outline-success
+                    </span>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <span class="badge bg-outline-info">
+                        <i class="bi bi-shield-slash me-2" aria-hidden="true"></i>
+                        bg-outline-info
+                    </span>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <span class="badge bg-outline-warning">
+                        <i class="bi bi-shield-slash me-2" aria-hidden="true"></i>
+                        bg-outline-warning
+                    </span>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <span class="badge bg-outline-danger">
+                        <i class="bi bi-shield-slash me-2" aria-hidden="true"></i>
+                        bg-outline-danger
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Buttons *@
+    <div id="buttons" class="card mb-3 p-3">
+        <div class="d-flex align-items-center justify-content-between">
+            <h2 class="m-0">@Loc["Page_Samples_SampelsNav_Buttons_Item"]</h2>
+        </div>
+        <hr />
+        <div class="card-body p-0 pt-2">
+            <h3 class="mt-2">@Loc["Page_Samples_Normal_Buttons"]</h3>
+
+            <div class="row g-3">
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <button type="button" class="btn">
+                        <i class="bi bi-arrow-clockwise me-2" aria-hidden="true"></i>
+                        Button btn
+                    </button>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <button type="button" class="btn btn-primary">
+                        <i class="bi bi-arrow-clockwise me-2" aria-hidden="true"></i>
+                        Button btn-primary
+                    </button>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <button type="button" class="btn btn-secondary">
+                        <i class="bi bi-arrow-clockwise me-2" aria-hidden="true"></i>
+                        Button btn-secondary
+                    </button>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <button type="button" class="btn btn-success">
+                        <i class="bi bi-arrow-clockwise me-2" aria-hidden="true"></i>
+                        Button btn-success
+                    </button>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <button type="button" class="btn btn-info">
+                        <i class="bi bi-arrow-clockwise me-2" aria-hidden="true"></i>
+                        Button btn-info
+                    </button>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <button type="button" class="btn btn-warning">
+                        <i class="bi bi-arrow-clockwise me-2" aria-hidden="true"></i>
+                        Button btn-warning
+                    </button>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <button type="button" class="btn btn-danger">
+                        <i class="bi bi-arrow-clockwise me-2" aria-hidden="true"></i>
+                        Button btn-danger
+                    </button>
+                </div>
+            </div>
+
+            <hr class="h-line" />
+
+            <h3 class="mt-2">@Loc["Page_Samples_Outline_Buttons"]</h3>
+            <div class="row g-3">
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <button type="button" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-clockwise me-2" aria-hidden="true"></i>
+                        Button btn-outline-primary
+                    </button>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <button type="button" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-clockwise me-2" aria-hidden="true"></i>
+                        Button btn-outline-secondary
+                    </button>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <button type="button" class="btn btn-outline-success">
+                        <i class="bi bi-arrow-clockwise me-2" aria-hidden="true"></i>
+                        Button btn-outline-success
+                    </button>
+                </div>
+            </div>
+
+            <hr class="h-line" />
+
+            <h3 class="mt-2">@Loc["Page_Samples_Link_Buttons"]</h3>
+            <div class="row g-3">
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <button type="button" class="btn btn-link">
+                        <i class="bi bi-arrow-clockwise me-2" aria-hidden="true"></i>
+                        Button btn-link
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Cards *@
+    <div id="cards" class="card mb-3 p-3">
+        <div class="d-flex align-items-center justify-content-between">
+            <h2 class="m-0">@Loc["Page_Samples_SampelsNav_Cards_Item"]</h2>
+        </div>
+        <hr />
+        <div class="card-body p-0 pt-2">
+            <h3 class="mt-2">@Loc["Page_Samples_Normal_Cards"]</h3>
+
+            <div class="row g-3">
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <div class="card">
+                        <div class="card-header">Card Header</div>
+                        <div class="card-body">
+                            <div class="card-title">Card Title</div>
+                            <div class="card-title small">Card Small Title</div>
+                            <p class="mb-0">
+                                <i class="bi bi-credit-card-2-front me-2" aria-hidden="true"></i>
+                                This is some text within a card body.
+                            </p>
+                        </div>
+                        <div class="card-footer">Card Footer</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Design tokens *@
+    <div id="tokens" class="card mb-3 p-3">
+        <div class="d-flex align-items-center justify-content-between">
+            <h2 class="m-0">@Loc["Page_Samples_SampelsNav_DesignTokens_Item"]</h2>
+        </div>
+        <hr />
+        <div class="card-body p-0 pt-2">
+            <DesignTokens CssPath="_content/Contista.Shared.UI/css/DesignTokens.css" />
+        </div>
+    </div>
+
+    @* Horizontal lines *@
+    <div id="lines" class="card mb-3 p-3">
+        <div class="d-flex align-items-center justify-content-between">
+            <h2 class="m-0">@Loc["Page_Samples_SampelsNav_HorizontalLines_Item"]</h2>
+        </div>
+        <hr />
+        <div class="card-body p-0 pt-2">
+            <h3 class="mt-3">@Loc["Page_Samples_Normal_HorizontalLines"]</h3>
+            <div class="row g-3">
+                <div class="col-12">
+                    <hr />
+                </div>
+                <div class="col-12">
+                    <hr class="h-line" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Progress bars *@
+    <div id="progress" class="card mb-3 p-3">
+        <div class="d-flex align-items-center justify-content-between">
+            <h2 class="m-0">@Loc["Page_Samples_SampelsNav_ProgressBars_Item"]</h2>
+        </div>
+        <hr />
+        <div class="card-body p-0 pt-2">
+            <h3 class="mt-2">@Loc["Page_Samples_Normal_ProgressBars"]</h3>
+
+            <div class="row g-3">
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <div class="mb-2">Progressbar success</div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-success" role="progressbar"
+                             style="width: 80%;"
+                             aria-valuenow="80"
+                             aria-valuemin="0"
+                             aria-valuemax="100"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Typography *@
+    <div id="typography" class="card mb-3 p-3">
+        <div class="d-flex align-items-center justify-content-between">
+            <h2 class="m-0">@Loc["Page_Samples_SampelsNav_Typography_Item"]</h2>
+        </div>
+        <hr />
+        <div class="card-body p-0 pt-2">
+            <h3 class="mt-2">@Loc["Page_Samples_Normal_Typography"]</h3>
+
+            <div class="row g-3">
+                <div class="col-12 col-md-6">
+                    <div class="page-title">Page title</div>
+                    <div class="page-subtitle">Page subtitle</div>
+                </div>
+
+                <div class="col-12">
+                    <hr class="h-line" />
+                </div>
+
+                <div class="col-6 col-lg-2"><h1>h1</h1></div>
+                <div class="col-6 col-lg-2"><h2>h2</h2></div>
+                <div class="col-6 col-lg-2"><h3>h3</h3></div>
+                <div class="col-6 col-lg-2"><h4>h4</h4></div>
+                <div class="col-6 col-lg-2"><h5>h5</h5></div>
+                <div class="col-6 col-lg-2"><h6>h6</h6></div>
+
+                <div class="col-12">
+                    <hr class="h-line" />
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <div class="small">small text</div>
+                    <div class="text-muted">text-muted text</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Confirm modal demo *@
+    <div id="confirmmodal" class="card mb-3 p-3">
+        <div class="d-flex align-items-center justify-content-between">
+            <h2 class="m-0">@Loc["Page_Samples_SampelsNav_ConfirmModal_Item"]</h2>
+        </div>
+        <hr />
+        <div class="card-body p-0 pt-2">
+            <h3 class="mt-2">@Loc["Page_Samples_Normal_ConfirmModal"]</h3>
+
+            <div class="row g-3">
+                
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <button type="button" class="btn btn-outline-primary"
+                            @onclick="OnConfirmOpenPrimary">
+                        <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
+                        @Loc["Page_Samples_ConfirmModalSampel_Show_Button"]
+                    </button>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <button type="button" class="btn btn-outline-secondary"
+                            @onclick="OnConfirmOpenSecondary">
+                        <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
+                        @Loc["Page_Samples_ConfirmModalSampel_Show_Button"]
+                    </button>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <button type="button" class="btn btn-outline-success"
+                            @onclick="OnConfirmOpenSuccess">
+                        <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
+                        @Loc["Page_Samples_ConfirmModalSampel_Show_Button"]
+                    </button>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <button type="button" class="btn btn-outline-info"
+                            @onclick="OnConfirmOpenInfo">
+                        <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
+                        @Loc["Page_Samples_ConfirmModalSampel_Show_Button"]
+                    </button>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <button type="button" class="btn btn-outline-warning"
+                            @onclick="OnConfirmOpenWarning">
+                        <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
+                        @Loc["Page_Samples_ConfirmModalSampel_Show_Button"]
+                    </button>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <button type="button" class="btn btn-outline-danger"
+                            @onclick="OnConfirmOpenDanger">
+                        <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
+                        @Loc["Page_Samples_ConfirmModalSampel_Show_Button"]
+                    </button>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+
+    <ConfirmModal @ref="_confirmClosePrimary"
+              ModalOptions="@(new { backdrop = false, keyboard = false })"
+              Title="@($"Primary {@Loc.GetOr("Page_Samples_ConfirmModalSampel_Title", "Delete?")}")"
+              Message="@Loc["Page_Samples_ConfirmModalSampel_Message"]"
+              Variant="primary"
+              CancelText="@Loc.GetOr("Common_Actions_Cancel", "Cancel")"
+              ConfirmText="@Loc.GetOr("Common_Actions_Delete", "Delete")"
+              OnConfirm="OnConfirmCloseClosed" />
+
+    <ConfirmModal @ref="_confirmCloseSecondary"
+                  ModalOptions="@(new { backdrop = false, keyboard = false })"
+                  Title="@($"Secondary {@Loc.GetOr("Page_Samples_ConfirmModalSampel_Title", "Delete?")}")"
+                  Message="@Loc["Page_Samples_ConfirmModalSampel_Message"]"
+                  Variant="secondary"
+                  CancelText="@Loc.GetOr("Common_Actions_Cancel", "Cancel")"
+                  ConfirmText="@Loc.GetOr("Common_Actions_Delete", "Delete")"
+                  OnConfirm="OnConfirmCloseClosed" />
+
+    <ConfirmModal @ref="_confirmCloseWarning"
+                  ModalOptions="@(new { backdrop = false, keyboard = false })"
+                  Title="@($"Warning {@Loc.GetOr("Page_Samples_ConfirmModalSampel_Title", "Delete?")}")"
+                  Message="@Loc["Page_Samples_ConfirmModalSampel_Message"]"
+                  Variant="warning"
+                  CancelText="@Loc.GetOr("Common_Actions_Cancel", "Cancel")"
+                  ConfirmText="@Loc.GetOr("Common_Actions_Delete", "Delete")"
+                  OnConfirm="OnConfirmCloseClosed" />
+
+    <ConfirmModal @ref="_confirmCloseDanger"
+                  ModalOptions="@(new { backdrop = false, keyboard = false })"
+                  Title="@($"Danger {@Loc.GetOr("Page_Samples_ConfirmModalSampel_Title", "Delete?")}")"
+                  Message="@Loc["Page_Samples_ConfirmModalSampel_Message"]"
+                  Variant="danger"
+                  CancelText="@Loc.GetOr("Common_Actions_Cancel", "Cancel")"
+                  ConfirmText="@Loc.GetOr("Common_Actions_Delete", "Delete")"
+                  OnConfirm="OnConfirmCloseClosed" />
+
+    <ConfirmModal @ref="_confirmCloseInfo"
+                  ModalOptions="@(new { backdrop = false, keyboard = false })"
+                  Title="@($"Info {@Loc.GetOr("Page_Samples_ConfirmModalSampel_Title", "Delete?")}")"
+                  Message="@Loc["Page_Samples_ConfirmModalSampel_Message"]"
+                  Variant="info"
+                  CancelText="@Loc.GetOr("Common_Actions_Cancel", "Cancel")"
+                  ConfirmText="@Loc.GetOr("Common_Actions_Delete", "Delete")"
+                  OnConfirm="OnConfirmCloseClosed" />
+
+    <ConfirmModal @ref="_confirmCloseSuccess"
+                  ModalOptions="@(new { backdrop = false, keyboard = false })"
+                  Title="@($"Success {@Loc.GetOr("Page_Samples_ConfirmModalSampel_Title", "Delete?")}")"
+                  Message="@Loc["Page_Samples_ConfirmModalSampel_Message"]"
+                  Variant="success"
+                  CancelText="@Loc.GetOr("Common_Actions_Cancel", "Cancel")"
+                  ConfirmText="@Loc.GetOr("Common_Actions_Delete", "Delete")"
+                  OnConfirm="OnConfirmCloseClosed" />
+</div>
+
+@code {
+    private ConfirmModal? _confirmClosePrimary;
+    private ConfirmModal? _confirmCloseSecondary;
+    private ConfirmModal? _confirmCloseWarning;
+    private ConfirmModal? _confirmCloseDanger;
+    private ConfirmModal? _confirmCloseInfo;
+    private ConfirmModal? _confirmCloseSuccess;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Null-safe auth debug (om du vill använda senare)
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = state.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            _ = user.FindFirst(ClaimTypes.Email)?.Value ?? "";
+        }
+    }
+
+    private IReadOnlyList<SamplesNav.SamplesNavItem> NavItems => new[]
+    {
+        new SamplesNav.SamplesNavItem("alerts", Loc["Page_Samples_SampelsNav_Alerts_Item"], "bi bi-bell-fill"),
+        new SamplesNav.SamplesNavItem("badges", Loc["Page_Samples_SampelsNav_Bages_Item"], "bi bi-patch-check-fill"),
+        new SamplesNav.SamplesNavItem("buttons", Loc["Page_Samples_SampelsNav_Buttons_Item"], "bi bi-hand-index-thumb-fill"),
+        new SamplesNav.SamplesNavItem("cards", Loc["Page_Samples_SampelsNav_Cards_Item"], "bi bi-card-text"),
+        new SamplesNav.SamplesNavItem("tokens", Loc["Page_Samples_SampelsNav_DesignTokens_Item"], "bi bi-palette-fill"),
+        new SamplesNav.SamplesNavItem("lines", Loc["Page_Samples_SampelsNav_HorizontalLines_Item"], "bi bi-dash-lg"),
+        new SamplesNav.SamplesNavItem("progress", Loc["Page_Samples_SampelsNav_ProgressBars_Item"], "bi bi-bar-chart-fill"),
+        new SamplesNav.SamplesNavItem("typography", Loc["Page_Samples_SampelsNav_Typography_Item"], "bi bi-fonts"),
+        new SamplesNav.SamplesNavItem("confirmmodal", Loc["Page_Samples_SampelsNav_ConfirmModal_Item"], "bi bi-info-circle-fill")
+    };
+
+    private Task OnConfirmCloseClosed()
+    {
+        return Task.CompletedTask;
+    }
+
+
+    private async Task OnConfirmOpenPrimary()
+    {
+        _ = _confirmClosePrimary!.ShowAsync();
+    }
+
+    private async Task OnConfirmOpenSecondary()
+    {
+        _ = _confirmCloseSecondary!.ShowAsync();
+    }
+
+    private async Task OnConfirmOpenWarning()
+    {
+        _ = _confirmCloseWarning!.ShowAsync();
+    }
+
+    private async Task OnConfirmOpenDanger()
+    {
+        _ = _confirmCloseDanger!.ShowAsync();
+    }
+
+    private async Task OnConfirmOpenInfo()
+    {
+        _ = _confirmCloseInfo!.ShowAsync();
+    }
+
+    private async Task OnConfirmOpenSuccess()
+    {
+        _ = _confirmCloseSuccess!.ShowAsync();
+    }
+
+}

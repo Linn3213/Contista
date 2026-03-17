@@ -1,0 +1,277 @@
+﻿@* DesignTokens.razor component *@
+@inject IJSRuntime JS
+@inject HttpClient Http
+@inject NavigationManager Nav
+
+@if (_sections is null || _values is null)
+{
+    <div class="text-muted">@Loc["Page_Samples_DesignTokens_Loading_Text"]</div>
+}
+else
+{
+    @foreach (var sec in _sections)
+    {
+        <h2 class="mt-4">@sec.Title</h2>
+        <div class="row g-3">
+            @foreach (var name in sec.Vars)
+            {
+                var value = _values.TryGetValue(name, out var v) ? v : "";
+
+                <div class="col-12 col-sm-12 col-lg-6 col-xl-4">
+                    <div class="card token-card">
+                        <div class="card-body p-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="token-swatch" style="@SwatchStyle(value)" aria-hidden="true"></div>
+
+                                <div class="flex-grow-1" style="min-width:0;">
+                                    <div class="token-name text-truncate">@name</div>
+                                    <div class="token-value text-truncate">@value</div>
+                                </div>
+
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-secondary token-copy-btn"
+                                        title="@Loc["Page_Samples_DesignTokens_Copy_Button"]"
+                                        @onclick="@(() => Copy(name))">
+                                    @if (_copiedToken == name && _copiedVisible)
+                                    {
+                                        <span class="token-copied">@Loc["Page_Samples_DesignTokens_Copy_Text"]</span>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-clipboard" aria-hidden="true"></i>
+                                    }
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+}
+
+@code {
+    [CascadingParameter] public ILocalizationService Loc { get; set; } = default!;
+
+    [Parameter] public string CssPath { get; set; } = "_content/Contista.Shared.UI/css/DesignTokens.css";
+    [Parameter] public bool IncludeDarkBlock { get; set; } = false;
+
+    private List<Section>? _sections;
+    private Dictionary<string, string>? _values;
+
+    private string? _copiedToken;
+    private bool _copiedVisible;
+    private CancellationTokenSource? _copyCts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var css = await JsCall<string>("contista.cssVars.fetchText", "cssVars.fetchText", CssPath);
+
+
+        _sections = ParseCssIntoSections(css, includeDarkBlock: IncludeDarkBlock);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        _values = await JsCall<Dictionary<string, string>>("contista.cssVars.getRootVarsMap", "cssVars.getRootVarsMap");
+
+        StateHasChanged();
+    }
+
+    private static List<Section> ParseCssIntoSections(string css, bool includeDarkBlock)
+    {
+        var sections = new List<Section>();
+        Section? current = null;
+
+        using var sr = new StringReader(css);
+        string? line;
+
+        bool inDarkBlock = false;
+
+        // --- För rubriker i block-kommentarer ---
+        bool inComment = false;
+        var commentLines = new List<string>();
+
+        while ((line = sr.ReadLine()) is not null)
+        {
+            var trimmed = line.Trim();
+
+            // Dark block start
+            if (trimmed.StartsWith("[data-bs-theme=\"dark\"]"))
+            {
+                inDarkBlock = true;
+                if (!includeDarkBlock) continue;
+            }
+
+            // Dark block end
+            if (inDarkBlock && trimmed.StartsWith("}"))
+            {
+                inDarkBlock = false;
+                continue;
+            }
+
+            // Hoppa dark-block helt om vi inte vill visa det
+            if (inDarkBlock && !includeDarkBlock)
+                continue;
+
+            // -------------------------
+            // Rubrik-parser: /* ... */
+            // -------------------------
+            if (!inComment && trimmed.StartsWith("/*"))
+            {
+                inComment = true;
+                commentLines.Clear();
+
+                // Om kommentaren börjar och slutar på samma rad
+                if (trimmed.Contains("*/"))
+                {
+                    inComment = false;
+                    var single = trimmed
+                        .Replace("/*", "")
+                        .Replace("*/", "")
+                        .Trim();
+                    TryAddSectionFromCommentLines(new[] { single });
+                }
+
+                continue;
+            }
+
+            if (inComment)
+            {
+                // Slut på block-kommentar
+                if (trimmed.Contains("*/"))
+                {
+                    // Lägg ev sista raden innan */
+                    var last = trimmed.Replace("*/", "").Trim();
+                    if (!string.IsNullOrWhiteSpace(last))
+                        commentLines.Add(last);
+
+                    inComment = false;
+                    TryAddSectionFromCommentLines(commentLines);
+                    continue;
+                }
+
+                // Samla rader i kommentaren
+                var cleaned = trimmed.TrimStart('*').Trim();
+                if (!string.IsNullOrWhiteSpace(cleaned))
+                    commentLines.Add(cleaned);
+
+                continue;
+            }
+
+            // -------------------------
+            // Variabler
+            // -------------------------
+            if (trimmed.StartsWith("--") && trimmed.Contains(':') && trimmed.Contains(';'))
+            {
+                var name = trimmed.Split(':', 2)[0].Trim();
+                current ??= GetOrCreateFallbackSection(sections, inDarkBlock, includeDarkBlock);
+                current.Vars.Add(name);
+            }
+        }
+
+        return sections.Where(s => s.Vars.Count > 0).ToList();
+
+        void TryAddSectionFromCommentLines(IEnumerable<string> lines)
+        {
+            // Välj en "titelrad" som inte bara är ==== eller tom.
+            // Dvs typ "BACKGROUND & SURFACES", "TEXT", "UI", osv.
+            var title = lines
+                .Select(l => l.Trim().Trim('-').Trim())
+                .FirstOrDefault(l =>
+                    !string.IsNullOrWhiteSpace(l) &&
+                    l.Any(char.IsLetterOrDigit) &&
+                    !IsMostlyEquals(l));
+
+            if (string.IsNullOrWhiteSpace(title))
+                return;
+
+            current = new Section { Title = title };
+            sections.Add(current);
+        }
+
+        static bool IsMostlyEquals(string s)
+        {
+            // “====” rader ska ignoreras
+            var eq = s.Count(c => c == '=');
+            return eq >= Math.Max(6, s.Length / 2);
+        }
+    }
+
+    
+
+    
+
+    private static Section GetOrCreateFallbackSection(List<Section> sections, bool inDarkBlock, bool includeDarkBlock)
+    {
+        var title = includeDarkBlock && inDarkBlock ? "🌙 DARK MODE (uncategorized)" : "Uncategorized";
+        var existing = sections.LastOrDefault(s => s.Title == title);
+        if (existing is not null) return existing;
+
+        var created = new Section { Title = title };
+        sections.Add(created);
+        return created;
+    }
+
+    private static string SwatchStyle(string value)
+    {
+        var v = (value ?? "").Trim();
+
+        var looksLikeColor =
+            v.StartsWith("#") ||
+            v.StartsWith("rgb", StringComparison.OrdinalIgnoreCase) ||
+            v.StartsWith("hsl", StringComparison.OrdinalIgnoreCase) ||
+            v.Contains("gradient", StringComparison.OrdinalIgnoreCase);
+
+        if (looksLikeColor)
+            return $"background:{v};";
+
+        return $"background: var(--bg-secondary); border:1px dashed var(--border-strong);";
+    }
+
+    private async Task Copy(string text)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", text);
+
+            _copyCts?.Cancel();
+            _copyCts?.Dispose();
+            _copyCts = new CancellationTokenSource();
+
+            _copiedToken = text;
+            _copiedVisible = true;
+            StateHasChanged();
+
+            await Task.Delay(900, _copyCts.Token);
+
+            _copiedVisible = false;
+            StateHasChanged();
+        }
+        catch
+        {
+            // ignore
+        }
+    }
+
+    private sealed class Section
+    {
+        public string Title { get; set; } = "";
+        public List<string> Vars { get; set; } = new();
+    }
+
+    private async Task<T> JsCall<T>(string newCall, string oldCall, params object[] args)
+    {
+        try
+        {
+            return await JS.InvokeAsync<T>(newCall, args);
+        }
+        catch
+        {
+            // fallback till gamla window.cssVars om du råkar ha kvar det någonstans
+            return await JS.InvokeAsync<T>(oldCall, args);
+        }
+    }
+}

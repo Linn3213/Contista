@@ -1,0 +1,141 @@
+﻿@* WeekPlanSection.razor component *@
+<div class="card mb-4 weekplan">
+    <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-start align-items-md-center gap-3 mb-3">
+            <h2 class="section-title mb-0">
+                <i class="bi bi-calendar4-week me-2" aria-hidden="true"></i>
+                @(Loc?["Page_Home_WeekPlanSection_Title"] ?? "This week")
+            </h2>
+
+            <div class="weekplan_nav d-flex align-items-center gap-2">
+                <button type="button"
+                        class="btn weekplan_nav-btn"
+                        @onclick="PrevWeek"
+                        aria-label="@(Loc?["Page_Home_WeekPlanSection_PrevWeek_Button"] ?? "Previous week")">
+                    <i class="bi bi-chevron-left" aria-hidden="true"></i>
+                </button>
+
+                <div class="weekplan_nav-pill">
+                    @(Loc?["Page_Home_WeekPlanSection_CurrentWeek_Text"] ?? "Week") @WeekNumber
+                </div>
+
+                <button type="button"
+                        class="btn weekplan_nav-btn"
+                        @onclick="NextWeek"
+                        aria-label="@(Loc?["Page_Home_WeekPlanSection_NextWeek_Button"] ?? "Next week")">
+                    <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="row g-3 weekplan_grid">
+            @foreach (var d in Days)
+            {
+                <div class="col-12 col-sm-6 col-lg-3 col-xl weekplan_daycol">
+                    <div class="weekplan_daycard"
+                         role="button"
+                         tabindex="0"
+                         @onclick="@(() => OnDaySelected.InvokeAsync(d.Key))"
+                         @onkeydown="(e) => OnDayKeyDown(e, d.Key)">
+                        <div class="weekplan_dayname">@d.DayName</div>
+                        <div class="weekplan_daycategory">@d.Category</div>
+                        <div class="weekplan_dayposts">@d.PostsText</div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [CascadingParameter] public ILocalizationService Loc { get; set; } = default!;
+
+    [Parameter] public DateOnly? WeekStart { get; set; } // måndag
+    [Parameter] public EventCallback<DateOnly> WeekChanged { get; set; }
+    [Parameter] public EventCallback<string> OnDaySelected { get; set; }
+    [Parameter] public IReadOnlyList<WeekPlanItem> Items { get; set; } = Array.Empty<WeekPlanItem>();
+
+    private DateOnly _weekStart;
+    private int WeekNumber => GetIsoWeekNumber(_weekStart);
+
+    private List<DayPlanItem> Days { get; set; } = new();
+
+    protected override void OnParametersSet()
+    {
+        _weekStart = WeekStart ?? GetMonday(DateOnly.FromDateTime(DateTime.Today));
+        Days = BuildWeek(_weekStart);
+    }
+
+    private async Task PrevWeek()
+    {
+        _weekStart = _weekStart.AddDays(-7);
+        await WeekChanged.InvokeAsync(_weekStart);
+        Days = BuildWeek(_weekStart);
+    }
+
+    private async Task NextWeek()
+    {
+        _weekStart = _weekStart.AddDays(7);
+        await WeekChanged.InvokeAsync(_weekStart);
+        Days = BuildWeek(_weekStart);
+    }
+
+    private async Task OnDayKeyDown(KeyboardEventArgs e, string key)
+    {
+        if (e.Key is "Enter" or " ")
+            await OnDaySelected.InvokeAsync(key);
+    }
+
+    // --- Helpers (ISO vecka + måndag) ---
+    private static DateOnly GetMonday(DateOnly date)
+    {
+        var dow = (int)date.DayOfWeek;
+        dow = dow == 0 ? 7 : dow; // söndag=7
+        return date.AddDays(1 - dow);
+    }
+
+    private static int GetIsoWeekNumber(DateOnly date)
+        => System.Globalization.ISOWeek.GetWeekOfYear(date.ToDateTime(TimeOnly.MinValue));
+
+    private List<DayPlanItem> BuildWeek(DateOnly weekStart)
+    {
+        var noPostText = Loc?["Page_Home_WeekPlanSection_NoPostPlanned_Text"] ?? "No post planned";
+
+        var byDate = Items
+            .GroupBy(x => x.Date)
+            .ToDictionary(g => g.Key, g => g.OrderBy(x => x.SortKey).First());
+
+        var list = new List<DayPlanItem>(7);
+        for (var i = 0; i < 7; i++)
+        {
+            var date = weekStart.AddDays(i);
+            var dayName = date.ToDateTime(TimeOnly.MinValue).ToString("dddd");
+
+            if (byDate.TryGetValue(date, out var item))
+            {
+                var key = string.IsNullOrWhiteSpace(item.Key) ? date.ToString("yyyy-MM-dd") : item.Key!;
+                list.Add(new DayPlanItem(
+                    key,
+                    dayName,
+                    string.IsNullOrWhiteSpace(item.Category) ? noPostText : item.Category,
+                    string.IsNullOrWhiteSpace(item.PostsText) ? noPostText : item.PostsText));
+                continue;
+            }
+
+            list.Add(new DayPlanItem(date.ToString("yyyy-MM-dd"), dayName, noPostText, noPostText));
+        }
+
+        return list;
+    }
+
+    public sealed class WeekPlanItem
+    {
+        public DateOnly Date { get; set; }
+        public string? Key { get; set; }
+        public string Category { get; set; } = "";
+        public string PostsText { get; set; } = "";
+        public int SortKey { get; set; }
+    }
+
+    private sealed record DayPlanItem(string Key, string DayName, string Category, string PostsText);
+}

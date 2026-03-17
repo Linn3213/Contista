@@ -1,0 +1,168 @@
+﻿@* DreamCustomerSection.razor *@
+@using Contista.Shared.Core.DTO
+@using Contista.Shared.UI.Services
+@using Contista.Shared.UI.Components.Modals.Home
+
+<div class="card dc-card">
+    <div class="card-body dc-body">
+
+        <div class="dc-header">
+            <h3 class="dc-title">@DisplayTitle</h3>
+            @if (!string.IsNullOrWhiteSpace(DisplaySubTitle))
+            {
+                <div class="dc-subtitle">@DisplaySubTitle</div>
+            }
+        </div>
+
+        @if (Clients is null || !Clients.Any())
+        {
+            <div class="dc-empty">
+                @DisplayEmptyText
+            </div>
+        }
+        else
+        {
+            var list = Clients
+            .OrderBy(c => c.Order)
+            .ThenBy(c => c.Name)
+            .ToList();
+
+            var hasMore = list.Count > MaxCollapsedItems;
+
+            <ul class="dc-list" role="list">
+                @foreach (var c in list.Take(MaxCollapsedItems))
+                {
+                    @ClientRow(c)
+                }
+
+                @if (hasMore)
+                {
+                    <li class="dc-more @(IsExpanded ? "is-open" : "")">
+                        <div class="dc-more__inner" role="list">
+                            @foreach (var c in list.Skip(MaxCollapsedItems))
+                            {
+                                @ClientRow(c)
+                            }
+                    </div>
+                </li>
+
+                <li class="dc-expand">
+                    <button type="button"
+                            class="dc-expand__btn"
+                            aria-expanded="@IsExpanded"
+                            @onclick="ToggleExpanded">
+                        <i class="bi @(IsExpanded ? "bi-chevron-up" : "bi-chevron-down")" aria-hidden="true"></i>
+
+                        <span class="dc-expand__text">
+                            @(IsExpanded
+                                                    ? (Loc?.GetOr("Common_Actions_ShowLess", "Show less") ?? "Show less")
+                                                    : (Loc?.GetOr("Common_Actions_ShowMore", "Show more") ?? "Show more"))
+                            </span>
+
+                            <span class="dc-expand__count">
+                                +@(list.Count - MaxCollapsedItems)
+                            </span>
+                        </button>
+                    </li>
+                }
+            </ul>
+        }
+
+    </div>
+</div>
+
+<DreamCustomerModal IsOpen="@_isOpen"
+                    IsOpenChanged="@OnOpenChanged"
+                    Client="@_selectedClient" />
+
+@code {
+    [CascadingParameter] public ILocalizationService? Loc { get; set; }
+
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public string? EmptyText { get; set; }
+
+    [Parameter] public IEnumerable<DreamCustomer>? Clients { get; set; }
+
+    // (valfritt) Om du vill att parent ska kunna reagera på klick
+    [Parameter] public EventCallback<DreamCustomer> OnSelected { get; set; }
+
+    // ✅ Samma som Upcoming/ContentPillars: hur många som syns innan expand
+    [Parameter] public int MaxItems { get; set; } = 1;
+
+    private int MaxCollapsedItems => Math.Max(1, MaxItems);
+    private bool IsExpanded;
+
+    private bool _isOpen;
+    private DreamCustomer? _selectedClient;
+
+    private string DisplayTitle =>
+        Title ?? (Loc?.GetOr("Page_DreamCustomerSection_Title", "Dream customer")) ?? "Dream customer";
+
+    private string DisplaySubTitle =>
+        Subtitle ?? (Loc?.GetOr("Page_DreamCustomerSection_SubTitle", "Your selected dream client")) ?? "Your selected dream client";
+
+    private string DisplayEmptyText =>
+        EmptyText ?? (Loc?.GetOr("Page_DreamCustomerSection_Empty", "No dream clients yet.")) ?? "No dream clients yet.";
+
+    private void ToggleExpanded() => IsExpanded = !IsExpanded;
+
+    private void OpenDetails(DreamCustomer client)
+    {
+        _selectedClient = client;
+        _isOpen = true;
+
+        if (OnSelected.HasDelegate)
+            _ = OnSelected.InvokeAsync(client);
+    }
+
+    private Task OnOpenChanged(bool open)
+    {
+        _isOpen = open;
+        if (!open) _selectedClient = null;
+        return Task.CompletedTask;
+    }
+
+    private string ResolveClientTitle(DreamCustomer c)
+    {
+        var prefix = Loc?.GetOr("Page_DreamCustomerSection_ClientPrefix", "Dream Client") ?? "Dream Client";
+        var name = string.IsNullOrWhiteSpace(c.Name)
+            ? (Loc?.GetOr("Common_Errors_Unknown", "Unknown") ?? "Unknown")
+            : c.Name.Trim();
+
+        var age = c.Age is > 0 ? $", {c.Age}" : "";
+        return $"{prefix}: {name}{age}";
+    }
+
+    private string ResolveClientSubtitle(DreamCustomer c)
+        => c.Tagline ?? c.RoleOrPersona ?? c.Notes ?? "";
+
+    private RenderFragment ClientRow(DreamCustomer c) => @<li class="dc-item">
+    <button type="button"
+            class="dc-rowBtn"
+            @onclick="() => OpenDetails(c)">
+        <div class="dc-row">
+            <div class="dc-rowMain">
+                <div class="dc-rowTitle">
+                    @ResolveClientTitle(c)
+
+                    @if (c.IsPrimary)
+                                        {
+                    <span class="dc-primaryBadge"
+                          title="@Loc?.GetOr("Page_DreamCustomerSection_Primary_Tooltip", "Primary dream customer")">
+                        @Loc?.GetOr("Page_DreamCustomerSection_Primary", "Primary")
+                    </span>
+                                        }
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(ResolveClientSubtitle(c)))
+                                {
+                <div class="dc-rowMeta">@ResolveClientSubtitle(c)</div>
+                                }
+            </div>
+
+            <i class="bi bi-chevron-right dc-rowChevron" aria-hidden="true"></i>
+        </div>
+    </button>
+</li>;
+}

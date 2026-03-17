@@ -1,0 +1,271 @@
+﻿/* =========================================================
+   CalendarWeekView
+   ========================================================= */
+
+.cal-weekGrid {
+    --cal-hour-height: 56px;
+    --cal-half-hour-height: 28px;
+    display: grid;
+    grid-template-columns: 60px repeat(7, minmax(0, 1fr));
+    gap: var(--space-sm);
+    align-items: start;
+}
+
+.cal-weekHours {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.cal-weekHoursHead {
+    min-height: 96px; /* samma som dagkolumnens header inkl heldag */
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding-top: 10px;
+    box-sizing: border-box;
+}
+
+.cal-weekNumber {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    font-weight: 600;
+    line-height: 1.1;
+}
+
+.cal-hour {
+    height: var(--cal-hour-height);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    display: flex;
+    align-items: flex-start;
+    padding-top: 2px;
+    box-sizing: border-box;
+}
+
+.cal-weekCol {
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+    overflow: hidden;
+    min-width: 0;
+}
+
+.cal-weekColHead {
+    display: flex;
+    flex-direction: column;
+    padding: 8px 10px 6px;
+    border-bottom: 1px solid var(--border-divider);
+    min-height: 96px;
+    cursor: pointer;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.cal-weekHeadTop {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    min-width: 0;
+}
+
+.cal-weekHeadLeft {
+    min-width: 0;
+}
+
+.cal-weekDow {
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+    line-height: 1.1;
+}
+
+.cal-weekDate {
+    font-weight: 700;
+    line-height: 1.1;
+    margin-top: 2px;
+}
+
+.cal-weekAddBtn {
+    flex: 0 0 auto;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .cal-weekAddBtn {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    .cal-weekCol:hover .cal-weekAddBtn,
+    .cal-weekCol:focus-within .cal-weekAddBtn {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+    }
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .cal-weekAddBtn {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+    }
+}
+
+.cal-weekHeadAllDay {
+    margin-top: 6px;
+    min-height: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.cal-weekColBody {
+    position: relative;
+    height: calc(16 * var(--cal-hour-height));
+    padding: 6px;
+    overflow: hidden;
+    box-sizing: border-box;
+    min-width: 0;
+    /* 30-minuterslinjer */
+    background-image: repeating-linear-gradient( to bottom, transparent 0, transparent calc(var(--cal-half-hour-height) - 1px), color-mix(in srgb, var(--border-divider) 55%, transparent) calc(var(--cal-half-hour-height) - 1px), color-mix(in srgb, var(--border-divider) 55%, transparent) var(--cal-half-hour-height) );
+    background-origin: content-box;
+}
+
+/* Week event block */
+.cal-block {
+    position: absolute;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-default);
+    background: var(--bg-card);
+    padding: 8px;
+    overflow: hidden;
+    z-index: 2;
+    min-width: 0;
+    max-width: none;
+    box-sizing: border-box;
+}
+
+/* Compact all-day block inside header */
+.cal-weekHeadAllDay .cal-block {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    width: 100% !important;
+    height: 28px !important;
+    min-height: 28px;
+    display: flex;
+    align-items: center;
+    padding: 4px 8px;
+}
+
+/* Truncation */
+.cal-blockTitle,
+.cal-blockTime,
+.cal-blockAvail {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Week view: only title + availability */
+.cal-blockTitle {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.cal-blockTime {
+    display: none;
+}
+
+.cal-blockAvail {
+    font-size: 12px;
+    margin-top: 4px;
+    line-height: 1.1;
+}
+
+
+.cal-blockTitle,
+.cal-blockAvail {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cal-blockTitle {
+    width: 100%;
+    max-width: 100%;
+}
+
+.cal-blockAvail {
+    width: 100%;
+    max-width: 100%;
+}
+
+/* All-day row: title only */
+.cal-weekHeadAllDay .cal-blockTime,
+.cal-weekHeadAllDay .cal-blockAvail {
+    display: none;
+}
+
+.cal-weekHeadAllDay .cal-blockTitle {
+    font-size: var(--text-sm);
+    line-height: 1.1;
+}
+
+.cal-block {
+    position: absolute;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-default);
+    border-left: 4px solid var(--cal-accent);
+    background: color-mix(in srgb, var(--cal-accent) 8%, var(--bg-card));
+    padding: 8px;
+    overflow: hidden;
+    z-index: 2;
+    min-width: 0;
+    max-width: none;
+    box-sizing: border-box;
+}
+
+    .cal-block.avail-busy {
+        background: color-mix(in srgb, var(--cal-accent) 16%, var(--bg-secondary));
+    }
+
+    .cal-block.avail-ooo {
+        background: color-mix(in srgb, var(--color-error-bg) 55%, var(--bg-card));
+    }
+
+    .cal-block.avail-tentative {
+        background: repeating-linear-gradient( -45deg, transparent 0px, transparent 8px, color-mix(in srgb, var(--ui-secondary) 20%, transparent) 8px, color-mix(in srgb, var(--ui-secondary) 20%, transparent) 12px ), color-mix(in srgb, var(--cal-accent) 8%, var(--bg-card));
+    }
+
+.cal-nowLine {
+    position: absolute;
+    left: 6px;
+    right: 6px;
+    height: 2px;
+    background: var(--color-error, #d84c4c);
+    z-index: 4;
+    pointer-events: none;
+}
+
+.cal-nowDot {
+    position: absolute;
+    left: -3px;
+    top: 50%;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-error, #d84c4c);
+    transform: translateY(-50%);
+    box-shadow: 0 0 0 2px var(--bg-card);
+}

@@ -1,0 +1,113 @@
+﻿.offline-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-default);
+    background: var(--bg-card);
+    box-shadow: var(--shadow-card);
+    margin: var(--space-sm) 0;
+}
+
+.offline-banner-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+    color: var(--text-secondary);
+    min-width: 0;
+}
+
+.offline-banner-right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+}
+
+.offline-banner-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: var(--radius-full);
+    background: var(--text-disabled);
+    box-shadow: 0 0 0 4px var(--bg-secondary);
+    flex: 0 0 auto;
+}
+
+/* Online */
+.offline-banner-online .offline-banner-dot {
+    background: var(--color-success);
+    box-shadow: 0 0 0 4px var(--color-success-bg);
+}
+
+/* Offline */
+.offline-banner-offline {
+    background: var(--bg-secondary);
+    border-color: var(--border-strong);
+}
+
+    .offline-banner-offline .offline-banner-dot {
+        background: var(--ui-focus);
+        box-shadow: 0 0 0 4px var(--bg-secondary);
+    }
+
+.offline-banner-status {
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+}
+
+.offline-banner-pending b {
+    color: var(--text-primary);
+}
+
+.offline-banner-sep {
+    opacity: 0.55;
+}
+
+.offline-banner-msg {
+    color: var(--text-disabled);
+}
+
+/* Compact (Landing) */
+.offline-banner-compact {
+    padding: var(--space-xs) var(--space-sm);
+    margin: var(--space-xs) 0;
+    border-radius: var(--radius-md);
+    box-shadow: none;
+}
+
+    .offline-banner-compact .offline-banner-right {
+        display: none;
+    }
+
+    .offline-banner-compact .offline-banner-left {
+        gap: var(--space-xs);
+        font-size: var(--text-sm);
+    }
+
+    .offline-banner-compact .offline-banner-dot {
+        width: 8px;
+        height: 8px;
+        box-shadow: none;
+    }
+
+/* Pulse (compact offline) – token-only */
+@keyframes offline-pulse {
+    0% {
+        box-shadow: 0 0 0 0 var(--bg-secondary);
+    }
+
+    70% {
+        box-shadow: 0 0 0 6px var(--bg-card);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 var(--bg-secondary);
+    }
+}
+
+.offline-banner-compact.offline-banner-offline .offline-banner-dot {
+    animation: offline-pulse 1.8s ease-out infinite;
+}

@@ -1,0 +1,59 @@
+﻿.feature-card-gate {
+    position: relative;
+}
+
+/* Innehållet när det är låst */
+.feature-card-gate-content.is-locked {
+    filter: blur(1px);
+    opacity: 0.55;
+    pointer-events: none; /* inget klick igenom */
+}
+
+/* Overlay */
+.feature-card-gate-overlay {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    text-align: center;
+    gap: var(--space-sm);
+    padding: var(--space-lg);
+    border-radius: var(--radius-lg);
+    background: var(--bg-glass-strong);
+    border: 1px solid var(--border-default);
+    box-shadow: var(--shadow-card);
+    backdrop-filter: blur(6px);
+}
+
+.feature-card-gate-title {
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    line-height: var(--leading-tight);
+}
+
+.feature-card-gate-message {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* “Primary”-känsla utan nya tokens */
+.feature-card-gate-btn {
+    border: 1px solid var(--border-strong);
+    background: var(--gradient-accent);
+    color: var(--text-inverse);
+    font-weight: var(--font-semibold);
+    border-radius: var(--radius-full);
+    padding-inline: 14px;
+}
+
+    .feature-card-gate-btn:hover,
+    .feature-card-gate-btn:focus-visible {
+        box-shadow: var(--shadow-hover);
+        transform: translateY(-1px);
+    }
+
+    .feature-card-gate-btn:focus-visible {
+        outline: 3px solid var(--ui-primary);
+        outline-offset: 3px;
+    }

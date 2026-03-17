@@ -1,0 +1,70 @@
+﻿@* ContentPillarsModal.razor *@
+@using Contista.Shared.Core.DTO
+@using Contista.Shared.UI.Services
+
+@if (IsOpen)
+{
+    <div class="cp-modalOverlay" role="dialog" aria-modal="true" @onclick="OnOverlayClick">
+        <div class="cp-modal" @onclick:stopPropagation="true">
+
+            <div class="cp-modal__header">
+                <div class="cp-modal__titleWrap">
+                    <h3 class="cp-modal__title">@Title</h3>
+                    @if (!string.IsNullOrWhiteSpace(Subtitle))
+                    {
+                        <div class="cp-modal__subtitle">@Subtitle</div>
+                    }
+                </div>
+
+                <button type="button"
+                        class="cp-modal__close"
+                        @onclick="Close"
+                        aria-label="@Loc?.GetOr("Common_Actions_Close", "Close")">
+                    <i class="bi bi-x-lg" aria-hidden="true"></i>
+                </button>
+            </div>
+
+            <div class="cp-modal__body">
+                @if (Pillar?.Items is null || !Pillar.Items.Any())
+                {
+                    <div class="text-muted">
+                        @Loc?.GetOr("Page_ContentPillarsModal_Empty", "No items")
+                    </div>
+                }
+                else
+                {
+                    <ul class="cp-modalList" role="list">
+                        @foreach (var it in Pillar.Items)
+                        {
+                            <li class="cp-modalItem">@it</li>
+                        }
+                    </ul>
+                }
+            </div>
+
+            <div class="cp-modal__footer">
+                <button type="button" class="btn btn-secondary" @onclick="Close">
+                    @Loc?.GetOr("Common_Actions_Close", "Close")
+                </button>
+            </div>
+
+        </div>
+    </div>
+}
+
+@code {
+    [CascadingParameter] public ILocalizationService? Loc { get; set; }
+
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public EventCallback<bool> IsOpenChanged { get; set; }
+
+    // ✅ Anpassa typen vid behov
+    [Parameter] public ContentPillar? Pillar { get; set; }
+
+    private string Title => Pillar?.Title ?? (Loc?.GetOr("Page_ContentPillarsModal_Title", "Content pillar") ?? "Content pillar");
+    private string Subtitle => Loc?.GetOr("Page_ContentPillarsModal_SubTitle", "Included ideas") ?? "Included ideas";
+
+    private Task Close() => IsOpenChanged.InvokeAsync(false);
+    private Task OnOverlayClick() => Close();
+}
+

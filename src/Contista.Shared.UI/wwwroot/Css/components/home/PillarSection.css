@@ -1,0 +1,87 @@
+﻿/* =========================================================
+   🧩 PILLARS (PillarsSection.razor)
+   ========================================================= */
+
+.pillars {
+    margin-bottom: var(--space-lg);
+}
+
+.pillars-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-lg);
+    margin-bottom: var(--space-lg);
+}
+
+.pillars-card {
+    --pillar-color: var(--ui-primary);
+    background-color: var(--bg-card);
+    padding: var(--space-lg);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-default);
+    border-left: 4px solid var(--pillar-color);
+    cursor: pointer;
+    box-shadow: var(--shadow-card);
+    transition: transform var(--transition-medium) var(--ease-default), box-shadow var(--transition-medium) var(--ease-default), border-color var(--transition-medium) var(--ease-default);
+}
+
+    .pillars-card:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-hover);
+        border-color: var(--border-strong);
+    }
+
+    .pillars-card:focus-visible {
+        outline: 3px solid var(--ui-primary);
+        outline-offset: 3px;
+        box-shadow: var(--shadow-focus), var(--shadow-hover);
+    }
+
+    /* Slot mapping */
+    .pillars-card.slot-1 {
+        --pillar-color: var(--pillar-1, var(--ui-focus));
+    }
+
+    .pillars-card.slot-2 {
+        --pillar-color: var(--pillar-2, var(--ui-primary));
+    }
+
+    .pillars-card.slot-3 {
+        --pillar-color: var(--pillar-3, var(--ui-secondary));
+    }
+
+    .pillars-card.slot-4 {
+        --pillar-color: var(--pillar-4, var(--ui-focus));
+    }
+
+/* Contents */
+.pillars-icon {
+    font-size: 2.5rem;
+    margin-bottom: var(--space-sm);
+}
+
+.pillars-title {
+    font-size: var(--text-h4);
+    font-weight: var(--font-bold);
+    margin-bottom: var(--space-xs);
+    color: var(--text-primary);
+}
+
+.pillars-count {
+    font-size: 1.8rem;
+    font-weight: var(--font-bold);
+    margin-bottom: var(--space-xs);
+    color: var(--text-secondary);
+}
+
+.pillars-meta {
+    font-size: var(--text-sm);
+    color: var(--text-disabled);
+    margin: 0;
+}
+
+@media (max-width: 992px) {
+    .pillars-grid {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+}

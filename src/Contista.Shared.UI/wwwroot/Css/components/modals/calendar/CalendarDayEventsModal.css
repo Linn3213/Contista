@@ -1,0 +1,405 @@
+﻿/* =========================================================
+   CalendarDayEventsModal.css
+   ========================================================= */
+
+.cal-dayModal {
+    max-width: 680px;
+    max-height: min(86vh, 820px);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.cal-dayEvent-modalBody {
+    flex: 0 1 auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    min-height: 100px;
+    max-height: calc(min(86vh, 820px) - 170px);
+    padding-top: var(--space-2xl);
+    padding-bottom: 55px;
+    position: relative;
+    z-index: 2;
+}
+
+.cal-dayModalHeader,
+.cal-modalFooter {
+    flex: 0 0 auto;
+    flex-shrink: 0;
+}
+
+.cal-modalFooter {
+    position: relative;
+    z-index: 1;
+}
+
+.cal-dayModalHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-md);
+}
+
+.cal-dayModalHeaderLeft {
+    min-width: 0;
+}
+
+.cal-dayModalTitleRow {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.cal-dayModalIconBtn {
+    flex: 0 0 auto;
+}
+
+.cal-dayModalCloseBtn {
+    background: var(--bg-card);
+}
+
+.cal-dayList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-bottom: var(--space-sm);
+}
+
+.cal-dayItem {
+    border: 1px solid var(--border-divider);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--bg-secondary) 28%, var(--bg-card));
+    border-left: 4px solid var(--cal-accent);
+    overflow: visible;
+    position: relative;
+    z-index: 1;
+}
+
+    .cal-dayItem:has(.cal-editDropdown .dropdown-menu.show) {
+        z-index: 40;
+    }
+
+/* =========================================================
+   Main row
+   ========================================================= */
+
+.cal-dayRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: var(--space-md);
+    align-items: start;
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+    .cal-dayRow:hover {
+        background: color-mix(in srgb, var(--bg-secondary) 45%, var(--bg-card));
+    }
+
+.cal-dayRowMain {
+    min-width: 0;
+    display: flex;
+    align-items: flex-start;
+}
+
+.cal-dayRowSide {
+    display: grid;
+    grid-template-rows: auto auto;
+    justify-items: end;
+    align-content: start;
+    row-gap: 2px;
+    min-width: 0;
+    padding-top: 1px;
+}
+
+.cal-dayRowActions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    flex-wrap: nowrap;
+    min-height: 24px;
+}
+
+.cal-dayRowIconBtn {
+    flex: 0 0 auto;
+}
+
+/* Small calendar badge to match availability badge */
+.cal-dayRowCalBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 18px;
+    padding: 0 7px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-default);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    font-size: var(--text-xs);
+    line-height: 1.1;
+    white-space: nowrap;
+    max-width: 10rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* =========================================================
+   Expand
+   ========================================================= */
+
+.cal-dayExpand {
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(calc(var(--space-sm) * -1));
+    overflow: hidden;
+    transition: max-height var(--transition-medium) var(--ease-default), opacity var(--transition-medium) var(--ease-default), transform var(--transition-medium) var(--ease-default);
+}
+
+    .cal-dayExpand.is-open {
+        max-height: 520px;
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+.cal-dayExpandInner {
+    padding: 10px 12px 12px;
+    border-top: 1px solid var(--border-divider);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* =========================================================
+   Detail area
+   ========================================================= */
+
+.cal-dayDetailTopRow {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.cal-dayDetailTitle {
+    font-weight: var(--font-semibold);
+    font-size: var(--text-sm);
+    color: var(--text-primary);
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.cal-dayTypeBadge {
+    flex: 0 0 auto;
+    margin-left: auto;
+}
+
+.cal-dayDetailSection {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.cal-dayDetailLabel {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    font-weight: var(--font-medium);
+}
+
+.cal-dayDetailRow {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+}
+
+.cal-dayDetailText {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+}
+
+.cal-dayDetailGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 14px;
+}
+
+@media (max-width: 575.98px) {
+    .cal-dayDetailGrid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.cal-dayDetailKv {
+    border: 1px solid var(--border-divider);
+    border-radius: var(--radius-md);
+    background: var(--bg-card);
+    padding: 8px 10px;
+}
+
+.cal-dayDetailValue {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+/* =========================================================
+   Location
+   ========================================================= */
+
+.cal-dayLocationRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.cal-dayLocationValue {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+    .cal-dayLocationValue span {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+.cal-dayLocationIconBtn {
+    flex: 0 0 auto;
+    text-decoration: none;
+}
+
+.cal-dayLocationMapPreview {
+    margin-top: var(--space-sm);
+    border: 1px solid var(--border-divider);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--bg-card);
+    height: 180px;
+}
+
+    .cal-dayLocationMapPreview iframe {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border: 0;
+    }
+
+@media (max-width: 575.98px) {
+    .cal-dayLocationMapPreview {
+        height: 160px;
+    }
+}
+
+/* =========================================================
+   Checklist
+   ========================================================= */
+
+.cal-dayChecklist {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.cal-dayChecklistItem {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
+
+    .cal-dayChecklistItem input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+    }
+
+.cal-dayChecklistText {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+/* =========================================================
+   Meta
+   ========================================================= */
+
+.cal-dayMeta {
+    margin-top: 4px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-divider);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.cal-dayMetaDates {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    flex-wrap: wrap;
+}
+
+.cal-dayMetaKv {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+}
+
+.cal-dayMetaLabelInline {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.cal-dayMetaValue {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.cal-dayMetaValueFooter {
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    white-space: nowrap;
+    line-height: 1.2;
+}
+
+/* =========================================================
+   Dropdown
+   ========================================================= */
+
+.cal-dayRowActions,
+.cal-editDropdown {
+    position: relative;
+}
+
+    .cal-editDropdown .dropdown-menu {
+        position: absolute !important;
+        top: calc(100% + 4px) !important;
+        right: 0 !important;
+        left: auto !important;
+        bottom: auto !important;
+        inset: auto 0 auto auto !important;
+        transform: none !important;
+        margin: 0 !important;
+        z-index: 2500;
+    }
+
+.cal-editBtn {
+    gap: 4px;
+    min-width: 42px;
+    width: auto;
+    height: var(--icon-md);
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+    .cal-editBtn.dropdown-toggle::after {
+        margin-left: 4px;
+        font-size: 0.78em;
+        vertical-align: 0.08em;
+        opacity: 0.7;
+    }

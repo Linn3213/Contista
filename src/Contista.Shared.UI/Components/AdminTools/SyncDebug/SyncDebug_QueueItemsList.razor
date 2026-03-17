@@ -1,0 +1,124 @@
+﻿@* SyncDebug_QueueItemsList.razor component *@
+
+@using Contista.Shared.Core.Offline.Models
+@using Contista.Shared.Core.Interfaces.SyncDebug
+@using Contista.Shared.UI.Services.SyncDebug
+
+@implements IDisposable
+
+<div>
+    <div class="small la-muted" style="display:flex; gap:1rem; flex-wrap:wrap;">
+        <div>@Loc["Common_Actions_Pending"]: <b>@Vm.PendingCount</b></div>
+        <div>@Loc["Common_Actions_Processing"]: <b>@Vm.ProcessingCount</b></div>
+        <div>@Loc["Common_Actions_Failed"]: <b>@Vm.FailedCount</b></div>
+        <div>@Loc["Common_Actions_Done"]: <b>@Vm.DoneCount</b></div>
+        <div>@Loc["Common_Actions_Total"]: <b>@Vm.QueueItems.Count</b></div>
+    </div>
+
+    <hr />
+
+    <h3 class="page-subtitle">@Loc["Page_SyncDebug_QueueItemsList_QueueItems_Text"]</h3>
+
+    @if (Vm.QueueItems.Count == 0)
+    {
+        <p class="small la-muted">@Loc["Page_SyncDebug_QueueItemsList_QueueEmpty_Text"]</p>
+    }
+    else
+    {
+        <div style="display:flex; flex-direction:column; gap:.5rem;">
+            @foreach (var it in Vm.QueueItems.OrderBy(x => x.CreatedAtUtc))
+            {
+                <div class="card" style="padding:.75rem;">
+                    <div style="display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
+                        <div style="min-width:220px;">
+                            <div class="small la-muted">Id</div>
+                            <div style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace;">@it.Id</div>
+                        </div>
+
+                        <div>
+                            <div class="small la-muted">@Loc["Common_Actions_Status"]</div>
+                            <div><b>@it.Status</b></div>
+                        </div>
+
+                        <div>
+                            <div class="small la-muted">@Loc["Page_SyncDebug_QueueItemsList_Attempts_Text"]</div>
+                            <div><b>@it.Attempts</b></div>
+                        </div>
+
+                        <div>
+                            <div class="small la-muted">@Loc["Common_Actions_Created"]</div>
+                            <div>@it.CreatedAtUtc.ToString("u")</div>
+                        </div>
+
+                        <div>
+                            <div class="small la-muted">@Loc["Page_SyncDebug_QueueItemsList_LastAttempts_Text"]</div>
+                            <div>@(it.LastAttemptUtc?.ToString("u") ?? "-")</div>
+                        </div>
+                    </div>
+
+                    <div class="small la-muted" style="margin-top:.5rem;">
+                        OperationType: <b>@it.Operation.OperationType</b><br />
+                        UserId: <b>@it.Operation.UserId</b>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(it.LastError))
+                    {
+                        <div class="small" style="margin-top:.5rem;">
+                            <b>@Loc["Page_SyncDebug_QueueItemsList_LastError_Text"]:</b> @it.LastError
+                        </div>
+                    }
+
+                    <div class="form-actions" style="display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.75rem;">
+                        <button class="btn" @onclick="() => Vm.SetPendingAsync(it.Id)">@Loc["Page_SyncDebug_QueueItemsList_SetPending_Button"]</button>
+                        <button class="btn" @onclick="() => Vm.DeleteQueueItemAsync(it.Id)">@Loc["Common_Actions_Delete"]</button>
+                        <button class="btn primary" @onclick="Vm.SyncNowAsync">@Loc["Page_SyncDebug_QueueItemsList_SyncNow_Button"]</button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [CascadingParameter] public ILocalizationService Loc { get; set; } = default!;
+    [Parameter] public ISyncDebugController Vm { get; set; } = default!;
+
+    private CancellationTokenSource? _cts;
+
+    protected override void OnInitialized()
+    {
+        _cts = new CancellationTokenSource();
+        _ = AutoRefreshLoopAsync(_cts.Token);
+    }
+
+    private async Task AutoRefreshLoopAsync(CancellationToken ct)
+    {
+        try
+        {
+            while (!ct.IsCancellationRequested)
+            {
+                await Vm.RefreshQueueOnlyAsync();
+
+                // 🔴 VIKTIGT: detta triggar UI-uppdatering
+                await InvokeAsync(StateHasChanged);
+
+                await Task.Delay(2000, ct); // 2 sek
+            }
+        }
+        catch (TaskCanceledException)
+        {
+            // ok
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(Loc["Page_SyncDebug_QueueItemsList_QueueAutoRefresh_Error"] + ": " + ex.Message);
+        }
+    }
+
+    public void Dispose()
+    {
+        _cts?.Cancel();
+        _cts?.Dispose();
+        _cts = null;
+    }
+}

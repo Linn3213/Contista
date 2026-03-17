@@ -1,0 +1,34 @@
+﻿/* =========================================================
+   📚 Content Library Section
+   ========================================================= */
+
+.content-library.card {
+    /* använder din generella card, men kan förstärka layout */
+    border-radius: var(--radius-lg);
+}
+
+/* Titel/metadata */
+.content-library .section-title {
+    color: var(--text-primary);
+    font-weight: var(--font-semibold);
+}
+
+.content-library .text-muted {
+    color: var(--text-secondary);
+}
+
+/* CTA-knappen: gör den lite “mer hero” men fortfarande token-baserad */
+.content-library__cta {
+    width: clamp(240px, 40%, 360px);
+    text-align: left;
+    /* behåll dina globala btn-primary regler,
+       men lägg till accent-gradient + lite extra oomph */
+    background: var(--gradient-accent);
+    border-color: transparent;
+    box-shadow: var(--shadow-card);
+}
+
+    .content-library__cta:hover,
+    .content-library__cta:focus-visible {
+        box-shadow: var(--shadow-hover);
+    }

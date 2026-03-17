@@ -1,0 +1,510 @@
+﻿@* Home.razor *@
+@attribute [Feature(FeatureKey.Dashboard)]
+@page "/app/home"
+@attribute [Authorize]
+
+@using Contista.Shared.Core.DTO
+@using Contista.Shared.Core.DTO.Calendar
+@using Contista.Shared.Core.Models.Calendar
+@using Contista.Shared.Core.Offline.Interfaces
+@using Contista.Shared.UI.Components.Home
+@using Contista.Shared.UI.Components.Layout
+@using Contista.Shared.UI.Components.Modals.Home
+@using Contista.Shared.UI.Components.Modals.Calendar
+
+@inherits AppPageBase
+@inject OfflineOrchestrator Offline
+@inject ICalendarState CalendarState
+@inject NavigationManager Nav
+@implements IDisposable
+
+<div class="container-fluid">
+
+    <!-- Row 1: Today's Focus -->
+    <div class="row g-3 mt-2 mb-3">
+        <div class="col-12">
+            <TodaysFocusSection Title="@Loc["Page_TodaysFocusSection_Title"]"
+                                Items="_todayFocus"
+                                OnToggle="HandleToggleFocus"
+                                OnAdd="HandleAddFocus" />
+        </div>
+    </div>
+
+    <!-- Row 2: Three cards -->
+    <div class="row g-3 mb-3">
+        <div class="col-12 col-lg-4">
+            <QuickCreateSection Title="@Loc?["Page_QuickCreateSection_Title"]"
+                                Subtitle="@Loc?["Page_QuickCreateSection_SubTitle"]"
+                                OnCreate="HandleCreatePost" />
+        </div>
+        <div class="col-12 col-lg-4">
+            <UpcomingContentSection Title="@Loc["Page_UpcomingContentSection_Title"]"
+                                    Subtitle="@Loc["Page_UpcomingContentSection_SubTitle"]"
+                                    Items="_createdPosts"
+                                    MaxItems="2"
+                                    OnSelect="OpenEditPostModal" />
+        </div>
+
+        <div class="col-12 col-lg-4">
+            <WeekAtAGlanceSection Title="@Loc["Page_WeekAtAGlanceSection_Title"]"
+                                  Subtitle="@Loc["Page_WeekAtAGlanceSection_SubTitle"]"
+                                  AgendaItems="_agenda"
+                                  OnDayClicked="OpenWeekAgendaDayModalAsync" />
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-12 col-lg-4">
+            <DreamCustomerSection Clients="@DreamClients" MaxItems="1" />
+        </div>
+
+        <div class="col-12 col-lg-4">
+            <ContentPillarsSection Pillars="@Pillars" MaxItems="2" />
+        </div>
+    </div>
+</div>
+
+<ContentPostModal IsOpen="@_isPostModalOpen"
+                  IsOpenChanged="HandlePostModalOpenChanged"
+                  Mode="@_postModalMode"
+                  InitialPost="@_editingPost"
+                  OnSave="HandleSaveEditedPost" />
+
+<CalendarDayEventsModal IsOpen="@_isWeekAgendaDayModalOpen"
+                        IsOpenChanged="OnWeekAgendaDayModalOpenChanged"
+                        DateLocal="@_weekAgendaSelectedDate"
+                        Events="@GetWeekAgendaEventsForDay(_weekAgendaSelectedDate)"
+                        SingleEvent="@null"
+                        FocusEventId="@null"
+                        CurrentUserId="@CurrentUserId"
+                        CalendarIdToHex="@GetCalendarHex"
+                        CalendarIdToName="@GetCalendarName"
+                        UserIdToName="@ResolveUserName"
+                        OnAddRequested="HandleDashboardAddRequested"
+                        OnEditRequested="HandleDashboardEditRequested"
+                        OnEditSeriesRequested="HandleDashboardEditSeriesRequested"
+                        OnDeleteRequested="HandleDashboardDeleteRequested"
+                        OnChecklistToggled="HandleDashboardChecklistToggled" />
+
+@code {
+    [Inject] public IUserDirectoryState Users { get; set; } = default!;
+    private bool _ready;
+
+    private readonly List<FocusItem> _todayFocus = new()
+    {
+        new FocusItem { Title = "Identify Your Dream Customer", Description = "Review your customer persona and refine your ideal client profile.", IsDone = false, IconClass = "bi-bullseye" },
+        new FocusItem { Title = "Plan Your Posts", Description = "Schedule your social media posts for the week ahead.", IsDone = false, IconClass = "bi-calendar-week" },
+        new FocusItem { Title = "Review Analytics", Description = "Look at what performed best last week.", IsDone = false, IconClass = "bi-bar-chart" },
+        new FocusItem { Title = "Engage With Audience", Description = "Reply to comments and messages.", IsDone = false, IconClass = "bi-chat-dots" },
+        new FocusItem { Title = "Write One Caption", Description = "Draft a caption for your next post and save it as a template.", IsDone = false, IconClass = "bi-pencil-square" },
+        new FocusItem { Title = "Pick 3 Content Pillars", Description = "Choose 3 pillars you’ll focus on this week.", IsDone = false, IconClass = "bi-layers" },
+        new FocusItem { Title = "Engage 10 Minutes", Description = "Reply to comments and DMs to build momentum.", IsDone = false, IconClass = "bi-chat-dots" },
+    };
+
+    private readonly List<DreamCustomer> DreamClients = new()
+    {
+        new DreamCustomer
+        {
+            Order = 1,
+            Name = "Emma",
+            Age = 32,
+            RoleOrPersona = "Skincare Enthusiast",
+            Tagline = "Busy professional, values simplicity",
+            Goals = "Build a consistent skincare routine",
+            Challenges = "Too much information online",
+            Notes = "Responds well to step-by-step content",
+            IsPrimary = true
+        },
+        new DreamCustomer { Order = 2, Name = "Sara", Age = 41, RoleOrPersona = "Skincare Enthusiast", Tagline = "Wants clearer routines", Goals = "Build a consistent skincare routine", Challenges = "Too much information online", Notes = "Responds well to step-by-step content" },
+        new DreamCustomer { Order = 3, Name = "Maja", Age = 27, RoleOrPersona = "Skincare Enthusiast", Tagline = "Needs inspiration & structure", Goals = "Build a consistent skincare routine", Challenges = "Too much information online", Notes = "Responds well to step-by-step content" }
+    };
+
+    private readonly List<ContentPillar> Pillars = new()
+    {
+        new ContentPillar
+        {
+            Title = "Beauty Tutorials",
+            Items =
+            {
+                "Skincare routines",
+                "Makeup basics",
+                "Product comparisons"
+            },
+            Order = 1
+        },
+        new ContentPillar
+        {
+            Title = "Product Reviews",
+            Items =
+            {
+                "Honest reviews",
+                "Before & after",
+                "Budget vs premium"
+            },
+            Order = 2
+        },
+        new ContentPillar
+        {
+            Title = "Inspiration & Quotes",
+            Items =
+            {
+                "Motivational quotes",
+                "Self-care reminders"
+            },
+            Order = 3
+        }
+    };
+
+    private readonly List<ContentPost> _createdPosts = new();
+
+    private bool _isPostModalOpen;
+    private ContentPost? _editingPost;
+    private ContentPostModalMode _postModalMode = ContentPostModalMode.Edit;
+
+    private bool _isWeekAgendaDayModalOpen;
+    private DateTime _weekAgendaSelectedDate;
+
+    private DateTime? _selectedDay = DateTime.Now.Date;
+    private DateOnly _weekPlanStart = GetMonday(DateOnly.FromDateTime(DateTime.Today));
+    private readonly List<WeekPlanSection.WeekPlanItem> _weekPlanItems = new();
+    private int _weekLoadVersion;
+    private bool _isWeekLoading;
+    private string? _weekLoadError;
+
+    private readonly List<WeekAtAGlanceSection.WeekAgendaItem> _agenda = new();
+    private readonly List<CalendarEventDto> _weekAgendaEvents = new();
+
+    private string CurrentUserId => Auth?.Uid ?? "";
+
+    protected override void OnInitialized()
+    {
+        CommonState.Changed += OnCommonChanged;
+        UserState.Changed += OnUserChanged;
+        CalendarState.Changed += OnCalendarStateChanged;
+        base.OnInitialized();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _ready = false;
+
+        var uid = Auth.Uid!;
+        await Offline.GetUserAsync<object>(uid);
+
+        await Task.WhenAll(
+            CommonState.EnsureLoadedAsync(),
+            UserState.EnsureLoadedAsync(uid)
+        );
+
+        await LoadWeekAgendaAsync(force: false);
+
+        _ready = true;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void OnCommonChanged() => _ = InvokeAsync(StateHasChanged);
+
+    private void OnUserChanged() => _ = InvokeAsync(StateHasChanged);
+
+    private void OnCalendarStateChanged() => _ = InvokeAsync(() =>
+    {
+        if (!_isWeekLoading)
+            RebuildAgendaFromCalendarState();
+
+        StateHasChanged();
+    });
+
+    public void Dispose()
+    {
+        CommonState.Changed -= OnCommonChanged;
+        UserState.Changed -= OnUserChanged;
+        CalendarState.Changed -= OnCalendarStateChanged;
+    }
+
+    private Task HandleToggleFocus(FocusItem item) => Task.CompletedTask;
+
+    private Task HandleAddFocus(FocusItem item)
+    {
+        _todayFocus.Add(item);
+        return Task.CompletedTask;
+    }
+
+    private Task HandleCreatePost(ContentPost post)
+    {
+        if (string.IsNullOrWhiteSpace(post.PostId))
+            post.PostId = "temp_" + Guid.NewGuid().ToString("N");
+
+        if (post.CreatedDate == default) post.CreatedDate = DateTime.UtcNow;
+        post.UpdatedDate = DateTime.UtcNow;
+
+        if (string.IsNullOrWhiteSpace(post.Status))
+            post.Status = "Draft";
+
+        _createdPosts.Insert(0, post);
+
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task OpenEditPostModal(ContentPost post)
+    {
+        _editingPost = post;
+        _postModalMode = ContentPostModalMode.Edit;
+        _isPostModalOpen = true;
+        return Task.CompletedTask;
+    }
+
+    private Task HandlePostModalOpenChanged(bool open)
+    {
+        _isPostModalOpen = open;
+        if (!open) _editingPost = null;
+        return Task.CompletedTask;
+    }
+
+    private Task HandleSaveEditedPost(ContentPostModalResult result)
+    {
+        var updated = result.Post;
+
+        if (string.IsNullOrWhiteSpace(updated.PostId) && _editingPost is not null)
+            updated.PostId = _editingPost.PostId;
+
+        if (string.IsNullOrWhiteSpace(updated.PostId))
+            updated.PostId = "temp_" + Guid.NewGuid().ToString("N");
+
+        updated.UpdatedDate = DateTime.UtcNow;
+
+        var idx = _createdPosts.FindIndex(p => p.PostId == updated.PostId);
+        if (idx >= 0)
+            _createdPosts[idx] = updated;
+        else
+            _createdPosts.Insert(0, updated);
+
+        _isPostModalOpen = false;
+        _editingPost = null;
+
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OpenWeekAgendaDayModalAsync(DateTime day)
+    {
+        _weekAgendaSelectedDate = day.Date;
+        _isWeekAgendaDayModalOpen = true;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private Task OnWeekAgendaDayModalOpenChanged(bool open)
+    {
+        _isWeekAgendaDayModalOpen = open;
+
+        if (!open)
+            _weekAgendaSelectedDate = default;
+
+        return Task.CompletedTask;
+    }
+
+    private List<CalendarEventDto> GetWeekAgendaEventsForDay(DateTime dayLocal)
+    {
+        var start = dayLocal.Date;
+        var end = start.AddDays(1);
+
+        return _weekAgendaEvents
+            .Where(e => e.StartUtc.ToLocalTime() < end && e.EndUtc.ToLocalTime() > start)
+            .OrderBy(e => e.IsAllDay ? 0 : 1)
+            .ThenBy(e => e.StartUtc)
+            .ToList();
+    }
+
+    private Task HandleDashboardAddRequested(DateTime day)
+    {
+        Nav.NavigateTo("/app/calendar");
+        return Task.CompletedTask;
+    }
+
+    private Task HandleDashboardEditRequested(CalendarEventDto ev)
+    {
+        Nav.NavigateTo("/app/calendar");
+        return Task.CompletedTask;
+    }
+
+    private Task HandleDashboardEditSeriesRequested(CalendarEventDto ev)
+    {
+        Nav.NavigateTo("/app/calendar");
+        return Task.CompletedTask;
+    }
+
+    private Task HandleDashboardDeleteRequested(CalendarEventDto ev)
+    {
+        Nav.NavigateTo("/app/calendar");
+        return Task.CompletedTask;
+    }
+
+    private Task HandleDashboardChecklistToggled((CalendarEventDto Ev, int Order, bool Done) arg)
+    {
+        Nav.NavigateTo("/app/calendar");
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleWeekPlanWeekChanged(DateOnly weekStart)
+    {
+        _weekPlanStart = weekStart;
+        await LoadWeekAgendaAsync(force: false);
+    }
+
+    private Task HandleWeekPlanDaySelected(string dayKey)
+    {
+        if (DateOnly.TryParse(dayKey, out var parsed))
+            _selectedDay = parsed.ToDateTime(TimeOnly.MinValue);
+
+        return Task.CompletedTask;
+    }
+
+    private static DateOnly GetMonday(DateOnly date)
+    {
+        var dow = (int)date.DayOfWeek;
+        dow = dow == 0 ? 7 : dow;
+        return date.AddDays(1 - dow);
+    }
+
+    private async Task LoadWeekAgendaAsync(bool force)
+    {
+        if (!Auth.IsLoggedIn || string.IsNullOrWhiteSpace(Auth.Uid))
+            return;
+
+        var loadVersion = ++_weekLoadVersion;
+        _isWeekLoading = true;
+        _weekLoadError = null;
+
+        try
+        {
+            var anchorLocal = _weekPlanStart.ToDateTime(TimeOnly.MinValue);
+
+            await CalendarState.RefreshAsync(
+                Auth.Uid!,
+                CalendarViewMode.Week,
+                anchorLocal,
+                force,
+                ct: CancellationToken.None);
+
+            if (loadVersion != _weekLoadVersion)
+                return;
+
+            RebuildAgendaFromCalendarState();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch
+        {
+            if (loadVersion == _weekLoadVersion)
+                _weekLoadError = Loc.GetOr("Page_Home_WeekWidgets_Error", "Could not load this week right now.");
+        }
+        finally
+        {
+            if (loadVersion == _weekLoadVersion)
+                _isWeekLoading = false;
+        }
+    }
+
+    private void RebuildAgendaFromCalendarState()
+    {
+        _agenda.Clear();
+        _weekAgendaEvents.Clear();
+
+        var weekEnd = _weekPlanStart.AddDays(7);
+        var events = CalendarState.Current?.Events ?? new List<CalendarEventDto>();
+
+        foreach (var ev in events)
+        {
+            var localStart = ev.StartUtc.ToLocalTime();
+            var day = DateOnly.FromDateTime(localStart.Date);
+
+            if (day < _weekPlanStart || day >= weekEnd)
+                continue;
+
+            _weekAgendaEvents.Add(ev);
+
+            var timeText = ev.IsAllDay
+                ? Loc.GetOr("Common_Actions_AllDay", "All day")
+                : localStart.ToString("HH:mm");
+
+            _agenda.Add(new WeekAtAGlanceSection.WeekAgendaItem
+            {
+                Date = localStart.Date,
+                Title = string.IsNullOrWhiteSpace(ev.Title)
+                    ? Loc.GetOr("Page_UpcomingContentSection_Untitled_Text", "(untitled)")
+                    : ev.Title,
+                TimeText = timeText,
+                SortKey = ev.IsAllDay ? -1 : (localStart.Hour * 100 + localStart.Minute)
+            });
+        }
+
+        RebuildWeekPlanItems();
+    }
+
+    private void RebuildWeekPlanItems()
+    {
+        _weekPlanItems.Clear();
+
+        var weekEnd = _weekPlanStart.AddDays(7);
+        var inWeek = _agenda
+            .Where(a =>
+            {
+                var d = DateOnly.FromDateTime(a.Date.Date);
+                return d >= _weekPlanStart && d < weekEnd;
+            })
+            .GroupBy(a => DateOnly.FromDateTime(a.Date.Date));
+
+        foreach (var g in inWeek)
+        {
+            var ordered = g.OrderBy(x => x.SortKey).ToList();
+            var first = ordered[0];
+
+            _weekPlanItems.Add(new WeekPlanSection.WeekPlanItem
+            {
+                Date = g.Key,
+                Key = g.Key.ToString("yyyy-MM-dd"),
+                Category = first.Title,
+                PostsText = GetAgendaItemsText(ordered.Count),
+                SortKey = first.SortKey
+            });
+        }
+    }
+
+    private string GetAgendaItemsText(int count)
+    {
+        if (count <= 0)
+            return Loc.GetOr("Page_Home_WeekPlanSection_NoPostPlanned_Text", "No post planned");
+
+        if (count == 1)
+            return string.Format(
+                Loc.GetOr("Page_Home_WeekPlanSection_AgendaItems_Singular", "{0} agenda item"),
+                count);
+
+        return string.Format(
+            Loc.GetOr("Page_Home_WeekPlanSection_AgendaItems_Plural", "{0} agenda items"),
+            count);
+    }
+
+    private string GetCalendarHex(string? calendarId)
+    {
+        if (string.IsNullOrWhiteSpace(calendarId))
+            return "#2B2622";
+
+        var cal = CalendarState.Current?.My?.Calendars?.FirstOrDefault(c => c.CalendarId == calendarId);
+        return CalendarColors.GetHex(cal?.Color);
+    }
+
+    private string? GetCalendarName(string? calendarId)
+    {
+        if (string.IsNullOrWhiteSpace(calendarId))
+            return null;
+
+        return CalendarState.Current?.My?.Calendars?
+            .FirstOrDefault(c => c.CalendarId == calendarId)?.Name;
+    }
+
+    private string? ResolveUserName(string? userId)
+    {
+        if (string.IsNullOrWhiteSpace(userId))
+            return null;
+
+        return Users.TryGetName(userId);
+    }
+}

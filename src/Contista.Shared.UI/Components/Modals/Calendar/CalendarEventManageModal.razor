@@ -1,0 +1,1769 @@
+﻿@* CalendarEventManageModal.razor *@
+@using Contista.Shared.Core.DTO.Calendar
+@using Contista.Shared.Core.Interfaces.Auth
+@using Contista.Shared.Core.Models.Auth
+@using System.Globalization
+@using Contista.Shared.Core.Models.Calendar
+@using Contista.Shared.UI.Components.Common
+@using Contista.Shared.UI.Utils
+@inject IJSRuntime JS
+@inject IFeatureAccessService Features
+
+@if (IsOpen)
+{
+    <div class="cal-modalOverlay">
+        <div class="cal-modal cal-eventModal" tabindex="0"
+             @ref="_modalRef"
+             @onkeydown="HandleKeyDown"
+             @onclick:stopPropagation="true">
+            <div class="cal-modalHeader">
+                <div>
+                    <div class="cal-modalTitle">
+                        @(IsEdit ? Loc.GetOr("Page_CalendarEventModal_EditTitle", "Edit event")
+                                            : Loc.GetOr("Page_CalendarEventModal_AddTitle", "Add event"))
+                    </div>
+                    <div class="cal-modalSub">
+                        @(IsEdit ? Loc.GetOr("Page_CalendarEventModal_EditSub", "Edit event / task / meeting")
+                                            : Loc.GetOr("Page_CalendarEventModal_AddSub", "Create event / task / meeting"))
+                    </div>
+                    @if (IsOccurrenceEdit)
+                    {
+                        <div class="text-muted" style="font-size: var(--text-sm);">
+                            @Loc.GetOr("Page_CalendarEventModal_EditThisEvent", "This instance only (deviation in the series)")
+                        </div>
+                    }
+                    else if (HasRecurrence)
+                    {
+                        <div class="text-muted" style="font-size: var(--text-sm);">
+                            @Loc.GetOr("Page_CalendarEventModal_EditWholeEvent", "The entire series")
+                        </div>
+                    }
+                </div>
+
+                <button type="button"
+                        class="cal-modalClose"
+                        @onclick="RequestCloseAsync"
+                        aria-label="@Loc.GetOr("Common_Actions_Close", "Close")">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+
+            <div class="cal-modalBody">
+
+                @* Title *@
+                <div class="cal-formRow">
+                    <label class="cal-label">@Loc.GetOr("Page_CalendarQuickAddModal_Title_Label", "Title")</label>
+                    <input class="cal-input" @bind="Model.Title" />
+                </div>
+
+                @* Type & Calendar picker *@
+                <div class="cal-formRow cal-grid2 cal-grid2-collapse">
+                    <div class="cal-field cal-select">
+                        <label class="cal-label">@Loc.GetOr("Page_CalendarQuickAddModal_Type_Label", "Type")</label>
+
+                        <div class="dropdown">
+                            <button type="button"
+                                    class="cal-input cal-selectBtn dropdown-toggle"
+                                    data-bs-toggle="dropdown"
+                                    aria-expanded="false">
+                                @GetTypeLabel(Model.Type)
+                            </button>
+
+                            <ul class="dropdown-menu cal-selectMenu">
+                                <li>
+                                    <button type="button" class="dropdown-item" @onclick="() => SetType(CalendarEventType.Event)">
+                                        @GetTypeLabel(CalendarEventType.Event)
+                                    </button>
+                                </li>
+                                <li>
+                                    <button type="button" class="dropdown-item" @onclick="() => SetType(CalendarEventType.Meeting)">
+                                        @GetTypeLabel(CalendarEventType.Meeting)
+                                    </button>
+                                </li>
+                                <li>
+                                    <button type="button" class="dropdown-item" @onclick="() => SetType(CalendarEventType.Task)">
+                                        @GetTypeLabel(CalendarEventType.Task)
+                                    </button>
+                                </li>
+                                <li>
+                                    <button type="button" class="dropdown-item" @onclick="() => SetType(CalendarEventType.Checklist)">
+                                        @GetTypeLabel(CalendarEventType.Checklist)
+                                    </button>
+                                </li>
+                                <li>
+                                    <button type="button" class="dropdown-item" @onclick="() => SetType(CalendarEventType.Dnd)">
+                                        @GetTypeLabel(CalendarEventType.Dnd)
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    @if (HasManyCalendars)
+                    {
+                        <div class="cal-field cal-select">
+                            <label class="cal-label">@Loc.GetOr("Page_CalendarQuickAddModal_Calendar_Label", "Calendar")</label>
+
+                            <div class="dropdown">
+                                <button type="button"
+                                        class="cal-input cal-selectBtn dropdown-toggle"
+                                        data-bs-toggle="dropdown"
+                                        aria-expanded="false">
+
+                                    @{
+                                        var selected = GetSelectedCalendar();
+                                        var hex = ResolveHex(selected?.CalendarId);
+                                    }
+
+                                    <span class="cal-colorLeft">
+                                        <span class="cal-colorSwatch" style="background:@hex"></span>
+                                        <span class="cal-colorLabel text-truncate">@GetSelectedCalendarLabel()</span>
+                                    </span>
+                                </button>
+
+                                <ul class="dropdown-menu cal-selectMenu">
+                                    @foreach (var cal in Calendars.OrderByDescending(x => x.IsPrimary).ThenBy(x => x.Name))
+                                    {
+                                        var isSelected = string.Equals(cal.CalendarId, SelectedCalendarId, StringComparison.Ordinal);
+                                        var resHex = ResolveHex(cal.CalendarId);
+
+                                        <li>
+                                            <button type="button"
+                                                    class="dropdown-item cal-colorItem @(isSelected ? "active" : "")"
+                                                    @onclick="() => SelectCalendar(cal.CalendarId)">
+                                                <span class="cal-colorSwatch" style="background:@resHex"></span>
+                                                <span class="cal-colorLabel">
+                                                    @cal.Name@(cal.IsPrimary ? $" ({Loc.GetOr("Common_Calendars_Primary", "Primary")})" : "")
+                                                </span>
+                                            </button>
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="cal-formRow">
+                    <div class="cal-timeRow">
+
+                        @if (IsAllDay)
+                        {
+                            <div class="cal-field">
+                                <label class="cal-label">@Loc.GetOr("Common_Date", "Datum")</label>
+                                <input class="cal-input"
+                                       type="date"
+                                       value="@_startDateText"
+                                       @oninput="OnStartDateChanged" />
+                            </div>
+
+                            <div class="cal-field">
+                                <label class="cal-label">@Loc.GetOr("Common_Actions_To", "To")</label>
+                                <input class="cal-input"
+                                       type="date"
+                                       value="@_endDateText"
+                                       min="@_startDateText"
+                                       @oninput="OnEndDateChanged" />
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="cal-field">
+                                <label class="cal-label">@Loc.GetOr("Common_Actions_From", "From")</label>
+                                <input class="cal-input"
+                                       type="datetime-local"
+                                       value="@_startText"
+                                       @oninput="OnStartChanged"
+                                       step="60" />
+                            </div>
+
+                            <div class="cal-field">
+                                <label class="cal-label">@Loc.GetOr("Common_Actions_To", "To")</label>
+                                <input class="cal-input"
+                                       type="datetime-local"
+                                       value="@_endText"
+                                       min="@_startText"
+                                       @oninput="OnEndChanged"
+                                       step="60" />
+                            </div>
+                        }
+
+                        <div class="cal-field cal-alldayField">
+                            <button type="button"
+                                    class="cal-alldayPill @(IsAllDay ? "is-on" : "")"
+                                    @onclick="() => IsAllDay = !IsAllDay"
+                                    aria-pressed="@IsAllDay">
+                                @Loc.GetOr("Common_Actions_AllDay", "All day")
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                @* Description *@
+                <div class="cal-formRow">
+                    <label class="cal-label">@Loc.GetOr("Page_CalendarQuickAddModal_Description_Label", "Description")</label>
+                    <textarea class="cal-input" rows="3" @bind="Model.Description"></textarea>
+                </div>
+
+                @* Location *@
+                <div class="cal-formRow">
+                    <label class="cal-label">@Loc.GetOr("Common_Location", "Location")</label>
+
+                    <div class="cal-locationRow">
+                        <input class="cal-input cal-locationInput"
+                               @bind="Model.Location"
+                               placeholder="@Loc.GetOr("Common_Location_Placeholder", "Address / place / link")" />
+
+                        @if (CalendarLocationHelper.HasValue(Model.Location))
+                        {
+                            <a class="cal-locationIconLink"
+                               target="_blank"
+                               rel="noopener"
+                               href="@CalendarLocationHelper.BuildOpenHref(Model.Location)"
+                               aria-label="@CalendarLocationHelper.GetOpenLabel(Loc, Model.Location)"
+                               title="@CalendarLocationHelper.GetOpenLabel(Loc, Model.Location)">
+                                <a class="ui-iconBtn ui-iconBtn--sm ui-iconBtn--ghost cal-locationIconBtn"
+                                   target="_blank"
+                                   rel="noopener"
+                                   href="@CalendarLocationHelper.BuildOpenHref(Model.Location)"
+                                   aria-label="@CalendarLocationHelper.GetOpenLabel(Loc, Model.Location)"
+                                   title="@CalendarLocationHelper.GetOpenLabel(Loc, Model.Location)">
+                                    <i class="bi @(CalendarLocationHelper.IsLinkLike(Model.Location) ? "bi-box-arrow-up-right" : "bi-map")"
+                                       aria-hidden="true"></i>
+                                </a>
+                            </a>
+                        }
+                    </div>
+
+                    @if (CalendarLocationHelper.HasValue(Model.Location) && !CalendarLocationHelper.IsLinkLike(Model.Location))
+                    {
+                        <div class="cal-locationMapPreview">
+                            <iframe title="@Loc.GetOr("Common_Action_OpenMap", "Open map")"
+                                    loading="lazy"
+                                    referrerpolicy="no-referrer-when-downgrade"
+                                    src="@GetLocationMapEmbedUrl(Model.Location)">
+                            </iframe>
+                        </div>
+                    }
+                </div>
+
+                @* Availability + Visibility *@
+                <div class="cal-grid2 cal-grid2-collapse">
+
+                    <div class="cal-field cal-select">
+                        <label class="cal-label">@Loc.GetOr("Common_Availability", "Availability")</label>
+                        <div class="dropdown">
+                            <button type="button"
+                                    class="cal-input cal-selectBtn dropdown-toggle"
+                                    data-bs-toggle="dropdown"
+                                    aria-expanded="false">
+                                @GetAvailabilityLabel(Model.Availability)
+                            </button>
+
+                            <ul class="dropdown-menu cal-selectMenu">
+                                <li>
+                                    <button type="button" class="dropdown-item" @onclick="() => SetAvailability(CalendarAvailability.Free)">
+                                        @GetAvailabilityLabel(CalendarAvailability.Free)
+                                    </button>
+                                </li>
+                                <li>
+                                    <button type="button" class="dropdown-item" @onclick="() => SetAvailability(CalendarAvailability.Busy)">
+                                        @GetAvailabilityLabel(CalendarAvailability.Busy)
+                                    </button>
+                                </li>
+                                <li>
+                                    <button type="button" class="dropdown-item" @onclick="() => SetAvailability(CalendarAvailability.OutOfOffice)">
+                                        @GetAvailabilityLabel(CalendarAvailability.OutOfOffice)
+                                    </button>
+                                </li>
+                                <li>
+                                    <button type="button" class="dropdown-item" @onclick="() => SetAvailability(CalendarAvailability.Tentative)">
+                                        @GetAvailabilityLabel(CalendarAvailability.Tentative)
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="cal-field cal-select">
+                        <label class="cal-label">@Loc.GetOr("Common_Visibility", "Visibility")</label>
+
+                        <div class="dropdown">
+                            <button type="button"
+                                    class="cal-input cal-selectBtn dropdown-toggle"
+                                    data-bs-toggle="dropdown"
+                                    aria-expanded="false">
+                                @GetVisibilityLabel(Model.Visibility)
+                            </button>
+
+                            <ul class="dropdown-menu cal-selectMenu">
+                                <li>
+                                    <button type="button" class="dropdown-item" @onclick="() => SetVisibility(CalendarVisibility.Private)">
+                                        @GetVisibilityLabel(CalendarVisibility.Private)
+                                    </button>
+                                </li>
+                                <li>
+                                    <button type="button" class="dropdown-item" @onclick="() => SetVisibility(CalendarVisibility.BusyOnly)">
+                                        @GetVisibilityLabel(CalendarVisibility.BusyOnly)
+                                    </button>
+                                </li>
+                                <li>
+                                    <button type="button" class="dropdown-item" @onclick="() => SetVisibility(CalendarVisibility.Details)">
+                                        @GetVisibilityLabel(CalendarVisibility.Details)
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                @* Reminders *@
+                <div class="cal-section">
+                    <div class="cal-sectionHeader">
+                        <div class="cal-sectionTitle">@Loc.GetOr("Common_Reminders", "Reminders")</div>
+                        <span class="cal-sectionSwitch">
+                            <input type="checkbox" class="cal-switch" @bind="RemindersEnabled" />
+                        </span>
+                    </div>
+
+                    @if (RemindersEnabled)
+                    {
+                        <div class="cal-sectionBody">
+                            @{
+                                var r = Model.Reminders![0];
+                                var presetLabel = GetPresetLabel(_reminderPreset);
+                            }
+
+                            <div class="cal-reminderRow">
+
+                                <!-- Channel -->
+                                <div class="cal-reminderCol">
+                                    @if (CanSelectReminderChannel)
+                                    {
+                                        <div class="dropdown w-100">
+                                            <button type="button"
+                                                    class="cal-input cal-selectBtn dropdown-toggle w-100"
+                                                    data-bs-toggle="dropdown"
+                                                    aria-expanded="false">
+                                                @GetReminderChannelLabel(r.Channel)
+                                            </button>
+
+                                            <ul class="dropdown-menu cal-selectMenu w-100">
+                                                @foreach (var ch in ReminderChannels)
+                                                {
+                                                    var isSelected = r.Channel == ch;
+                                                    <li>
+                                                        <button type="button"
+                                                                class="dropdown-item @(isSelected ? "active" : "")"
+                                                                @onclick="() => SetReminderChannelSingle(ch)">
+                                                            @GetReminderChannelLabel(ch)
+                                                        </button>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        @* TODO: Kalenderpåminnelser – kanalval (Email/Push) för admins när backend + notifieringar är klara *@
+                                        <div class="cal-input w-100">@GetReminderChannelLabel(ReminderChannel.InApp)</div>
+                                    }
+                                </div>
+
+                                <!-- Preset -->
+                                <div class="cal-reminderCol">
+                                    <div class="dropdown w-100">
+                                        <button type="button"
+                                                class="cal-input cal-selectBtn dropdown-toggle w-100"
+                                                data-bs-toggle="dropdown"
+                                                aria-expanded="false">
+                                            @presetLabel
+                                        </button>
+
+                                        <ul class="dropdown-menu cal-selectMenu w-100">
+                                            @foreach (var p in ReminderPresets)
+                                            {
+                                                var isSelected = _reminderPreset == p.Value;
+                                                <li>
+                                                    <button type="button"
+                                                            class="dropdown-item @(isSelected ? "active" : "")"
+                                                            @onclick="() => SetReminderPreset(p.Value)">
+                                                        @p.Label
+                                                    </button>
+                                                </li>
+                                            }
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <!-- Custom minutes (only when Custom selected) -->
+                                @if (_reminderPreset == "custom")
+                                {
+                                    <div class="cal-reminderCol cal-reminderCustom">
+                                        <div class="cal-reminderCustomWrap">
+                                            <input class="cal-input cal-reminderMinutes"
+                                                   type="number"
+                                                   min="0"
+                                                   step="1"
+                                                   @bind="r.MinutesBeforeStart" />
+
+                                            <span class="cal-reminderUnit">
+                                                @Loc.GetOr("Common_Minutes", "minutes")
+                                            </span>
+                                        </div>
+                                    </div>
+                                }
+
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                @* Recurrence *@
+                <div class="cal-section">
+                    <div class="cal-sectionHeader">
+                        <div class="cal-sectionTitle">@Loc.GetOr("Common_Recurrence", "Recurrence")</div>
+
+                        @if (IsOccurrenceEdit)
+                        {
+                            <span class="text-muted" style="font-size: var(--text-sm);">
+                                @Loc.GetOr("Common_Recurrence_OccurrenceLocked", "This is a single occurrence. Edit the series from the original event.")
+                            </span>
+
+                            <button type="button"
+                                    class="btn btn-ghost btn-sm"
+                                    @onclick="() => OnEditSeries.InvokeAsync(ExistingEvent!)">
+                                @Loc.GetOr("Common_Actions_EditSeries", "Edit series")
+                            </button>
+                        }
+                        else
+                        {
+                            <span class="cal-sectionSwitch">
+                                <input type="checkbox" class="cal-switch" checked="@HasRecurrence" @onchange="ToggleRecurrence" />
+                            </span>
+                        }
+                    </div>
+
+                    @if (!IsOccurrenceEdit && HasRecurrence)
+                    {
+                        <div class="cal-sectionBody">
+                            @* (din befintliga recurrence-body exakt som idag) *@
+
+                            <div class="cal-formRow cal-grid2" style="margin:0;">
+                                <div class="cal-field cal-select">
+                                    <label class="cal-label">@Loc.GetOr("Common_Frequency", "Frequency")</label>
+                                    <div class="dropdown">
+                                        <button type="button" class="cal-input cal-selectBtn dropdown-toggle" data-bs-toggle="dropdown">
+                                            @GetRecurrenceFrequencyLabel(Model.Recurrence!.Frequency)
+                                        </button>
+                                        <ul class="dropdown-menu cal-selectMenu">
+                                            @foreach (var f in Enum.GetValues<RecurrenceFrequency>())
+                                            {
+                                                var isSelected = Model.Recurrence!.Frequency == f;
+                                                <li>
+                                                    <button type="button"
+                                                            class="dropdown-item @(isSelected ? "active" : "")"
+                                                            @onclick="() => SetRecurrenceFrequency(f)">
+                                                        @GetRecurrenceFrequencyLabel(f)
+                                                    </button>
+                                                </li>
+                                            }
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <div class="cal-field">
+                                    <label class="cal-label">@Loc.GetOr("Common_Interval", "Interval")</label>
+                                    <input class="cal-input" type="number" min="1" step="1" @bind="Model.Recurrence!.Interval" />
+                                </div>
+                            </div>
+
+                            @if (Model.Recurrence?.Frequency == RecurrenceFrequency.Weekly)
+                            {
+                                <div class="cal-formRow" style="margin-top:10px;">
+                                    <label class="cal-label">@Loc.GetOr("Common_Days", "Days")</label>
+                                    <div class="cal-chipRow">
+                                        @foreach (var d in WeekdayOptions)
+                                        {
+                                            var selected = Model.Recurrence!.ByWeekDays.Contains(d);
+                                            <button type="button"
+                                                    class="cal-chip @(selected ? "is-on" : "")"
+                                                    @onclick="() => ToggleWeekday(d)">
+                                                @GetWeekdayShortLabel(d)
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            }
+
+                            <div class="cal-formRow cal-grid2" style="margin-top:10px;">
+                                <div class="cal-field cal-select">
+                                    <label class="cal-label">@Loc.GetOr("Common_EndMode", "Ends")</label>
+
+                                    <div class="dropdown">
+                                        <button type="button" class="cal-input cal-selectBtn dropdown-toggle" data-bs-toggle="dropdown">
+                                            @GetRecurrenceEndModeLabel(_recurrenceEndMode)
+                                        </button>
+
+                                        <ul class="dropdown-menu cal-selectMenu">
+                                            @foreach (var m in RecurrenceEndModes)
+                                            {
+                                                var isSelected = string.Equals(_recurrenceEndMode, m.Value, StringComparison.Ordinal);
+                                                <li>
+                                                    <button type="button"
+                                                            class="dropdown-item @(isSelected ? "active" : "")"
+                                                            @onclick="() => SetRecurrenceEndMode(m.Value)">
+                                                        @m.Label
+                                                    </button>
+                                                </li>
+                                            }
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <div class="cal-field">
+                                    @if (_recurrenceEndMode == "until")
+                                    {
+                                        <label class="cal-label">@Loc.GetOr("Common_Until", "Until")</label>
+                                        <input class="cal-input" type="date" value="@_recurrenceUntilLocalText" @oninput="OnRecurrenceUntilChanged" />
+                                    }
+                                    else if (_recurrenceEndMode == "count")
+                                    {
+                                        <label class="cal-label">@Loc.GetOr("Common_Count", "Count")</label>
+                                        <input class="cal-input" type="number" min="1" step="1" @bind="Model.Recurrence!.Count" />
+                                    }
+                                    else
+                                    {
+                                        <label class="cal-label">&nbsp;</label>
+                                        <div class="cal-input" style="opacity:0; pointer-events:none;">.</div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                @* Checklist *@
+                <div class="cal-section">
+                    <div class="cal-sectionHeader">
+                        <div class="cal-sectionTitle">@Loc.GetOr("Common_Checklist", "Checklist")</div>
+
+                        <span class="cal-sectionSwitch">
+                            <input type="checkbox" class="cal-switch" @bind="ChecklistEnabled" />
+                        </span>
+                    </div>
+
+                    @if (ChecklistEnabled)
+                    {
+                        <div class="cal-sectionBody">
+                            <div class="cal-miniList">
+                                @for (var i = 0; i < (Model.Checklist?.Count ?? 0); i++)
+                                {
+                                    var item = Model.Checklist![i];
+
+                                    <div class="cal-miniRow cal-miniRowChecklist" @key="item">
+                                        <input type="checkbox"
+                                               class="form-check-input cal-checklistBox"
+                                               @bind="item.Done" />
+
+                                        <input class="cal-input cal-miniInput cal-checklistInput"
+                                               @bind="item.Text"
+                                               placeholder="@Loc.GetOr("Common_ChecklistItem_Placeholder", "Checklist item")" />
+
+                                        <IconButton IconClass="bi bi-trash"
+                                                    Title="@Loc.GetOr("Common_Actions_Delete", "Delete")"
+                                                    AriaLabel="@Loc.GetOr("Common_Actions_Delete", "Delete")"
+                                                    Size="sm"
+                                                    Tone="ghost"
+                                                    Class="cal-dayRowIconBtn cal-checklistTrash"
+                                                    OnClick="@(e => { RemoveChecklistItem(item); return Task.CompletedTask; })" />
+                                    </div>
+                                }
+
+                                <IconButton IconClass="bi bi-plus-lg"
+                                            Title="@Loc.GetOr("Common_Actions_Add", "Add")"
+                                            AriaLabel="@Loc.GetOr("Common_Actions_Add", "Add")"
+                                            Size="sm"
+                                            Tone="ghost"
+                                            Class="cal-dayRowIconBtn cal-checklistAddBtn"
+                                            OnClick="@(e => { AddChecklistItem(); return Task.CompletedTask; })" />
+                            </div>
+                        </div>
+                    }
+                </div>
+
+            </div>
+
+            <div class="cal-modalFooter">
+                @if (IsEdit)
+                {
+                    <button type="button"
+                            class="btn btn-ghost"
+                            @onclick="DeleteAsync">
+                        @Loc.GetOr("Common_Actions_Delete", "Delete")
+                    </button>
+                }
+
+                <div style="flex:1"></div>
+
+                <button type="button" class="btn btn-ghost" @onclick="RequestCloseAsync">
+                    @Loc.GetOr("Common_Actions_Cancel", "Cancel")
+                </button>
+                <button type="button"
+                        class="btn btn-primary"
+                        disabled="@(!HasEditableCalendar)"
+                        @onclick="SaveAsync">
+                    @Loc.GetOr("Common_Actions_Save", "Save")
+                </button>
+
+                @if (!HasEditableCalendar)
+                {
+                    <div class="alert alert-warning mt-2">
+                        @Loc.GetOr("Page_CalendarQuickAddModal_NoEditableCalendars", "You don't have permission to create events in any calendar.")
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+<ConfirmModal @ref="_confirmClose"
+              ModalOptions="@(new { backdrop = false, keyboard = false })"
+              Title="@Loc.GetOr("ConfirmModal_Title_UnsavedChanges", "Unsaved changes")"
+              Message="@Loc.GetOr("ConfirmModal_Message_UnsavedChanges", "Du har osparade ändringar. Vill du kasta dem?")"
+              Variant="warning"
+              CancelText="@Loc.GetOr("Common_Actions_Cancel", "Cancel")"
+              ConfirmText="@Loc.GetOr("Common_Actions_Discard", "Discard")"
+              OnClosed="OnConfirmCloseClosed" />
+
+@code {
+    [CascadingParameter] public ILocalizationService Loc { get; set; } = default!;
+
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public EventCallback<bool> IsOpenChanged { get; set; }
+
+    [Parameter] public List<CalendarDto> Calendars { get; set; } = new();
+    [Parameter] public string? DefaultCalendarId { get; set; }
+    [Parameter] public Func<string?, string>? CalendarIdToHex { get; set; }
+
+    [Parameter] public DateTime DefaultStartLocal { get; set; }
+    [Parameter] public DateTime DefaultEndLocal { get; set; }
+
+    [Parameter] public CalendarEventDto? ExistingEvent { get; set; }
+
+    [Parameter] public EventCallback<CalendarEventDto> OnSave { get; set; }
+    [Parameter] public EventCallback<CalendarEventDto> OnDelete { get; set; }
+    [Parameter] public EventCallback<CalendarEventDto> OnEditSeries { get; set; }
+
+    private CalendarEventDto Model = new();
+
+    private ConfirmModal? _confirmClose;
+    private TaskCompletionSource<bool>? _confirmTcs;
+
+    private string _initialSnapshot = "";
+    private bool _scrollLocked;
+    private ElementReference _modalRef;
+
+    private DateTime _startLocal;
+    private DateTime _endLocal;
+
+    private bool _endTouched;
+    private TimeSpan _duration = TimeSpan.FromMinutes(30);
+
+    // All-day UI (date only)
+    private string _startDateText = ""; // yyyy-MM-dd
+    private string _endDateText = "";   // yyyy-MM-dd (inclusive display)
+    private int _allDayDays = 1;        // number of days, end is exclusive in model
+
+    // Date-time UI
+    private string _startText = "";
+    private string _endText = "";
+
+    private string? SelectedCalendarId;
+
+    private bool HasManyCalendars => (Calendars?.Count ?? 0) > 1;
+    private bool IsEdit => ExistingEvent is not null && !string.IsNullOrWhiteSpace(ExistingEvent.EventId);
+
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+    private static readonly string[] DtFormats =
+    [
+        "yyyy-MM-ddTHH:mm",
+        "yyyy-MM-ddTHH:mm:ss"
+    ];
+
+    private bool _wasOpen;
+    private string? _lastEventId;
+
+    private bool HasEditableCalendar => Calendars?.Count > 0;
+
+    // Recurrence UI state
+    private string _recurrenceEndMode = "none"; // none | until | count
+    private string _recurrenceUntilLocalText = "";
+
+    private static readonly DayOfWeek[] WeekdayOptions =
+    [
+        DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday,
+        DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday
+    ];
+
+    private static readonly ReminderChannel[] ReminderChannels = Enum.GetValues<ReminderChannel>();
+    private bool _reminderChannelsFeatureEnabled;
+    private bool _reminderChannelsSelectionEnabled;
+    private string _reminderPreset = "30";
+
+    private bool CanUserChooseReminderChannel => _reminderChannelsFeatureEnabled;
+    private bool CanEnableReminderChannelSelection => CanUserChooseReminderChannel && _reminderChannelsSelectionEnabled;
+    private bool CanSelectReminderChannel => CanUserChooseReminderChannel && CanEnableReminderChannelSelection;
+
+    private bool HasRecurrence => Model.Recurrence is not null;
+
+    private bool RemindersEnabled
+    {
+        get => Model.Reminders is not null && Model.Reminders.Count > 0;
+        set
+        {
+            if (value)
+            {
+                Model.Reminders ??= new();
+                if (Model.Reminders.Count == 0)
+                {
+                    Model.Reminders.Add(new ReminderDto
+                    {
+                        Channel = ReminderChannel.InApp,
+                        MinutesBeforeStart = 30
+                    });
+                }
+                else if (Model.Reminders.Count > 1)
+                {
+                    // vi vill bara ha en
+                    Model.Reminders = new List<ReminderDto> { Model.Reminders[0] };
+                }
+            }
+            else
+            {
+                Model.Reminders = new();
+            }
+        }
+    }
+
+    private sealed record ReminderPreset(string Value, string Label);
+
+    private IEnumerable<ReminderPreset> ReminderPresets => new[]
+    {
+    new ReminderPreset("0",  Loc.GetOr("Common_AtStart", "At start")),
+    new ReminderPreset("5",  "5 " + Loc.GetOr("Common_MinutesShort", "min")),
+    new ReminderPreset("10", "10 " + Loc.GetOr("Common_MinutesShort", "min")),
+    new ReminderPreset("15", "15 " + Loc.GetOr("Common_MinutesShort", "min")),
+    new ReminderPreset("30", "30 " + Loc.GetOr("Common_MinutesShort", "min")),
+    new ReminderPreset("60", "60 " + Loc.GetOr("Common_MinutesShort", "min")),
+    new ReminderPreset("120", "120 " + Loc.GetOr("Common_MinutesShort", "min")),
+    new ReminderPreset("custom", Loc.GetOr("Common_Custom", "Custom")),
+};
+
+    private string GetPresetLabel(string value)
+    {
+        if (value == "custom")
+        {
+            var mins = Model.Reminders is { Count: > 0 } ? Model.Reminders[0].MinutesBeforeStart : 0;
+            return $"{Loc.GetOr("Common_Custom", "Custom")}: {mins} min";
+        }
+
+        return value == "0"
+            ? Loc.GetOr("Common_Reminder_AtStart", "At start")
+            : $"{value} min";
+    }
+
+    private void SetReminderPreset(string value)
+    {
+        _reminderPreset = string.IsNullOrWhiteSpace(value) ? "30" : value;
+
+        EnsureSingleReminder();
+        var r = Model.Reminders![0];
+
+        if (_reminderPreset != "custom")
+        {
+            if (int.TryParse(_reminderPreset, out var mins))
+                r.MinutesBeforeStart = Math.Max(0, mins);
+        }
+
+        StateHasChanged();
+    }
+
+    private bool ChecklistEnabled
+    {
+        get => Model.Checklist is { Count: > 0 };
+        set
+        {
+            if (value)
+            {
+                Model.Checklist ??= new List<ChecklistItemDto>();
+
+                if (Model.Checklist.Count == 0)
+                {
+                    Model.Checklist.Add(new ChecklistItemDto
+                    {
+                        Id = null,
+                        Text = "",
+                        Done = false,
+                        Order = 0
+                    });
+                }
+            }
+            else
+            {
+                Model.Checklist = null;
+            }
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        Calendars ??= new();
+
+        var openingNow = IsOpen && !_wasOpen;
+        var eventChanged = IsOpen && IsEdit && !string.Equals(_lastEventId, ExistingEvent?.EventId, StringComparison.Ordinal);
+
+        if (openingNow || eventChanged)
+        {
+            Init();
+            _lastEventId = ExistingEvent?.EventId;
+        }
+
+        _wasOpen = IsOpen;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _reminderChannelsFeatureEnabled = await Features.CanAsync(FeatureKey.CalendarRemindersChannels, CancellationToken.None);
+        _reminderChannelsSelectionEnabled = await Features.CanAsync(FeatureKey.CalendarRemindersChannelsEnable, CancellationToken.None);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (IsOpen && !_scrollLocked)
+        {
+            _scrollLocked = true;
+
+            await JS.InvokeVoidAsync("contista.lockScroll.lock");
+            TakeSnapshot();
+
+            // fokus så ESC funkar direkt
+            await _modalRef.FocusAsync();
+        }
+
+        if (!IsOpen && _scrollLocked)
+        {
+            _scrollLocked = false;
+            await JS.InvokeVoidAsync("contista.lockScroll.unlock");
+        }
+    }
+
+    private void TakeSnapshot()
+    {
+        _initialSnapshot = MakeSnapshot(Model, SelectedCalendarId, _recurrenceEndMode, _recurrenceUntilLocalText);
+    }
+
+    private static string MakeSnapshot(
+    CalendarEventDto m,
+    string? selectedCalendarId,
+    string recurrenceEndMode,
+    string recurrenceUntilLocalText)
+    {
+        // Viktigt: inkludera bara saker som påverkar “osparat”
+        // (och gör checklist/reminders/recurrence null-safe)
+        var snapshot = new
+        {
+            m.Title,
+            m.Description,
+            m.Location,
+            m.Type,
+            CalendarId = selectedCalendarId ?? m.CalendarId,
+
+            m.IsAllDay,
+            m.StartUtc,
+            m.EndUtc,
+
+            m.Availability,
+            m.Visibility,
+
+            Reminders = (m.Reminders ?? new()).Select(r => new { r.Channel, r.MinutesBeforeStart }).ToList(),
+
+            Recurrence = m.Recurrence is null ? null : new
+            {
+                m.Recurrence.Frequency,
+                m.Recurrence.Interval,
+                ByWeekDays = (m.Recurrence.ByWeekDays ?? new()).OrderBy(x => x).ToList(),
+                m.Recurrence.UntilUtc,
+                m.Recurrence.Count,
+                recurrenceEndMode,
+                recurrenceUntilLocalText
+            },
+
+            Checklist = (m.Checklist ?? new()).Select(c => new { c.Text, c.Done, c.Order }).ToList()
+        };
+
+        return System.Text.Json.JsonSerializer.Serialize(snapshot);
+    }
+
+    private bool IsDirty()
+    {
+        var now = MakeSnapshot(Model, SelectedCalendarId, _recurrenceEndMode, _recurrenceUntilLocalText);
+        return !string.Equals(now, _initialSnapshot, StringComparison.Ordinal);
+    }
+
+    private async Task RequestCloseAsync()
+    {
+        if (!IsDirty())
+        {
+            await CloseAsync();
+            return;
+        }
+
+        var discard = await AskDiscardAsync();
+        if (discard)
+            await CloseAsync();
+    }
+
+    private Task<bool> AskDiscardAsync()
+    {
+        _confirmTcs = new TaskCompletionSource<bool>();
+        _ = _confirmClose!.ShowAsync(); // visar modalen
+        return _confirmTcs.Task;
+    }
+
+    private Task OnConfirmCloseClosed(bool confirmed)
+    {
+        _confirmTcs?.TrySetResult(confirmed);
+        return Task.CompletedTask;
+    }
+
+    private void Init()
+    {
+        if (ExistingEvent is not null)
+        {
+            Model = new CalendarEventDto
+            {
+                EventId = ExistingEvent.EventId,
+                CalendarId = ExistingEvent.CalendarId,
+                CreatedById = ExistingEvent.CreatedById,
+
+                Type = ExistingEvent.Type,
+                Title = ExistingEvent.Title ?? "",
+                Description = ExistingEvent.Description ?? "",
+                Location = ExistingEvent.Location,
+
+                StartUtc = ExistingEvent.StartUtc,
+                EndUtc = ExistingEvent.EndUtc,
+                IsAllDay = ExistingEvent.IsAllDay,
+
+                OccurrenceOverrideSeriesId = ExistingEvent.OccurrenceOverrideSeriesId,
+                OriginalStartUtc = ExistingEvent.OriginalStartUtc,
+                IsOccurrenceOverride = ExistingEvent.IsOccurrenceOverride,
+                IsOccurrenceCancelled = ExistingEvent.IsOccurrenceCancelled,
+
+                Availability = ExistingEvent.Availability,
+                Visibility = ExistingEvent.Visibility,
+
+                Reminders = ExistingEvent.Reminders?.Select(r => new ReminderDto
+                {
+                    Channel = r.Channel,
+                    MinutesBeforeStart = r.MinutesBeforeStart
+                }).ToList() ?? new(),
+
+                Recurrence = ExistingEvent.Recurrence is null ? null : new RecurrenceDto
+                {
+                    Frequency = ExistingEvent.Recurrence.Frequency,
+                    Interval = ExistingEvent.Recurrence.Interval,
+                    ByWeekDays = ExistingEvent.Recurrence.ByWeekDays?.ToList() ?? new(),
+                    UntilUtc = ExistingEvent.Recurrence.UntilUtc,
+                    Count = ExistingEvent.Recurrence.Count,
+                    SeriesId = ExistingEvent.Recurrence.SeriesId
+                },
+
+                IsDone = ExistingEvent.IsDone,
+                Checklist = ExistingEvent.Checklist?.Select(c => new ChecklistItemDto
+                {
+                    Id = c.Id,
+                    Text = c.Text,
+                    Done = c.Done,
+                    Order = c.Order
+                }).ToList(), // kan bli null
+
+                ContentPostId = ExistingEvent.ContentPostId,
+
+                HasConflict = ExistingEvent.HasConflict,
+                ConflictWithEventIds = ExistingEvent.ConflictWithEventIds?.ToList() ?? new(),
+                ConflictAcknowledgedByUserIds = ExistingEvent.ConflictAcknowledgedByUserIds?.ToList() ?? new(),
+
+                CreatedAtUtc = ExistingEvent.CreatedAtUtc,
+                UpdatedAtUtc = ExistingEvent.UpdatedAtUtc,
+                LastMutationId = ExistingEvent.LastMutationId
+            };
+
+            if (Model.Checklist is { Count: 0 })
+                Model.Checklist = null;
+
+            SelectedCalendarId = ExistingEvent.CalendarId;
+
+            _startLocal = (Model.StartUtc == default ? DefaultStartLocal : Model.StartUtc.ToLocalTime());
+            _endLocal = (Model.EndUtc == default ? DefaultEndLocal : Model.EndUtc.ToLocalTime());
+        }
+        else
+        {
+            Model = new CalendarEventDto
+            {
+                Title = "",
+                Description = "",
+                Location = "",
+                Type = CalendarEventType.Event,
+                Availability = CalendarAvailability.Busy,
+                Visibility = CalendarVisibility.Details,
+                Reminders = new(),
+                Checklist = null
+            };
+
+            _startLocal = DefaultStartLocal;
+            _endLocal = DefaultEndLocal;
+        }
+
+        if (_endLocal <= _startLocal)
+            _endLocal = _startLocal.AddMinutes(30);
+
+        _duration = _endLocal - _startLocal;
+        if (_duration < TimeSpan.FromMinutes(1))
+            _duration = TimeSpan.FromMinutes(30);
+
+        _endTouched = false;
+
+        SelectedCalendarId =
+            SelectedCalendarId
+            ?? DefaultCalendarId
+            ?? Calendars.FirstOrDefault(c => c.IsPrimary)?.CalendarId
+            ?? Calendars.FirstOrDefault()?.CalendarId;
+
+        if (!string.IsNullOrWhiteSpace(SelectedCalendarId))
+            Model.CalendarId = SelectedCalendarId;
+
+        if (Model.IsAllDay)
+        {
+            _startLocal = _startLocal.Date;
+
+            var endDateExclusive = _endLocal.Date;
+            if (endDateExclusive <= _startLocal.Date)
+                endDateExclusive = _startLocal.Date.AddDays(1);
+
+            _endLocal = endDateExclusive;
+            _endTouched = true;
+            _duration = _endLocal - _startLocal;
+        }
+
+        _startText = ToLocalText(_startLocal);
+        _endText = ToLocalText(_endLocal);
+
+        _startDateText = ToLocalDateText(_startLocal.Date);
+        _endDateText = ToLocalDateText(_endLocal.Date.AddDays(-1));
+        _allDayDays = Math.Max(1, (_endLocal.Date - _startLocal.Date).Days);
+
+        SyncModelTimesFromLocals();
+
+        InitRecurrenceUiFromModel();
+        NormalizeChecklistOrder();
+
+        if (RemindersEnabled)
+            EnsureSingleReminder();
+        
+        NormalizeReminders();
+
+        // Synka preset-dropdown från model
+        if (Model.Reminders is { Count: > 0 })
+        {
+            var mins = Model.Reminders[0].MinutesBeforeStart;
+            _reminderPreset = mins switch
+            {
+                0 => "0",
+                5 => "5",
+                10 => "10",
+                15 => "15",
+                30 => "30",
+                60 => "60",
+                120 => "120",
+                _ => "custom"
+            };
+        }
+        else
+        {
+            _reminderPreset = "30";
+        }
+    }
+
+    private void EnsureSingleReminder()
+    {
+        Model.Reminders ??= new();
+
+        if (Model.Reminders.Count == 0)
+        {
+            Model.Reminders.Add(new ReminderDto
+            {
+                Channel = ReminderChannel.InApp,
+                MinutesBeforeStart = 30
+            });
+        }
+        else if (Model.Reminders.Count > 1)
+        {
+            Model.Reminders = new List<ReminderDto> { Model.Reminders[0] };
+        }
+    }
+
+    private void RemoveOnlyReminder()
+    {
+        Model.Reminders = new();
+        StateHasChanged();
+    }
+
+    private void OnFirstChecklistTextInput(ChangeEventArgs e)
+    {
+        // Om användaren börjar skriva när listan är tom: skapa första item automatiskt
+        var text = e?.Value?.ToString() ?? "";
+        if (Model.Checklist is null) Model.Checklist = new();
+        if (Model.Checklist.Count == 0)
+        {
+            Model.Checklist.Add(new ChecklistItemDto { Text = text, Done = false, Order = 0 });
+        }
+        else
+        {
+            Model.Checklist[0].Text = text;
+        }
+    }
+
+    private void InitRecurrenceUiFromModel()
+    {
+        if (Model.Recurrence is null)
+        {
+            _recurrenceEndMode = "none";
+            _recurrenceUntilLocalText = "";
+            return;
+        }
+
+        if (Model.Recurrence.Count.HasValue)
+        {
+            _recurrenceEndMode = "count";
+            _recurrenceUntilLocalText = "";
+            return;
+        }
+
+        var until = NormalizeUntil(Model.Recurrence.UntilUtc);
+
+        if (until.HasValue)
+        {
+            _recurrenceEndMode = "until";
+            var local = until.Value.ToLocalTime().Date;
+            _recurrenceUntilLocalText = local.ToString("yyyy-MM-dd", Invariant);
+            return;
+        }
+
+        // ✅ här hamnar default(0001-01-01) => none
+        _recurrenceEndMode = "none";
+        _recurrenceUntilLocalText = "";
+        Model.Recurrence.UntilUtc = null; 
+    }
+
+    private static bool TryParseLocal(string s, out DateTime local)
+        => DateTime.TryParseExact(s, DtFormats, Invariant, DateTimeStyles.None, out local);
+
+    private static string ToLocalText(DateTime local)
+        => local.ToString("yyyy-MM-ddTHH:mm", Invariant);
+
+    private static string ToLocalDateText(DateTime localDate)
+        => localDate.ToString("yyyy-MM-dd", Invariant);
+
+    private static bool TryParseLocalDate(string s, out DateTime localDate)
+        => DateTime.TryParseExact(s, "yyyy-MM-dd", Invariant, DateTimeStyles.None, out localDate);
+
+    private void OnStartChanged(ChangeEventArgs e)
+    {
+        var s = e.Value?.ToString() ?? "";
+        _startText = s;
+
+        if (!TryParseLocal(s, out var dt))
+            return;
+
+        _startLocal = dt;
+
+        if (!_endTouched)
+        {
+            _endLocal = _startLocal + _duration;
+        }
+        else if (_endLocal < _startLocal)
+        {
+            _endLocal = _startLocal.AddMinutes(30);
+        }
+
+        _endText = ToLocalText(_endLocal);
+        SyncModelTimesFromLocals();
+    }
+
+    private void OnEndChanged(ChangeEventArgs e)
+    {
+        var s = e.Value?.ToString() ?? "";
+        _endText = s;
+        _endTouched = true;
+
+        if (!TryParseLocal(s, out var dt))
+            return;
+
+        _endLocal = dt;
+
+        if (_endLocal < _startLocal)
+            _endLocal = _startLocal.AddMinutes(30);
+
+        _duration = _endLocal - _startLocal;
+        if (_duration < TimeSpan.FromMinutes(1))
+            _duration = TimeSpan.FromMinutes(30);
+
+        _endText = ToLocalText(_endLocal);
+        SyncModelTimesFromLocals();
+    }
+
+    private void OnStartDateChanged(ChangeEventArgs e)
+    {
+        var s = e.Value?.ToString() ?? "";
+        _startDateText = s;
+
+        if (!TryParseLocalDate(s, out var date))
+            return;
+
+        _startLocal = date.Date;
+
+        if (_allDayDays < 1) _allDayDays = 1;
+        _endLocal = _startLocal.AddDays(_allDayDays);
+
+        _endDateText = ToLocalDateText(_endLocal.Date.AddDays(-1));
+
+        _startText = ToLocalText(_startLocal);
+        _endText = ToLocalText(_endLocal);
+
+        SyncModelTimesFromLocals();
+    }
+
+    private void OnEndDateChanged(ChangeEventArgs e)
+    {
+        var s = e.Value?.ToString() ?? "";
+        _endDateText = s;
+
+        if (!TryParseLocalDate(s, out var endInclusive))
+            return;
+
+        var endExclusive = endInclusive.Date.AddDays(1);
+
+        if (endExclusive <= _startLocal.Date)
+            endExclusive = _startLocal.Date.AddDays(1);
+
+        _endLocal = endExclusive;
+        _allDayDays = Math.Max(1, (_endLocal.Date - _startLocal.Date).Days);
+
+        _startText = ToLocalText(_startLocal);
+        _endText = ToLocalText(_endLocal);
+
+        SyncModelTimesFromLocals();
+    }
+
+    private void SyncModelTimesFromLocals()
+    {
+        Model.StartUtc = DateTime.SpecifyKind(_startLocal, DateTimeKind.Local).ToUniversalTime();
+        Model.EndUtc = DateTime.SpecifyKind(_endLocal, DateTimeKind.Local).ToUniversalTime();
+    }
+
+    private bool IsAllDay
+    {
+        get => Model.IsAllDay;
+        set
+        {
+            Model.IsAllDay = value;
+
+            if (value)
+            {
+                var startDate = _startLocal.Date;
+                var endDate = _endLocal.Date;
+
+                _allDayDays = Math.Max(1, (endDate - startDate).Days);
+                _startLocal = startDate;
+                _endLocal = _startLocal.AddDays(_allDayDays);
+
+                _endTouched = true;
+                _duration = _endLocal - _startLocal;
+
+                _startDateText = ToLocalDateText(_startLocal.Date);
+                _endDateText = ToLocalDateText(_endLocal.Date.AddDays(-1));
+            }
+            else
+            {
+                if (_endLocal <= _startLocal)
+                    _endLocal = _startLocal.AddMinutes(30);
+
+                _endTouched = false;
+                _duration = _endLocal - _startLocal;
+                if (_duration < TimeSpan.FromMinutes(1))
+                    _duration = TimeSpan.FromMinutes(30);
+
+                _startDateText = ToLocalDateText(_startLocal.Date);
+                _endDateText = ToLocalDateText(_endLocal.Date.AddDays(-1));
+                _allDayDays = Math.Max(1, (_endLocal.Date - _startLocal.Date).Days);
+            }
+
+            _startText = ToLocalText(_startLocal);
+            _endText = ToLocalText(_endLocal);
+
+            SyncModelTimesFromLocals();
+        }
+    }
+
+    private async Task CloseAsync()
+    {
+        _wasOpen = false;
+        _lastEventId = null;
+
+        IsOpen = false;
+        ExistingEvent = null;
+        Model = new CalendarEventDto();
+
+        await IsOpenChanged.InvokeAsync(false);
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (ExistingEvent is null) return;
+        await OnDelete.InvokeAsync(ExistingEvent);
+        await CloseAsync();
+    }
+
+    private async Task SaveAsync()
+    {
+        SyncModelTimesFromLocals();
+
+        if (string.IsNullOrWhiteSpace(Model.Title))
+            Model.Title = Loc.GetOr("Common_Actions_Untitled", "Untitled");
+
+        if (Model.EndUtc <= Model.StartUtc)
+        {
+            _endLocal = _startLocal.AddMinutes(30);
+            _endText = ToLocalText(_endLocal);
+            SyncModelTimesFromLocals();
+        }
+
+        if (!string.IsNullOrWhiteSpace(SelectedCalendarId))
+            Model.CalendarId = SelectedCalendarId;
+
+        NormalizeRecurrence();
+        NormalizeChecklistOrder();
+        NormalizeReminders();
+
+        if (IsEdit && ExistingEvent is not null)
+        {
+            Model.CreatedById = ExistingEvent.CreatedById;
+            Model.CreatedAtUtc = ExistingEvent.CreatedAtUtc;
+        }
+
+        await OnSave.InvokeAsync(Model);
+        TakeSnapshot();
+        await CloseAsync();
+    }
+
+    private CalendarDto? GetSelectedCalendar()
+    {
+        var id = SelectedCalendarId ?? Model.CalendarId;
+        if (string.IsNullOrWhiteSpace(id)) return null;
+
+        return Calendars?.FirstOrDefault(c =>
+            string.Equals(c.CalendarId, id, StringComparison.Ordinal));
+    }
+
+    private string GetSelectedCalendarLabel()
+    {
+        var cal = GetSelectedCalendar();
+        if (cal is null) return Loc.GetOr("Common_None", "None");
+
+        return cal.Name + (cal.IsPrimary ? $" ({Loc.GetOr("Common_Calendars_Primary", "Primary")})" : "");
+    }
+
+    private void SelectCalendar(string? calendarId)
+    {
+        if (string.IsNullOrWhiteSpace(calendarId))
+            return;
+
+        SelectedCalendarId = calendarId;
+        Model.CalendarId = calendarId;
+    }
+
+    private string ResolveHex(string? calendarId)
+    {
+        if (CalendarIdToHex is null)
+            return "#2B2622";
+
+        var hex = CalendarIdToHex(calendarId);
+        return string.IsNullOrWhiteSpace(hex) ? "#2B2622" : hex;
+    }
+
+    // -------------------------
+    // Reminders helpers
+    // -------------------------
+    private void NormalizeReminders()
+    {
+        if (Model.Reminders is null) return;
+
+        if (Model.Reminders.Count > 1)
+            Model.Reminders = new List<ReminderDto> { Model.Reminders[0] };
+
+        foreach (var r in Model.Reminders)
+        {
+            // ✅ om inte "enable" är på -> tvinga InApp
+            if (!CanSelectReminderChannel)
+                r.Channel = ReminderChannel.InApp;
+
+            if (r.MinutesBeforeStart < 0) r.MinutesBeforeStart = 0;
+        }
+    }
+
+    // -------------------------
+    // Recurrence helpers
+    // -------------------------
+    private void ToggleRecurrence(ChangeEventArgs e)
+    {
+        var enabled = e?.Value is bool b && b;
+
+        if (!enabled)
+        {
+            Model.Recurrence = null;
+            _recurrenceEndMode = "none";
+            _recurrenceUntilLocalText = "";
+            return;
+        }
+
+        Model.Recurrence ??= new RecurrenceDto
+        {
+            Frequency = RecurrenceFrequency.Weekly,
+            Interval = 1,
+            ByWeekDays = new List<DayOfWeek>(),
+            SeriesId = Guid.NewGuid().ToString("N")
+        };
+
+        InitRecurrenceUiFromModel();
+    }
+
+    private void ToggleWeekday(DayOfWeek d)
+    {
+        Model.Recurrence ??= new RecurrenceDto
+        {
+            Frequency = RecurrenceFrequency.Weekly,
+            Interval = 1,
+            ByWeekDays = new List<DayOfWeek>()
+        };
+
+        if (Model.Recurrence.ByWeekDays.Contains(d))
+            Model.Recurrence.ByWeekDays.Remove(d);
+        else
+            Model.Recurrence.ByWeekDays.Add(d);
+    }
+
+    private void OnRecurrenceEndModeChanged()
+    {
+        if (Model.Recurrence is null)
+            return;
+
+        if (_recurrenceEndMode == "none")
+        {
+            Model.Recurrence.UntilUtc = null;
+            Model.Recurrence.Count = null;
+            _recurrenceUntilLocalText = "";
+        }
+        else if (_recurrenceEndMode == "until")
+        {
+            Model.Recurrence.Count = null;
+
+            // ✅ om fältet är tomt eller "0001-01-01" => behandla som none
+            if (string.IsNullOrWhiteSpace(_recurrenceUntilLocalText))
+            {
+                _recurrenceEndMode = "none";
+                Model.Recurrence.UntilUtc = null;
+            }
+        }
+        else if (_recurrenceEndMode == "count")
+        {
+            Model.Recurrence.UntilUtc = null;
+            _recurrenceUntilLocalText = "";
+            if (Model.Recurrence.Count is null or < 1) Model.Recurrence.Count = 1;
+        }
+    }
+
+    private void OnRecurrenceUntilChanged(ChangeEventArgs e)
+    {
+        _recurrenceUntilLocalText = e?.Value?.ToString() ?? "";
+
+        if (Model.Recurrence is null)
+            return;
+
+        if (DateTime.TryParseExact(_recurrenceUntilLocalText, "yyyy-MM-dd", Invariant, DateTimeStyles.None, out var localDate))
+        {
+            var localEnd = localDate.Date.AddDays(1).AddSeconds(-1);
+            Model.Recurrence.UntilUtc = DateTime.SpecifyKind(localEnd, DateTimeKind.Local).ToUniversalTime();
+        }
+        else
+        {
+            Model.Recurrence.UntilUtc = null;
+        }
+    }
+
+    private void NormalizeRecurrence()
+    {
+        if (Model.Recurrence is null)
+            return;
+
+        if (Model.Recurrence.Interval < 1)
+            Model.Recurrence.Interval = 1;
+
+        Model.Recurrence.ByWeekDays ??= new List<DayOfWeek>();
+
+        if (string.IsNullOrWhiteSpace(Model.Recurrence.SeriesId))
+            Model.Recurrence.SeriesId = Guid.NewGuid().ToString("N");
+
+        // ✅ ByWeekDays är endast relevant för Weekly
+        if (Model.Recurrence.Frequency != RecurrenceFrequency.Weekly)
+        {
+            Model.Recurrence.ByWeekDays.Clear();
+        }
+        else
+        {
+            // ✅ Weekly: om användaren inte valt dagar -> default = startdagen
+            if (Model.Recurrence.ByWeekDays.Count == 0)
+            {
+                var startDow = _startLocal.DayOfWeek;
+                Model.Recurrence.ByWeekDays.Add(startDow);
+            }
+
+            Model.Recurrence.ByWeekDays = Model.Recurrence.ByWeekDays
+                .Distinct()
+                .OrderBy(d => d == DayOfWeek.Sunday ? 7 : (int)d)
+                .ToList();
+        }
+
+        if (_recurrenceEndMode == "none")
+        {
+            Model.Recurrence.UntilUtc = null;
+            Model.Recurrence.Count = null;
+        }
+        else if (_recurrenceEndMode == "until")
+        {
+            Model.Recurrence.Count = null;
+        }
+        else if (_recurrenceEndMode == "count")
+        {
+            Model.Recurrence.UntilUtc = null;
+            if (Model.Recurrence.Count is < 1) Model.Recurrence.Count = 1;
+        }
+    }
+
+    // -------------------------
+    // Checklist helpers
+    // -------------------------
+    private void AddChecklistItem()
+    {
+        Model.Checklist ??= new();
+        Model.Checklist.Add(new ChecklistItemDto
+        {
+            Id = null,
+            Text = "",
+            Done = false,
+            Order = Model.Checklist.Count
+        });
+        NormalizeChecklistOrder();
+        StateHasChanged();
+    }
+
+    private void RemoveChecklistItem(ChecklistItemDto item)
+    {
+        if (Model.Checklist is null) return;
+
+        Model.Checklist.Remove(item);
+
+        if (Model.Checklist.Count == 0)
+            Model.Checklist = null; // valfritt: auto-stäng checklist
+
+        NormalizeChecklistOrder();
+        StateHasChanged();
+    }
+
+    private void NormalizeChecklistOrder()
+    {
+        if (Model.Checklist is null) return;
+
+        for (var i = 0; i < Model.Checklist.Count; i++)
+            Model.Checklist[i].Order = i;
+    }
+
+    // -------------------------
+    // Dropdown setters (forces rerender)
+    // -------------------------
+    private void SetType(CalendarEventType type) { Model.Type = type; StateHasChanged(); }
+    private void SetAvailability(CalendarAvailability a) { Model.Availability = a; StateHasChanged(); }
+    private void SetVisibility(CalendarVisibility v) { Model.Visibility = v; StateHasChanged(); }
+
+    private void SetRecurrenceFrequency(RecurrenceFrequency f)
+    {
+        if (Model.Recurrence is null) return;
+
+        Model.Recurrence.Frequency = f;
+
+        if (f != RecurrenceFrequency.Weekly)
+            Model.Recurrence.ByWeekDays?.Clear();
+
+        StateHasChanged();
+    }
+
+    private void SetReminderChannel(int index, ReminderChannel ch)
+    {
+        if (Model.Reminders is null) return;
+        if (index < 0 || index >= Model.Reminders.Count) return;
+
+        Model.Reminders[index].Channel = ch;
+        StateHasChanged();
+    }
+
+    private sealed record EndModeOption(string Value, string Label);
+
+    private IEnumerable<EndModeOption> RecurrenceEndModes => new[]
+    {
+        new EndModeOption("none",  Loc.GetOr("Common_None", "None")),
+        new EndModeOption("until", Loc.GetOr("Common_Until", "Until")),
+        new EndModeOption("count", Loc.GetOr("Common_Count", "Count")),
+    };
+
+    private void SetRecurrenceEndMode(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            value = "none";
+
+        if (!string.Equals(_recurrenceEndMode, value, StringComparison.Ordinal))
+        {
+            _recurrenceEndMode = value;
+            OnRecurrenceEndModeChanged();
+            StateHasChanged();
+        }
+    }
+
+    // -------------------------
+    // Labels / Loc
+    // -------------------------
+    private string GetTypeLabel(CalendarEventType type) => type switch
+    {
+        CalendarEventType.Event => Loc.GetOr("Page_Calendar_Event_Options", "Event"),
+        CalendarEventType.Meeting => Loc.GetOr("Page_Calendar_Meeting_Options", "Meeting"),
+        CalendarEventType.Task => Loc.GetOr("Page_Calendar_Task_Options", "Task"),
+        CalendarEventType.Checklist => Loc.GetOr("Page_Calendar_Checklist_Options", "Checklist"),
+        CalendarEventType.Dnd => Loc.GetOr("Page_Calendar_Dnd_Options", "Do not disturb"),
+        _ => type.ToString()
+    };
+
+    private string GetAvailabilityLabel(CalendarAvailability a) => a switch
+    {
+        CalendarAvailability.Free => Loc.GetOr("Page_Calendar_Availability_Free", "Free"),
+        CalendarAvailability.Busy => Loc.GetOr("Page_Calendar_Availability_Busy", "Busy"),
+        CalendarAvailability.OutOfOffice => Loc.GetOr("Page_Calendar_Availability_OutOfOffice", "Out of office"),
+        CalendarAvailability.Tentative => Loc.GetOr("Page_Calendar_Availability_Tentative", "Tentative"),
+        _ => a.ToString()
+    };
+
+    private string GetVisibilityLabel(CalendarVisibility v) => v switch
+    {
+        CalendarVisibility.Private => Loc.GetOr("Page_Calendar_Visibility_Private", "Private"),
+        CalendarVisibility.BusyOnly => Loc.GetOr("Page_Calendar_Visibility_BusyOnly", "Busy only"),
+        CalendarVisibility.Details => Loc.GetOr("Page_Calendar_Visibility_Details", "Details"),
+        _ => v.ToString()
+    };
+
+    private string GetRecurrenceFrequencyLabel(RecurrenceFrequency v) => v switch
+    {
+        RecurrenceFrequency.Daily => Loc.GetOr("Page_Calendar_RecurrenceFrequency_Daily", "Daily"),
+        RecurrenceFrequency.Weekly => Loc.GetOr("Page_Calendar_RecurrenceFrequency_Weekly", "Weekly"),
+        RecurrenceFrequency.Monthly => Loc.GetOr("Page_Calendar_RecurrenceFrequency_Monthly", "Monthly"),
+        RecurrenceFrequency.Yearly => Loc.GetOr("Page_Calendar_RecurrenceFrequency_Yearly", "Yearly"),
+        _ => v.ToString()
+    };
+
+    private string GetReminderChannelLabel(ReminderChannel v) => v switch
+    {
+        ReminderChannel.InApp => Loc.GetOr("Page_Calendar_ReminderChannel_InApp", "In app"),
+        ReminderChannel.Email => Loc.GetOr("Page_Calendar_ReminderChannel_Email", "Email"),
+        ReminderChannel.Push => Loc.GetOr("Page_Calendar_ReminderChannel_Push", "Push"),
+        _ => v.ToString()
+    };
+
+    private string GetRecurrenceEndModeLabel(string value) => value switch
+    {
+        "none" => Loc.GetOr("Common_None", "None"),
+        "until" => Loc.GetOr("Common_Until", "Until"),
+        "count" => Loc.GetOr("Common_Count", "Count"),
+        _ => Loc.GetOr("Common_None", "None"),
+    };
+
+    private string GetWeekdayShortLabel(DayOfWeek d) => d switch
+    {
+        DayOfWeek.Monday => Loc.GetOr("Common_Actions_MondayShort", "Mon"),
+        DayOfWeek.Tuesday => Loc.GetOr("Common_Actions_TuesdayShort", "Tue"),
+        DayOfWeek.Wednesday => Loc.GetOr("Common_Actions_WednesdayShort", "Wed"),
+        DayOfWeek.Thursday => Loc.GetOr("Common_Actions_ThursdayShort", "Thu"),
+        DayOfWeek.Friday => Loc.GetOr("Common_Actions_FridayShort", "Fri"),
+        DayOfWeek.Saturday => Loc.GetOr("Common_Actions_SaturdayShort", "Sat"),
+        DayOfWeek.Sunday => Loc.GetOr("Common_Actions_SundayShort", "Sun"),
+        _ => d.ToString().Substring(0, 3)
+    };
+
+    
+
+    private void SetReminderChannelSingle(ReminderChannel ch)
+    {
+        if (!CanSelectReminderChannel)
+            return;
+
+        EnsureSingleReminder();
+        Model.Reminders![0].Channel = ch;
+        StateHasChanged();
+    }
+
+    private string GetLocationMapEmbedUrl(string? location)
+    {
+        var clean = CalendarLocationHelper.Clean(location);
+        if (string.IsNullOrWhiteSpace(clean))
+            return string.Empty;
+
+        return $"https://www.google.com/maps?q={Uri.EscapeDataString(clean)}&output=embed";
+    }
+
+    private static DateTime? NormalizeUntil(DateTime? untilUtc)
+    {
+        if (!untilUtc.HasValue) return null;
+
+        var u = untilUtc.Value;
+
+        // Firestore/DTO kan ge default istället för null
+        if (u == default || u.Year < 1900) return null;
+
+        return DateTime.SpecifyKind(u, DateTimeKind.Utc);
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+            await CloseAsync();
+    }
+    
+
+    private bool IsOccurrenceEdit =>
+    ExistingEvent is not null
+    && ExistingEvent.Recurrence is null
+    && !string.IsNullOrWhiteSpace(ExistingEvent.OccurrenceOverrideSeriesId)
+    && ExistingEvent.OriginalStartUtc is not null;
+
+    // (valfritt) även blockera om Model råkar bära dessa flags
+    private bool IsOccurrenceEditFromModel =>
+        !string.IsNullOrWhiteSpace(Model.OccurrenceOverrideSeriesId)
+        && Model.OriginalStartUtc is not null;
+}

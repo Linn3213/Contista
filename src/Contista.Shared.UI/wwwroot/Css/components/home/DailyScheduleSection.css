@@ -1,0 +1,34 @@
+﻿/* =========================================================
+   🗓️ Daily Schedule Section
+   ========================================================= */
+
+.daily-schedule .section-title {
+    color: var(--text-primary);
+    font-weight: var(--font-semibold);
+}
+
+.daily-schedule .text-muted {
+    color: var(--text-secondary);
+}
+
+/* Empty state: “glass” + dashed border via tokens */
+.daily-schedule__empty {
+    background: var(--bg-glass);
+    backdrop-filter: blur(10px);
+    border-radius: var(--radius-lg);
+    border: 2px dashed var(--border-dashed);
+    color: var(--text-secondary);
+}
+
+/* Icon */
+.daily-schedule__empty-icon {
+    font-size: 3.2rem;
+    opacity: 0.85;
+    color: var(--ui-focus);
+}
+
+/* Title */
+.daily-schedule__empty-title {
+    color: var(--text-primary);
+    font-weight: var(--font-semibold);
+}

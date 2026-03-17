@@ -1,0 +1,74 @@
+﻿/* =========================================================
+   ⚠️ ALERTS
+   ========================================================= */
+.alert {
+    padding: 1rem 1.5rem;
+    margin-bottom: 1rem;
+    background-color: var(--bg-card);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-default);
+    border-left-width: 4px;
+    border-radius: var(--radius-md);
+    font-size: var(--text-base);
+    line-height: var(--leading-normal);
+    box-shadow: var(--shadow-card);
+}
+
+    .alert strong,
+    .alert .alert-title {
+        color: var(--text-primary);
+        font-weight: var(--font-semibold);
+    }
+
+/* Neutrala varianter */
+.alert-primary {
+    border-left-color: var(--border-focus);
+}
+
+.alert-secondary {
+    border-left-color: var(--border-strong);
+}
+
+/* Feedback-varianter (WCAG-säkra par) */
+.alert-success {
+    background-color: var(--color-success-bg);
+    border-color: var(--border-default);
+    border-left-color: var(--border-success);
+    color: var(--color-success);
+}
+
+.alert-danger {
+    background-color: var(--color-error-bg);
+    border-color: var(--border-default);
+    border-left-color: var(--border-error);
+    color: var(--color-error);
+}
+
+.alert-warning {
+    background-color: var(--color-warning-bg);
+    border-color: var(--border-default);
+    border-left-color: var(--border-warning);
+    color: var(--color-warning);
+}
+
+.alert-info {
+    background-color: var(--color-info-bg);
+    border-color: var(--border-default);
+    border-left-color: var(--border-info);
+    color: var(--color-info);
+}
+
+/* Light/Dark (neutrala) */
+.alert-light {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-default);
+    border-left-color: var(--border-default);
+    color: var(--text-secondary);
+}
+
+.alert-dark {
+    background-color: var(--ui-focus);
+    border-color: var(--border-focus);
+    border-left-color: var(--text-primary);
+    color: var(--bg-card);
+}

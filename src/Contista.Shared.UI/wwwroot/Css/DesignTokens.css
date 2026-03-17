@@ -1,0 +1,168 @@
+﻿:root [data-bs-theme="light"] {
+    /* =========================================================
+       BACKGROUND & SURFACES
+     ========================================================= */
+    --bg-primary: #F6F1EB; /* App-bakgrund, stora ytor */
+    --bg-card: #FFFFFF; /* Cards, modaler, popups */
+    --bg-secondary: #EFE8E0; /* Alternativa sektioner / zebra */
+    --bg-overlay: rgba(0,0,0,0.4);
+    --bg-glass: rgba(255,255,255,0.60);
+    --bg-glass-strong: rgba(255,255,255,0.72);
+    --bg-glow: rgba(255,255,255,0.16);
+    /* =========================================================
+       TEXT
+     ========================================================= */
+    --text-primary: #2B2622; /* WCAG AAA */
+    --text-secondary: #4F4A45; /* WCAG AA */
+    --text-disabled: #7A736C; /* Endast icke-kritisk info */
+    --text-subtle: var(--text-secondary);
+    /* =========================================================
+       UI (icons, borders, focus)
+     ========================================================= */
+    --ui-primary: #6B6259; /* Ikoner, borders, inputs */
+    --ui-secondary: #9C9288; /* Dekorativt/sekundärt */
+    --ui-focus: #3F3A35; /* Focus/active */
+    /* =========================================================
+       FEEDBACK
+     ========================================================= */
+    --color-success: #2D5016;
+    --color-success-bg: #E8F5E1;
+    --color-error: #8B1E1E;
+    --color-error-bg: #FDEAEA;
+    --color-warning: #7A5C00;
+    --color-warning-bg: #FFF4D6;
+    --color-info: #1E4D8B;
+    --color-info-bg: #E5F0FA;
+    /* =========================================================
+       GRADIENTS
+     ========================================================= */
+    --gradient-accent: linear-gradient( 135deg, var(--ui-focus) 0%, var(--ui-primary) 100% );
+    /* Inverse / dark surface gradient */
+    --gradient-inverse: linear-gradient( 135deg, var(--bg-inverse) 0%, var(--ui-focus) 100% );
+    /* =========================================================
+       SHADOWS
+     ========================================================= */
+    --shadow-card: 0 4px 16px rgba(0,0,0,0.08);
+    --shadow-hover: 0 6px 20px rgba(0,0,0,0.12);
+    --shadow-focus: 0 0 0 3px rgba(63,58,53,0.15);
+    --shadow-dropdown: 0 8px 24px rgba(0,0,0,0.15);
+    /* =========================================================
+       RADIUS 
+     ========================================================= */
+    --radius-xxs: 3px;
+    --radius-xs: 5px;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-full: 9999px;
+    /* =========================================================
+     🧱 BORDERS
+     ========================================================= */
+    /* NY: divider för tunna linjer i listor och headers */
+    --border-divider: color-mix(in srgb, var(--ui-secondary) 40%, var(--bg-card));
+    /* Standard border (cards, inputs, list separators) */
+    --border-default: color-mix(in srgb, var(--ui-secondary) 55%, var(--bg-card));
+    /* Dekorativ / låg prioritet */
+    /* Strong border (focus containers, active cards) */
+    --border-strong: var(--ui-primary);
+    --border-subtle: var(--border-divider);
+    /* Focus ring / active indicator */
+    --border-focus: var(--ui-focus);
+    /* Feedback borders */
+    --border-success: var(--color-success);
+    --border-error: var(--color-error);
+    --border-warning: var(--color-warning);
+    --border-info: var(--color-info);
+    --border-dashed: var(--border-muted);
+    /* =========================================================
+       SPACING
+     ========================================================= */
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-sm2: 12px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+    --space-2xl: 48px;
+    /* =========================================================
+       ICON
+     ========================================================= */
+    --icon-xs: 28px;
+    --icon-sm: 32px;
+    --icon-md: 38px;
+    --icon-lg: 42px;
+    --icon-font-xs: 14px;
+    --icon-font-sm: 15px;
+    --icon-font-md: 18px;
+    --icon-font-lg: 20px;
+    /* =========================================================
+       INPUTS 
+     ========================================================= */
+    --input-height: 40px;
+    /* =========================================================
+       Inverse / on-dark surfaces
+     ========================================================= */
+    --text-inverse: #ffffff;
+    --text-inverse-muted: rgba(255,255,255,0.90);
+    --bg-inverse: #1c1a18;
+    --bg-inverse-soft: rgba(255,255,255,0.12);
+    --bg-inverse-glass: rgba(255,255,255,0.18);
+    --bg-inverse-glow: rgba(255,255,255,0.16);
+    --border-inverse: rgba(255,255,255,0.35);
+    --border-inverse-muted: rgba(255,255,255,0.18);
+    --highlight-inverse: rgba(255,255,255,0.55);
+    /* =========================================================
+       TYPOGRAPHY
+     ========================================================= */
+    --font-serif: 'PlayfairDisplay', Georgia, serif;
+    --font-sans: 'Inter', 'SourceSans3', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrainsMono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    --text-h1: 2.5rem;
+    --text-h2: 2rem;
+    --text-h3: 1.5rem;
+    --text-h4: 1.25rem;
+    --text-lg: 1.125rem;
+    --text-base: 1rem;
+    --text-sm: 0.875rem;
+    --text-xs: 0.75rem;
+    --text-xxs: 0.55rem;
+    --font-regular: 400;
+    --font-medium: 500;
+    --font-semibold: 600;
+    --font-bold: 700;
+    --leading-tight: 1.25;
+    --leading-normal: 1.5;
+    --leading-relaxed: 1.75;
+    --bs-heading-font-family: var(--font-serif);
+    /* =========================================================
+       MOTION
+     ========================================================= */
+    --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: 0.2s;
+    --transition-medium: 0.3s;
+    /* =========================================================
+       ALIAS
+     ========================================================= */
+    --color-main-bg: var(--bg-primary);
+    --color-bg-page: var(--bg-primary);
+    --color-bg: var(--bg-primary);
+    --color-bg-secondary: var(--bg-secondary);
+    --color-bg-surface: var(--bg-card);
+    --color-bg-surface-hover: var(--bg-secondary);
+    --color-text-primary: var(--text-primary);
+    --color-text-secondary: var(--text-secondary);
+    --color-text: var(--text-secondary);
+    --color-text-muted: var(--text-disabled);
+    --color-text-disable: var(--text-disabled);
+    --color-border-default: var(--ui-secondary);
+    --color-border-strong: var(--ui-primary);
+    --bg-hover: var(--bg-secondary);
+    --bg-selected: var(--bg-secondary);
+}
+
+/* =========================================================
+   Dark mode
+ ========================================================= */
+[data-bs-theme="dark"] {
+    /* tomt just nu medvetet */
+}

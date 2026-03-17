@@ -1,0 +1,287 @@
+﻿/* =========================================================
+   WeekAtAGlanceSection (dashboard card)
+   Mål:
+   - Ingen "ruta i ruta"
+   - Inga knappar med outline
+   - Bara dagens datum markeras
+   - Röd prick om agenda finns
+   - Klick öppnar popup-lista
+   ========================================================= */
+.wag-card .card-body {
+    padding: var(--space-lg);
+}
+
+.wag-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding-bottom: var(--space-md);
+    border-bottom: 1px solid var(--border-divider);
+    /* kant-till-kant trots card-body padding */
+    margin-left: calc(var(--space-lg) * -1);
+    margin-right: calc(var(--space-lg) * -1);
+    padding-left: var(--space-lg);
+    padding-right: var(--space-lg);
+    margin-bottom: var(--space-md);
+}
+
+.wag-title {
+    margin: 0;
+    font-size: var(--text-h3);
+    line-height: var(--leading-tight);
+    color: var(--text-primary);
+    font-family: var(--font-serif);
+}
+
+.wag-subtitle {
+    margin-top: 2px;
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
+
+
+.wag-week {
+    border-bottom: 1px solid var(--border-divider);
+    padding: var(--space-md) 0;
+}
+
+.wag-dowRow,
+.wag-dateRow {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    align-items: center;
+    justify-items: center;
+}
+
+.wag-dow {
+    text-align: center;
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    font-weight: var(--font-semibold);
+    letter-spacing: 0.12em;
+}
+
+.wag-sep {
+    height: 1px;
+    background: var(--border-divider);
+    margin: var(--space-sm) 0;
+}
+
+/* "Dag" ska INTE se ut som knapp */
+.wag-day {
+    appearance: none;
+    border: none;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    height: 38px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    border-radius: 9999px; /* behövs för "today" pill/circle */
+    font-family: var(--font-sans);
+    color: var(--text-primary);
+}
+
+    /* Ingen hover-outline, bara subtil hover (valfri) */
+    .wag-day:hover {
+        background: color-mix(in srgb, var(--bg-secondary) 55%, transparent);
+    }
+
+    /* Focus: ingen "outline", men ge en diskret fokusmarkering för tangentbord */
+    .wag-day:focus,
+    .wag-day:focus-visible {
+        outline: none;
+        box-shadow: var(--shadow-focus);
+    }
+
+/* Siffran */
+.wag-dayNum {
+    font-size: var(--text-sm);
+    line-height: 1;
+}
+
+/* Bara idag markerat */
+.wag-day.is-today {
+    background: var(--bg-selected);
+    box-shadow: inset 0 0 0 1px var(--border-default);
+}
+
+/* Röd prick om agenda finns (högerkant av datumet) */
+.wag-day.has-agenda::after {
+    content: "";
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background: var(--color-error); /* din "röda" token */
+}
+
+/* Footer hint */
+.wag-hint {
+    margin-top: var(--space-sm);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+}
+
+/* =========================================================
+   Popup/modal för agenda (samma känsla som dina andra modaler)
+   ========================================================= */
+
+.wag-modalOverlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg-overlay);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-lg);
+    z-index: 1050;
+}
+
+/* Mobil: flytta ner lite (som du ville tidigare) */
+@media (max-width: 576px) {
+    .wag-modalOverlay {
+        align-items: flex-start;
+        padding-top: calc(var(--space-lg) + 18px);
+        padding-bottom: var(--space-lg);
+    }
+}
+
+.wag-modal {
+    width: 100%;
+    max-width: 520px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-dropdown);
+    overflow: hidden;
+    font-family: var(--font-sans); /* sans överallt i popupen */
+}
+
+.wag-modal__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding: var(--space-md) var(--space-lg);
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--bg-secondary);
+}
+
+.wag-modal__titleWrap {
+    min-width: 0;
+}
+
+.wag-modal__title {
+    margin: 0;
+    font-size: var(--text-h3);
+    line-height: var(--leading-tight);
+    color: var(--text-primary);
+    font-family: var(--font-serif); /* rubriken får vara serif */
+}
+
+.wag-modal__subtitle {
+    margin-top: 2px;
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
+
+.wag-modal__close {
+    appearance: none;
+    background: none;
+    border: 1px solid var(--border-default);
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-md);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    line-height: 0;
+    cursor: pointer;
+    transition: background var(--transition-fast) var(--ease-default), transform var(--transition-fast) var(--ease-default), box-shadow var(--transition-fast) var(--ease-default);
+}
+
+    .wag-modal__close i {
+        display: block;
+        line-height: 1;
+        margin: 0;
+        padding: 0;
+        font-size: 18px;
+    }
+
+    .wag-modal__close:hover {
+        background: var(--bg-hover);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-hover);
+    }
+
+    .wag-modal__close:focus-visible {
+        outline: none;
+        box-shadow: var(--shadow-focus);
+    }
+
+.wag-modal__body {
+    padding: var(--space-lg);
+}
+
+.wag-modal__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-sm);
+    padding: var(--space-md) var(--space-lg);
+    border-top: 1px solid var(--border-subtle);
+    background: var(--bg-secondary);
+}
+
+/* Agenda-lista */
+.wag-agendaList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: var(--space-sm);
+}
+
+.wag-agendaItem {
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--bg-secondary);
+}
+
+.wag-agendaTitle {
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+}
+
+.wag-agendaMeta {
+    margin-top: 2px;
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
+
+/* Mobile: lite tightare */
+@media (max-width: 576px) {
+    .wag-week {
+        padding: var(--space-sm) 0;
+    }
+
+    .wag-day {
+        height: 36px;
+    }
+
+        .wag-day.has-agenda::after {
+            right: 8px;
+        }
+}

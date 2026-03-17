@@ -1,0 +1,163 @@
+﻿@* CalendarCreateModal.razor *@
+@using Contista.Shared.Core.DTO.Calendar
+@using Contista.Shared.Core.Models.Calendar
+@inject IJSRuntime JS
+
+@if (IsOpen)
+{
+    <div class="cal-modalOverlay cal-createOverlay">
+        <div class="cal-modal cal-createModal" tabindex="0"
+             @onkeydown="HandleKeyDown"
+             @onclick:stopPropagation="true">
+            <div class="cal-modalHeader">
+                <div>
+                    <div class="cal-modalTitle">@Loc.GetOr("Page_CalendarCreateModal_Title", "New calendar")</div>
+                    <div class="cal-modalSub">@Loc.GetOr("Page_CalendarCreateModal_SubTitle", "Create an additional calendar")</div>
+                </div>
+
+                <button type="button" class="cal-modalClose" @onclick="CloseAsync" aria-label="@Loc.GetOr("Common_Actions_Close", "Close")">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+
+            <div class="cal-modalBody">
+                <div class="cal-formRow">
+                    <label class="cal-label">@Loc.GetOr("Page_CalendarCreateModal_Name_Label", "Name")</label>
+                    <input class="cal-input" @bind="Model.Name" />
+                </div>
+
+                <div class="cal-formRow">
+                    <label class="cal-label">@Loc.GetOr("Page_CalendarCreateModal_Color_Label", "Color")</label>
+
+                    <div class="cal-colorPicker">
+                        <button type="button"
+                                class="cal-input cal-colorPickerBtn dropdown-toggle"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                            <span class="cal-colorLeft">
+                                <span class="cal-colorSwatch"
+                                      style="background:@CalendarColors.GetHex(Model.Color)"></span>
+                                <span class="cal-colorLabel">@GetColorLabel(Model.Color)</span>
+                            </span>
+                        </button>
+
+                        <ul class="dropdown-menu cal-colorMenu">
+                            @foreach (var key in ColorOptions)
+                            {
+                                <li>
+                                    <button type="button"
+                                            class="dropdown-item cal-colorItem"
+                                            @onclick="() => SetColor(key)">
+                                        <span class="cal-colorSwatch"
+                                              style="background:@CalendarColors.GetHex(key)"></span>
+                                        <span>@GetColorLabel(key)</span>
+                                    </button>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="cal-modalFooter">
+                <button type="button" class="btn btn-ghost" @onclick="CloseAsync">
+                    @Loc.GetOr("Common_Actions_Cancel", "Cancel")
+                </button>
+
+                <button type="button" class="btn btn-primary" @onclick="SaveAsync">
+                    @Loc.GetOr("Common_Actions_Create", "Create")
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [CascadingParameter] public ILocalizationService Loc { get; set; } = default!;
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public EventCallback<bool> IsOpenChanged { get; set; }
+    [Parameter] public EventCallback<CalendarDto> OnSave { get; set; }
+
+    private CalendarDto Model = new();
+
+    // Läs alla färger från CalendarColors, men exkludera Primary
+    private List<string> ColorOptions =>
+        CalendarColors.Map.Keys
+            .Where(k => !string.Equals(k, CalendarColors.Primary, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(k => k, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    private void SetColor(string key)
+    {
+        var normalized = CalendarColors.Normalize(key);
+        if (string.Equals(normalized, CalendarColors.Primary, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        Model.Color = normalized;
+    }
+
+    private string GetColorLabel(string colorKey)
+        => (CalendarColors.Normalize(colorKey)) switch
+        {
+            "Blue" => Loc.GetOr("Common_Color_Blue", "Blue"),
+            "Green" => Loc.GetOr("Common_Color_Green", "Green"),
+            "Orange" => Loc.GetOr("Common_Color_Orange", "Orange"),
+            "Red" => Loc.GetOr("Common_Color_Red", "Red"),
+            "Purple" => Loc.GetOr("Common_Color_Purple", "Purple"),
+            "Pink" => Loc.GetOr("Common_Color_Pink", "Pink"),
+            "Teal" => Loc.GetOr("Common_Color_Teal", "Teal"),
+            "Gray" => Loc.GetOr("Common_Color_Gray", "Gray"),
+            _ => colorKey
+        };
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        Model.Name = "";
+    }
+
+    protected override void OnParametersSet()
+    {
+        Model.Name ??= "";
+        Model.IsPrimary = false;
+
+        // Förhindra att Primary blir default i create
+        var normalized = CalendarColors.Normalize(Model.Color);
+        if (string.Equals(normalized, CalendarColors.Primary, StringComparison.OrdinalIgnoreCase))
+            Model.Color = ColorOptions.FirstOrDefault() ?? "Blue";
+        else
+            Model.Color = normalized;
+    }
+
+    private async Task CloseAsync()
+    {
+        IsOpen = false;
+
+        // reset: välj första “riktiga” färgen istället för Primary
+        Model = new CalendarDto { Color = ColorOptions.FirstOrDefault() ?? "Blue" };
+
+        await IsOpenChanged.InvokeAsync(false);
+    }
+
+    private async Task SaveAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Model.Name))
+            Model.Name = Loc.GetOr("Common_Actions_Untitled", "Untitled");
+
+        var normalized = CalendarColors.Normalize(Model.Color);
+        if (string.Equals(normalized, CalendarColors.Primary, StringComparison.OrdinalIgnoreCase))
+            normalized = ColorOptions.FirstOrDefault() ?? "Blue";
+
+        Model.Color = normalized;
+
+        await OnSave.InvokeAsync(Model);
+
+        Model = new CalendarDto { Color = ColorOptions.FirstOrDefault() ?? "Blue" };
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+            await CloseAsync();
+    }
+}

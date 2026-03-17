@@ -1,0 +1,2143 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Auth_Login_Create_Account_Button" xml:space="preserve">
+    <value>Create account</value>
+  </data>
+  <data name="Auth_Login_Email_Label" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="Auth_Login_Email_Placeholder" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="Auth_Login_Forgot_Password_Button" xml:space="preserve">
+    <value>Forgot password?</value>
+  </data>
+  <data name="Auth_Login_Password_Label" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="Auth_Login_Password_Placeholder" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="Auth_Login_Register_Button" xml:space="preserve">
+    <value>Register</value>
+  </data>
+  <data name="Auth_Login_SignIn_Button" xml:space="preserve">
+    <value>Sign-in</value>
+  </data>
+  <data name="Auth_Login_Title" xml:space="preserve">
+    <value>Title</value>
+  </data>
+  <data name="Auth_Register_FirstName_Label" xml:space="preserve">
+    <value>First name</value>
+  </data>
+  <data name="Common_Actions_Back" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="Common_Actions_Add" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="Common_Actions_AllDay" xml:space="preserve">
+    <value>All day</value>
+  </data>
+  <data name="Page_Calendar_Agenda_Title" xml:space="preserve">
+    <value>Agenda</value>
+  </data>
+  <data name="Page_Calendar_Agenda_Empty" xml:space="preserve">
+    <value>No upcoming events in the next 7 days.</value>
+  </data>
+  <data name="Page_Calendar_MonthView_PrevMonth" xml:space="preserve">
+    <value>Previous month</value>
+  </data>
+  <data name="Page_Calendar_MonthView_NextMonth" xml:space="preserve">
+    <value>Next month</value>
+  </data>
+  <data name="Common_Actions_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Common_Actions_Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="Common_Actions_Confirm" xml:space="preserve">
+    <value>Confirm</value>
+  </data>
+  <data name="Common_Actions_Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Common_Errors_Generic" xml:space="preserve">
+    <value>An error occurred: </value>
+  </data>
+  <data name="Common_Messages_Loading" xml:space="preserve">
+    <value>Loading...</value>
+  </data>
+  <data name="Common_Validation_InvalidEmail" xml:space="preserve">
+    <value>Invalid Email</value>
+  </data>
+  <data name="Common_Validation_MaxLength" xml:space="preserve">
+    <value>Maximum length is</value>
+  </data>
+  <data name="Common_Validation_MinLength" xml:space="preserve">
+    <value>Minimum length is</value>
+  </data>
+  <data name="Common_Validation_Required" xml:space="preserve">
+    <value>Validation required</value>
+  </data>
+  <data name="Page_Home_AllContentPillars_Button" xml:space="preserve">
+    <value>See all Content Pillars</value>
+  </data>
+  <data name="Page_Home_AllTexts_Title" xml:space="preserve">
+    <value>All texts</value>
+  </data>
+  <data name="Page_Sidebar_Avatars_Nav" xml:space="preserve">
+    <value>Avatars</value>
+  </data>
+  <data name="Page_Sidebar_Calendar_Nav" xml:space="preserve">
+    <value>Calendar</value>
+  </data>
+  <data name="Page_Sidebar_Categories_Title" xml:space="preserve">
+    <value>Categories (Posts)</value>
+  </data>
+  <data name="Page_Sidebar_CreateContent_Nav" xml:space="preserve">
+    <value>Create content</value>
+  </data>
+  <data name="Page_Sidebar_ContentLibrary_Title" xml:space="preserve">
+    <value>Content library</value>
+  </data>
+  <data name="Page_Sidebar_ContentPillars_Nav" xml:space="preserve">
+    <value>Content pillars</value>
+  </data>
+  <data name="Page_Home_ContentPillarsOverview_Title" xml:space="preserve">
+    <value>Content pillars overview</value>
+  </data>
+  <data name="Page_Sidebar_ContentStrategy_Nav" xml:space="preserve">
+    <value>Content strategy</value>
+  </data>
+  <data name="Page_Sidebar_Dashboard_Nav" xml:space="preserve">
+    <value>Dashboard</value>
+  </data>
+  <data name="Page_Home_Dashboard_Text" xml:space="preserve">
+    <value>Overview of your content system</value>
+  </data>
+  <data name="Page_Home_Dashboard_Title" xml:space="preserve">
+    <value>Dashboard</value>
+  </data>
+  <data name="Page_Sidebar_DreamCustomer_Nav" xml:space="preserve">
+    <value>Dream customer</value>
+  </data>
+  <data name="Page_Home_ExploreContentLibrary_Button" xml:space="preserve">
+    <value>Explore the Content Library</value>
+  </data>
+  <data name="Page_Home_ExportData_Button" xml:space="preserve">
+    <value>Export data</value>
+  </data>
+  <data name="Page_Sidebar_HooksCTAs_Nav" xml:space="preserve">
+    <value>Hooks &amp; CTAs</value>
+  </data>
+  <data name="Page_Home_InspirationIdeas_Title" xml:space="preserve">
+    <value>Inspiration &amp; Ideas</value>
+  </data>
+  <data name="Page_Sidebar_MyStory_Nav" xml:space="preserve">
+    <value>My Story</value>
+  </data>
+  <data name="Page_Home_NoPostPlanned_Text" xml:space="preserve">
+    <value>No post planned</value>
+  </data>
+  <data name="Page_Sidebar_Notepad_Nav" xml:space="preserve">
+    <value>Notepad</value>
+  </data>
+  <data name="Page_Home_Notes_Label" xml:space="preserve">
+    <value>Notes</value>
+  </data>
+  <data name="Page_Home_NotStarted_Label" xml:space="preserve">
+    <value>Not started</value>
+  </data>
+  <data name="Page_Home_Ongoing_Label" xml:space="preserve">
+    <value>Ongoing</value>
+  </data>
+  <data name="Page_Home_PageComesHere_Text" xml:space="preserve">
+    <value>Page comes here...</value>
+  </data>
+  <data name="Page_Home_Published_Label" xml:space="preserve">
+    <value>Published</value>
+  </data>
+  <data name="Page_Sidebar_QuestionsAnswers_Nav" xml:space="preserve">
+    <value>Questions &amp; Answers</value>
+  </data>
+  <data name="Page_Home_ReadyMadeTextsToUse_Text" xml:space="preserve">
+    <value>ready-made texts and ideas to use</value>
+  </data>
+  <data name="Page_Sidebar_Register_Nav" xml:space="preserve">
+    <value>Register</value>
+  </data>
+  <data name="Page_Sidebar_Settings_Nav" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Page_Sidebar_SignIn_Nav" xml:space="preserve">
+    <value>Sign-in</value>
+  </data>
+  <data name="Page_Sidebar_SocialMedia_Nav" xml:space="preserve">
+    <value>Social Media</value>
+  </data>
+  <data name="Page_Home_ThisWeek_Title" xml:space="preserve">
+    <value>This week</value>
+  </data>
+  <data name="Page_Home_TotalPosts_Label" xml:space="preserve">
+    <value>Total Posts</value>
+  </data>
+  <data name="Page_Sidebar_TrendScouting_Nav" xml:space="preserve">
+    <value>Trend scouting</value>
+  </data>
+  <data name="Page_Home_Trends_Label" xml:space="preserve">
+    <value>Trends</value>
+  </data>
+  <data name="Page_Sidebar_WeeklyPlanning_Nav" xml:space="preserve">
+    <value>Weekly planning</value>
+  </data>
+  <data name="Page_MainLayout_ErrorOnPage_Text" xml:space="preserve">
+    <value>Error on page</value>
+  </data>
+  <data name="Page_MainLayout_Reload_Text" xml:space="preserve">
+    <value>Reload</value>
+  </data>
+  <data name="Page_MainLayout_UnhandledErrorOccurred_Text" xml:space="preserve">
+    <value>An unhandled error has occurred.</value>
+  </data>
+  <data name="Settings_Language_English_Button" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="Settings_Language_Swedish_Button" xml:space="preserve">
+    <value>Swedish</value>
+  </data>
+  <data name="Common_Errors_Unknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="Page_UnderConstruction_Page_01_text" xml:space="preserve">
+    <value>The page</value>
+  </data>
+  <data name="Page_UnderConstruction_Page_02_text" xml:space="preserve">
+    <value>is not ready yet.</value>
+  </data>
+  <data name="Page_UnderConstruction_Page_Title" xml:space="preserve">
+    <value>Under construction</value>
+  </data>
+  <data name="Common_Company_Title" xml:space="preserve">
+    <value>Contista</value>
+  </data>
+  <data name="Page_Home_AdvertisSection_Title" xml:space="preserve">
+    <value>Premium Content Creator</value>
+  </data>
+  <data name="Page_Home_AdvertisSection_Text" xml:space="preserve">
+    <value>Everything you need to create perfect content – ​​in one place</value>
+  </data>
+  <data name="Page_Home_AdvertisSection_Ad_1" xml:space="preserve">
+    <value>Save &amp; Schedule</value>
+  </data>
+  <data name="Page_Home_AdvertisSection_Ad_2" xml:space="preserve">
+    <value>Templates</value>
+  </data>
+  <data name="Page_Home_MyPremiumPostsSection_SavedCount_Text" xml:space="preserve">
+    <value>saved posts</value>
+  </data>
+  <data name="Page_Home_MyPremiumPostsSection_SeeAll_Button" xml:space="preserve">
+    <value>See all</value>
+  </data>
+  <data name="Page_Home_MyPremiumPostsSection_NoPostsExists_Text" xml:space="preserve">
+    <value>No posts yet. Create your first!</value>
+  </data>
+  <data name="Page_Home_MyPremiumPostsSection_CreatePost_Button" xml:space="preserve">
+    <value>Create post</value>
+  </data>
+  <data name="Page_Home_MyPremiumPostsSection_YouHave_Text" xml:space="preserve">
+    <value>You have</value>
+  </data>
+  <data name="Page_Home_MyPremiumPostsSection_ShowPost_Button" xml:space="preserve">
+    <value>Show saved posts</value>
+  </data>
+  <data name="Page_Home_MyPremiumPostsSection_Title" xml:space="preserve">
+    <value>My premium posts</value>
+  </data>
+  <data name="Page_Home_WeekPlanSection_Title" xml:space="preserve">
+    <value>This week</value>
+  </data>
+  <data name="Page_Home_WeekPlanSection_PrevWeek_Button" xml:space="preserve">
+    <value>Previous week</value>
+  </data>
+  <data name="Page_Home_WeekPlanSection_CurrentWeek_Text" xml:space="preserve">
+    <value>Week</value>
+  </data>
+  <data name="Page_Home_WeekPlanSection_NextWeek_Button" xml:space="preserve">
+    <value>Next week</value>
+  </data>
+  <data name="Page_Home_WeekPlanSection_NoPostPlanned_Text" xml:space="preserve">
+    <value>No post planned</value>
+  </data>
+  <data name="Page_Home_DailySchedule_Title" xml:space="preserve">
+    <value>Today's schedule</value>
+  </data>
+  <data name="Page_Home_DailySchedule_Subtitle" xml:space="preserve">
+    <value>Your daily routine &amp; activities</value>
+  </data>
+  <data name="Page_Home_DailySchedule_Add_Button" xml:space="preserve">
+    <value>Add activity</value>
+  </data>
+  <data name="Page_Home_DailySchedule_Reset_Button" xml:space="preserve">
+    <value>Restore</value>
+  </data>
+  <data name="Page_Home_DailySchedule_Empty_Title" xml:space="preserve">
+    <value>Your schedule is empty</value>
+  </data>
+  <data name="Page_Home_DailySchedule_Empty_Text" xml:space="preserve">
+    <value>Click "Add Activity" to start planning your day</value>
+  </data>
+  <data name="Page_Sidebar_Sampels_Nav" xml:space="preserve">
+    <value>Sampels</value>
+  </data>
+  <data name="Page_Samples_Title" xml:space="preserve">
+    <value>Samples</value>
+  </data>
+  <data name="Page_Samples_SubTitle" xml:space="preserve">
+    <value>Samples of components on the webpage</value>
+  </data>
+  <data name="Page_Samples_Normal_Alerts" xml:space="preserve">
+    <value>Normal alerts</value>
+  </data>
+  <data name="Page_Samples_Normal_Badges" xml:space="preserve">
+    <value>Normal badges</value>
+  </data>
+  <data name="Page_Samples_Outline_Badges" xml:space="preserve">
+    <value>Outline badges</value>
+  </data>
+  <data name="Page_Samples_Normal_Buttons" xml:space="preserve">
+    <value>Normal buttons</value>
+  </data>
+  <data name="Page_Samples_Outline_Buttons" xml:space="preserve">
+    <value>Outline buttons</value>
+  </data>
+  <data name="Page_Samples_Link_Buttons" xml:space="preserve">
+    <value>Link buttons</value>
+  </data>
+  <data name="Page_Samples_Normal_Cards" xml:space="preserve">
+    <value>Normal cards</value>
+  </data>
+  <data name="Page_Samples_Normal_HorizontalLines" xml:space="preserve">
+    <value>Normal horizontal lines</value>
+  </data>
+  <data name="Page_Samples_Normal_ProgressBars" xml:space="preserve">
+    <value>Normal progress bars</value>
+  </data>
+  <data name="Page_Samples_Normal_Typography" xml:space="preserve">
+    <value>Normal typography</value>
+  </data>
+  <data name="Page_Samples_Normal_Fonts" xml:space="preserve">
+    <value>Normal fonts</value>
+  </data>
+  <data name="Page_Samples_DesignTokens_Loading_Text" xml:space="preserve">
+    <value>Loading design tokens....</value>
+  </data>
+  <data name="Page_Samples_DesignTokens_Copy_Button" xml:space="preserve">
+    <value>Copy variable name</value>
+  </data>
+  <data name="Page_Samples_DesignTokens_Copy_Text" xml:space="preserve">
+    <value>Copied!</value>
+  </data>
+  <data name="Page_Landing_Title" xml:space="preserve">
+    <value>Create content with clarity, calm, and purpose</value>
+  </data>
+  <data name="Page_Landing_Subtitle" xml:space="preserve">
+    <value>Contista helps you plan, create, and reuse content in a creative, structured, and sustainable way.</value>
+  </data>
+  <data name="Page_Landing_Feature1_Title" xml:space="preserve">
+    <value>Content that lasts</value>
+  </data>
+  <data name="Page_Landing_Feature1_Text" xml:space="preserve">
+    <value>Create content that aligns with your brand, your goals, and your energy — not just today’s trends.</value>
+  </data>
+  <data name="Page_Landing_Feature2_Title" xml:space="preserve">
+    <value>Plan with clarity</value>
+  </data>
+  <data name="Page_Landing_Feature2_Text" xml:space="preserve">
+    <value>Organize weeks, themes, and content pillars so you always know what to create — and why.</value>
+  </data>
+  <data name="Page_Landing_Feature3_Title" xml:space="preserve">
+    <value>Everything in one place</value>
+  </data>
+  <data name="Page_Landing_Feature3_Text" xml:space="preserve">
+    <value>Save ideas, texts, hooks, and strategies in one system. Reuse, refine, and build when it suits you.</value>
+  </data>
+  <data name="Page_Landing_CreateAccount_Button" xml:space="preserve">
+    <value>Create account</value>
+  </data>
+  <data name="Page_Landing_LoginCard_CreateAccount_Button" xml:space="preserve">
+    <value>Create account</value>
+  </data>
+  <data name="Page_Landing_LoginCard_Login_Button" xml:space="preserve">
+    <value>Log in</value>
+  </data>
+  <data name="Page_Landing_LoginCard_Title" xml:space="preserve">
+    <value>Log in and keep creating</value>
+  </data>
+  <data name="Page_Landing_LoginCard_Subtitle" xml:space="preserve">
+    <value>Access your content system and continue where you left off.</value>
+  </data>
+  <data name="Page_Landing_Explore_Button" xml:space="preserve">
+    <value>Explore Features</value>
+  </data>
+  <data name="Page_Landing_LoginCard_ForgotPassword_Link" xml:space="preserve">
+    <value>Forgot password?</value>
+  </data>
+  <data name="Page_Landing_Login_Badge" xml:space="preserve">
+    <value>Welcome back</value>
+  </data>
+  <data name="Page_Landing_LoginCard_Email_Label" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="Page_Landing_LoginCard_Password_Label" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="Page_LoginCard_FailedToLogin_Error" xml:space="preserve">
+    <value>Fail to login. Wrong email or password.</value>
+  </data>
+  <data name="Page_Landing_Hero_Badge" xml:space="preserve">
+    <value>Content System</value>
+  </data>
+  <data name="Page_Landing_Hero_Title" xml:space="preserve">
+    <value>A calm start — with full control of your content.</value>
+  </data>
+  <data name="Page_Landing_Hero_Subtitle" xml:space="preserve">
+    <value>Plan weeks, build content pillars, and store ideas in one place. Create more — stress less.</value>
+  </data>
+  <data name="Page_Landing_Hero_Bullet1" xml:space="preserve">
+    <value>Secure sign-in</value>
+  </data>
+  <data name="Page_Landing_Hero_Bullet2" xml:space="preserve">
+    <value>Swedish &amp; English</value>
+  </data>
+  <data name="Page_Landing_Hero_Bullet3" xml:space="preserve">
+    <value>Fast, simple, structured</value>
+  </data>
+  <data name="Page_Landing_Hero_CtaTitle" xml:space="preserve">
+    <value>Get started in 2 minutes</value>
+  </data>
+  <data name="Page_Landing_Hero_CtaSubtitle" xml:space="preserve">
+    <value>Create an account, or explore features first.</value>
+  </data>
+  <data name="Common_Company_Subtitle" xml:space="preserve">
+    <value>Content System</value>
+  </data>
+  <data name="Common_Status_NoCache" xml:space="preserve">
+    <value>Preparing offline data…</value>
+  </data>
+  <data name="Common_Status_Ready" xml:space="preserve">
+    <value>Offline data ready</value>
+  </data>
+  <data name="Common_Status_Refreshing" xml:space="preserve">
+    <value>Checking for updates…</value>
+  </data>
+  <data name="Page_Sidebar_AdminTools_Nav" xml:space="preserve">
+    <value>Admin tools</value>
+  </data>
+  <data name="Settings_Language_Title" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="Page_Sidebar_AllTexts_Nav" xml:space="preserve">
+    <value>All texts</value>
+  </data>
+  <data name="SyncDebug_NotLoggedIn" xml:space="preserve">
+    <value>Not logged in.</value>
+  </data>
+  <data name="SyncDebug_Offline_AutoSyncWhenOnline" xml:space="preserve">
+    <value>Offline – sync runs automatically when you go online.</value>
+  </data>
+  <data name="SyncDebug_SyncDone" xml:space="preserve">
+    <value>Sync done.</value>
+  </data>
+  <data name="SyncDebug_SyncError" xml:space="preserve">
+    <value>Sync error: {0}</value>
+  </data>
+  <data name="SyncDebug_UserIdMissing" xml:space="preserve">
+    <value>UserId is missing.</value>
+  </data>
+  <data name="SyncDebug_UserIdMissing_AuthUid" xml:space="preserve">
+    <value>UserId is missing (AuthService.Uid).</value>
+  </data>
+  <data name="SyncDebug_SelectRealPost" xml:space="preserve">
+    <value>Select a real record (not temp/pending create).</value>
+  </data>
+  <data name="SyncDebug_PostNotFoundInUi" xml:space="preserve">
+    <value>Could not find the entry in the UI list.</value>
+  </data>
+  <data name="SyncDebug_CreatePostQueued" xml:space="preserve">
+    <value>CreatePost queued (opId={0}).</value>
+  </data>
+  <data name="SyncDebug_UpdatePostQueued" xml:space="preserve">
+    <value>UpdatePost queued (opId={0}).</value>
+  </data>
+  <data name="SyncDebug_DeletePostQueued" xml:space="preserve">
+    <value>DeletePost queued (opId={0}).</value>
+  </data>
+  <data name="SyncDebug_CreateRoleQueued" xml:space="preserve">
+    <value>CreateRole queued.</value>
+  </data>
+  <data name="SyncDebug_CreateMembershipQueued" xml:space="preserve">
+    <value>CreateMembership queued.</value>
+  </data>
+  <data name="SyncDebug_QueueCleared" xml:space="preserve">
+    <value>Queue cleared.</value>
+  </data>
+  <data name="SyncDebug_ClearQueueError" xml:space="preserve">
+    <value>ClearQueue error: {0}</value>
+  </data>
+  <data name="SyncDebug_DeletedItem" xml:space="preserve">
+    <value>Removed {0}.</value>
+  </data>
+  <data name="SyncDebug_DeleteError" xml:space="preserve">
+    <value>Delete error: {0}</value>
+  </data>
+  <data name="SyncDebug_ItemNotFound" xml:space="preserve">
+    <value>Could not find {0}.</value>
+  </data>
+  <data name="SyncDebug_SetPendingOk" xml:space="preserve">
+    <value>{0} =&gt; Pending.</value>
+  </data>
+  <data name="SyncDebug_SetPendingError" xml:space="preserve">
+    <value>SetPending error: {0}</value>
+  </data>
+  <data name="SyncDebug_OfflinePostTitle" xml:space="preserve">
+    <value>Offline entry {0}</value>
+  </data>
+  <data name="SyncDebug_QueuedViaPanelBody" xml:space="preserve">
+    <value>Queued via SyncDebugPanel</value>
+  </data>
+  <data name="SyncDebug_RoleNameTemplate" xml:space="preserve">
+    <value>Role {0}</value>
+  </data>
+  <data name="SyncDebug_MembershipNameTemplate" xml:space="preserve">
+    <value>Membership {0}</value>
+  </data>
+  <data name="SyncDebug_UpdateTitleSuffix" xml:space="preserve">
+    <value>{0} (upd {1})</value>
+  </data>
+  <data name="Page_NotFound_Title" xml:space="preserve">
+    <value>Page not found</value>
+  </data>
+  <data name="Page_NotFound_SubTitel" xml:space="preserve">
+    <value>Sorry, the content you are looking for does not exist.</value>
+  </data>
+  <data name="Page_Register_Title" xml:space="preserve">
+    <value>Create account</value>
+  </data>
+  <data name="Page_Register_SubTitle" xml:space="preserve">
+    <value>Register with email and password</value>
+  </data>
+  <data name="Page_Register_Email_Label" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="Page_Register_FirstName_Label" xml:space="preserve">
+    <value>First name</value>
+  </data>
+  <data name="Page_Register_LastName_Label" xml:space="preserve">
+    <value>Last name</value>
+  </data>
+  <data name="Page_Register_Password_Label" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="Page_Register_PasswordRequierment_Message" xml:space="preserve">
+    <value>Password required.</value>
+  </data>
+  <data name="Page_Register_PasswordMinLength_Message" xml:space="preserve">
+    <value>At least 6 characters.</value>
+  </data>
+  <data name="Page_Register_ConfirmPassword_Label" xml:space="preserve">
+    <value>Confirm password</value>
+  </data>
+  <data name="Page_Register_CreatingAccount_Loader" xml:space="preserve">
+    <value>Creating account...</value>
+  </data>
+  <data name="Page_Register_Register_Loader" xml:space="preserve">
+    <value>Register</value>
+  </data>
+  <data name="Page_Register_IAlreadyHaveAnAccount_Button" xml:space="preserve">
+    <value>I already have an account</value>
+  </data>
+  <data name="Page_Register_PasswordDoNotMatch_Message" xml:space="preserve">
+    <value>The passwords do not match.</value>
+  </data>
+  <data name="Page_Register_CouldNotCreateAccount_Message" xml:space="preserve">
+    <value>Could not create account.</value>
+  </data>
+  <data name="Page_Register_FirstNameRequierment_Message" xml:space="preserve">
+    <value>First name required.</value>
+  </data>
+  <data name="Page_Register_LastNameRequierment_Message" xml:space="preserve">
+    <value>Last name required.</value>
+  </data>
+  <data name="Page_Register_EmailRequierment_Message" xml:space="preserve">
+    <value>Email required.</value>
+  </data>
+  <data name="Page_Register_EmailInvalid_Message" xml:space="preserve">
+    <value>Invalid email address.</value>
+  </data>
+  <data name="Page_Register_ConfirmPasswordRequierment_Message" xml:space="preserve">
+    <value>Confirm password is required.</value>
+  </data>
+  <data name="Page_UpgradeRequired_Title" xml:space="preserve">
+    <value>Upgrade required</value>
+  </data>
+  <data name="Page_UpgradeRequired_SubTitle" xml:space="preserve">
+    <value>This feature requires a higher subscription or a one-time purchase.</value>
+  </data>
+  <data name="Page_UpgradeRequired_SelectedFunction_Text" xml:space="preserve">
+    <value>Selected function</value>
+  </data>
+  <data name="Page_UpgradeRequired_UnknownFunction_Text" xml:space="preserve">
+    <value>Unknown function</value>
+  </data>
+  <data name="Common_Actions_Upgrade" xml:space="preserve">
+    <value>Upgrade</value>
+  </data>
+  <data name="Page_UpgradeRequired_UnknownClaimsMissing_Error" xml:space="preserve">
+    <value>Unknown (claims missing)</value>
+  </data>
+  <data name="Common_Membership_Free" xml:space="preserve">
+    <value>Free</value>
+  </data>
+  <data name="Common_Membership_Admin" xml:space="preserve">
+    <value>Admin</value>
+  </data>
+  <data name="Common_Membership_Permanent" xml:space="preserve">
+    <value>Permanent</value>
+  </data>
+  <data name="Common_Membership_Premium" xml:space="preserve">
+    <value>Premium</value>
+  </data>
+  <data name="Common_Membership_Standard" xml:space="preserve">
+    <value>Standard</value>
+  </data>
+  <data name="Page_Settings_Title" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Page_Settings_SubTitle" xml:space="preserve">
+    <value>User settings</value>
+  </data>
+  <data name="Page_Home_FeatureCardGate_Hooks_Text" xml:space="preserve">
+    <value>Hooks &amp; CTAs are included in Premium.</value>
+  </data>
+  <data name="Page_Home_AdvertiseSection_Title" xml:space="preserve">
+    <value>Hooks &amp; CTAs</value>
+  </data>
+  <data name="Page_Home_AdvertiseSection_SubTitle" xml:space="preserve">
+    <value>Scroll-stopping hooks, ready to use</value>
+  </data>
+  <data name="Page_Home_AdvertiseSection_Bagde_1" xml:space="preserve">
+    <value>🔥 Premium hooks</value>
+  </data>
+  <data name="Page_Home_AdvertiseSection_Bagde_2" xml:space="preserve">
+    <value>✍️ Strong CTAs</value>
+  </data>
+  <data name="Page_Home_AdvertiseSection_Bagde_3" xml:space="preserve">
+    <value>⚡ Copy &amp; paste</value>
+  </data>
+  <data name="Page_Samples_ConfirmModalSampel_Title" xml:space="preserve">
+    <value>Delete?</value>
+  </data>
+  <data name="Page_Samples_ConfirmModalSampel_Message" xml:space="preserve">
+    <value>This cannot be undone.</value>
+  </data>
+  <data name="Common_Actions_Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Page_Samples_SampelsNav_Title" xml:space="preserve">
+    <value>Components</value>
+  </data>
+  <data name="Page_Samples_SampelsNav_Alerts_Item" xml:space="preserve">
+    <value>Alerts</value>
+  </data>
+  <data name="Page_Samples_SampelsNav_Bages_Item" xml:space="preserve">
+    <value>Badges</value>
+  </data>
+  <data name="Page_Samples_SampelsNav_Buttons_Item" xml:space="preserve">
+    <value>Buttons</value>
+  </data>
+  <data name="Page_Samples_SampelsNav_Cards_Item" xml:space="preserve">
+    <value>Cards</value>
+  </data>
+  <data name="Page_Samples_SampelsNav_DesignTokens_Item" xml:space="preserve">
+    <value>Design tokens</value>
+  </data>
+  <data name="Page_Samples_SampelsNav_HorizontalLines_Item" xml:space="preserve">
+    <value>Horizontal lines</value>
+  </data>
+  <data name="Page_Samples_SampelsNav_ProgressBars_Item" xml:space="preserve">
+    <value>Progress bars</value>
+  </data>
+  <data name="Page_Samples_SampelsNav_Typography_Item" xml:space="preserve">
+    <value>Typography</value>
+  </data>
+  <data name="Page_Samples_SampelsNav_Fonts_Item" xml:space="preserve">
+    <value>Fonts</value>
+  </data>
+  <data name="Page_Samples_ConfirmModalSampel_Show_Button" xml:space="preserve">
+    <value>Show Comfirm Modal</value>
+  </data>
+  <data name="Page_AdminTools_NoPosts_Text" xml:space="preserve">
+    <value>No posts yet.</value>
+  </data>
+  <data name="Page_AdminTools_LoadingCommonData_Text" xml:space="preserve">
+    <value>Loading common data...</value>
+  </data>
+  <data name="Common_Messages_LoggingOut" xml:space="preserve">
+    <value>Logging out...</value>
+  </data>
+  <data name="Page_OnlineRequired_Title" xml:space="preserve">
+    <value>You are offline</value>
+  </data>
+  <data name="Page_OnlineRequired_Message" xml:space="preserve">
+    <value>This page requires internet. Please turn on the internet and try again.</value>
+  </data>
+  <data name="Common_Actions_Reload" xml:space="preserve">
+    <value>Reload</value>
+  </data>
+  <data name="Page_TopBar_Membership_Text" xml:space="preserve">
+    <value>Membership</value>
+  </data>
+  <data name="Common_Actions_SignOut" xml:space="preserve">
+    <value>Sign out</value>
+  </data>
+  <data name="Common_Actions_SignIn" xml:space="preserve">
+    <value>Sign in</value>
+  </data>
+  <data name="Page_OfflineStatusBanner_ForcedOnline_Text" xml:space="preserve">
+    <value>FORCED ONLINE</value>
+  </data>
+  <data name="Page_SyncDebug_NetworkPanel_ForcedOnline_Text" xml:space="preserve">
+    <value>FORCED ONLINE</value>
+  </data>
+  <data name="Page_OfflineStatusBanner_ForcedOffline_Text" xml:space="preserve">
+    <value>FORCED OFFLINE</value>
+  </data>
+  <data name="Page_SyncDebug_NetworkPanel_ForcedOffline_Text" xml:space="preserve">
+    <value>FORCED OFFLINE</value>
+  </data>
+  <data name="Page_OfflineStatusBanner_ForcedNetwork_Button" xml:space="preserve">
+    <value>Force online/offline (debug)</value>
+  </data>
+  <data name="Page_OfflineStatusBanner_SyncNow_Button" xml:space="preserve">
+    <value>Sync now</value>
+  </data>
+  <data name="Page_OfflineStatusBanner_Offline_Title" xml:space="preserve">
+    <value>You are offline. Some features are not available.</value>
+  </data>
+  <data name="Page_OfflineStatusBanner_Online_Title" xml:space="preserve">
+    <value>Online</value>
+  </data>
+  <data name="Page_OfflineStatusBanner_Status_Text" xml:space="preserve">
+    <value>Offline – connect to the internet to log in</value>
+  </data>
+  <data name="Page_OfflineStatusBanner_ComputeMessage_1" xml:space="preserve">
+    <value>Login requires internet.</value>
+  </data>
+  <data name="Page_OfflineStatusBanner_ComputeMessage_2" xml:space="preserve">
+    <value>Changes are queued until you are online.</value>
+  </data>
+  <data name="Page_OfflineStatusBanner_ComputeMessage_3" xml:space="preserve">
+    <value>Ready to sync.</value>
+  </data>
+  <data name="Page_OfflineStatusBanner_Offline_Text" xml:space="preserve">
+    <value>Offline - can't sync right now.</value>
+  </data>
+  <data name="Page_OfflineStatusBanner_SyncDone_Text" xml:space="preserve">
+    <value>Sync done.</value>
+  </data>
+  <data name="Page_FeatureNavItem_Tooltip_Button" xml:space="preserve">
+    <value>Requires update</value>
+  </data>
+  <data name="Page_FeatureCardGate_Title" xml:space="preserve">
+    <value>Requires update</value>
+  </data>
+  <data name="Page_FeatureCardGate_Message" xml:space="preserve">
+    <value>This feature is not included in your plan.</value>
+  </data>
+  <data name="Page_LoginCard_NotOnline_Text" xml:space="preserve">
+    <value>You are offline. Please turn on the internet and try again.</value>
+  </data>
+  <data name="Page_Home_FeatureGate_OfflineTitle" xml:space="preserve">
+    <value>You are offline</value>
+  </data>
+  <data name="Page_Home_FeatureGate_OfflineMessage" xml:space="preserve">
+    <value>This feature requires internet. Turn on the internet and try again.</value>
+  </data>
+  <data name="Page_Home_FeatureGate_NoAccessTitle" xml:space="preserve">
+    <value>Not available in your plan</value>
+  </data>
+  <data name="Page_Home_FeatureGate_NoAccessMessage" xml:space="preserve">
+    <value>Upgrade to unlock this feature.</value>
+  </data>
+  <data name="Page_Home_FeatureGate_NotLoggedInTitle" xml:space="preserve">
+    <value>Sign in</value>
+  </data>
+  <data name="Page_Home_FeatureGate_NotLoggedInMessage" xml:space="preserve">
+    <value>You need to be logged in to use this feature.</value>
+  </data>
+  <data name="Common_Actions_No" xml:space="preserve">
+    <value>No</value>
+  </data>
+  <data name="Common_Actions_Yes" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="Page_SyncDebugPanel_LoggedIn_Text" xml:space="preserve">
+    <value>LOGGED IN</value>
+  </data>
+  <data name="Page_SyncDebugPanel_LoggedOut_Text" xml:space="preserve">
+    <value>LOGGED OUT</value>
+  </data>
+  <data name="Page_SyncDebugPanel_Missing_Text" xml:space="preserve">
+    <value>(missing)</value>
+  </data>
+  <data name="Page_SyncDebugPanel_Title" xml:space="preserve">
+    <value>Sync Debug</value>
+  </data>
+  <data name="Page_SyncDebugPanel_SyncNow_Button" xml:space="preserve">
+    <value>Sync now</value>
+  </data>
+  <data name="Page_SyncDebugPanel_ClearQueue_Button" xml:space="preserve">
+    <value>Clear queue</value>
+  </data>
+  <data name="Page_SyncDebugPanel_StopAutoRefreash_Button" xml:space="preserve">
+    <value>Stop auto-refresh</value>
+  </data>
+  <data name="Page_SyncDebugPanel_AutoRefreash_Button" xml:space="preserve">
+    <value>Auto-refresh</value>
+  </data>
+  <data name="Common_Actions_Refresh" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="Page_CreateRole_Title" xml:space="preserve">
+    <value>Create role</value>
+  </data>
+  <data name="Page_CreateRole_SubTitle" xml:space="preserve">
+    <value>Create a new role in the system</value>
+  </data>
+  <data name="Page_CreateRole_RoleName_Label" xml:space="preserve">
+    <value>Role name</value>
+  </data>
+  <data name="Page_CreateRole_RoleName_Placeholder" xml:space="preserve">
+    <value>e.g. Admin, Editor, Creator</value>
+  </data>
+  <data name="Page_CreateRole_SaveRole_Text" xml:space="preserve">
+    <value>Saving role</value>
+  </data>
+  <data name="Common_Errors_MustBeLoggedIn" xml:space="preserve">
+    <value>You must be logged in.</value>
+  </data>
+  <data name="Page_CreateRole_RoleNameRequired_Text" xml:space="preserve">
+    <value>Role name required.</value>
+  </data>
+  <data name="Page_CreateRole_TheRoleQueued_Text1" xml:space="preserve">
+    <value>The role</value>
+  </data>
+  <data name="Page_CreateRole_TheRoleQueued_Text2" xml:space="preserve">
+    <value>queued and synced.</value>
+  </data>
+  <data name="Page_CreateMembership_Title" xml:space="preserve">
+    <value>Create membership</value>
+  </data>
+  <data name="Page_CreateMembership_SubTitle" xml:space="preserve">
+    <value>Create a membership in the system</value>
+  </data>
+  <data name="Page_CreateMembership_MembershipName_Label" xml:space="preserve">
+    <value>Membership name</value>
+  </data>
+  <data name="Page_CreateMembership_MembershipName_Plaaceholder" xml:space="preserve">
+    <value>e.g. Free membership</value>
+  </data>
+  <data name="Page_CreateMembership_MembershipType_Label" xml:space="preserve">
+    <value>Membership type</value>
+  </data>
+  <data name="Page_CreateMembership_MembershipType_Plaaceholder" xml:space="preserve">
+    <value>for example Free, Subscriber, OneTime</value>
+  </data>
+  <data name="Page_CreateMembership_Price_Label" xml:space="preserve">
+    <value>Price</value>
+  </data>
+  <data name="Common_Actions_Active" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="Common_Actions_Inactive" xml:space="preserve">
+    <value>Inactive</value>
+  </data>
+  <data name="Page_CreateMembership_SaveMembership_Text" xml:space="preserve">
+    <value>Save membership</value>
+  </data>
+  <data name="Page_CreateMembership_MembershipNameRequired_Text" xml:space="preserve">
+    <value>Membership name is required.</value>
+  </data>
+  <data name="Page_CreateMembership_MembershipTypeRequired_Text" xml:space="preserve">
+    <value>Membership type is required.</value>
+  </data>
+  <data name="Page_CreateMembership_PriceNegative_Text" xml:space="preserve">
+    <value>Price cannot be negative.</value>
+  </data>
+  <data name="Page_CreateMembership_MembershipQueue_Text1" xml:space="preserve">
+    <value>The membership</value>
+  </data>
+  <data name="Page_CreateMembership_MembershipQueue_Text2" xml:space="preserve">
+    <value>queued for sync.</value>
+  </data>
+  <data name="Common_Actions_Pending" xml:space="preserve">
+    <value>Pending</value>
+  </data>
+  <data name="Common_Actions_Processing" xml:space="preserve">
+    <value>Processing</value>
+  </data>
+  <data name="Common_Actions_Failed" xml:space="preserve">
+    <value>Failed</value>
+  </data>
+  <data name="Common_Actions_Done" xml:space="preserve">
+    <value>Done</value>
+  </data>
+  <data name="Common_Actions_Total" xml:space="preserve">
+    <value>Total</value>
+  </data>
+  <data name="Page_SyncDebug_QueueItemsList_QueueEmpty_Text" xml:space="preserve">
+    <value>Queue is empty.</value>
+  </data>
+  <data name="Page_SyncDebug_QueueItemsList_QueueItems_Text" xml:space="preserve">
+    <value>Queue items</value>
+  </data>
+  <data name="Common_Actions_Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Page_SyncDebug_QueueItemsList_Attempts_Text" xml:space="preserve">
+    <value>Attempts</value>
+  </data>
+  <data name="Common_Actions_Created" xml:space="preserve">
+    <value>Created</value>
+  </data>
+  <data name="Page_SyncDebug_QueueItemsList_LastAttempts_Text" xml:space="preserve">
+    <value>Last attempt</value>
+  </data>
+  <data name="Page_SyncDebug_QueueItemsList_LastError_Text" xml:space="preserve">
+    <value>Last error</value>
+  </data>
+  <data name="Page_SyncDebug_QueueItemsList_SetPending_Button" xml:space="preserve">
+    <value>Set Pending</value>
+  </data>
+  <data name="Page_SyncDebug_QueueItemsList_SyncNow_Button" xml:space="preserve">
+    <value>Sync now</value>
+  </data>
+  <data name="Page_SyncDebug_QueueItemsList_QueueAutoRefresh_Error" xml:space="preserve">
+    <value>Queue auto-refresh error</value>
+  </data>
+  <data name="Page_SyncDebug_PostOpsPanel_QueueCreatePost_Button" xml:space="preserve">
+    <value>Queue CreatePost</value>
+  </data>
+  <data name="Page_SyncDebug_PostOpsPanel_QueueCreateRole_Button" xml:space="preserve">
+    <value>Queue CreateRole</value>
+  </data>
+  <data name="Page_SyncDebug_PostOpsPanel_QueueCreateMembership_Button" xml:space="preserve">
+    <value>Queue CreateMembership</value>
+  </data>
+  <data name="Page_SyncDebug_PostOpsPanel_SubTitle1" xml:space="preserve">
+    <value>Queue test operations</value>
+  </data>
+  <data name="Page_SyncDebug_PostOpsPanel_SubTitle2" xml:space="preserve">
+    <value>Queue test operations (Posts)</value>
+  </data>
+  <data name="Page_SyncDebug_PostOpsPanel_NoPostInState_Text" xml:space="preserve">
+    <value>No posts in state.</value>
+  </data>
+  <data name="Page_SyncDebug_PostOpsPanel_SelectPost_Text" xml:space="preserve">
+    <value>Select post</value>
+  </data>
+  <data name="Page_SyncDebug_NetworkPanel_NetworkType_Text" xml:space="preserve">
+    <value>Network type</value>
+  </data>
+  <data name="Page_SyncDebug_NetworkPanel_DebugPanel_Text" xml:space="preserve">
+    <value>Debug type</value>
+  </data>
+  <data name="Page_SyncDebug_NetworkPanel_EffectiveOnline_Text" xml:space="preserve">
+    <value>Effective online</value>
+  </data>
+  <data name="Page_SyncDebug_NetworkPanel_DebugOverrideIsNotSupported_Text" xml:space="preserve">
+    <value>Debug override is not supported on this host (IsSupported=false).
+This usually means that the page is running in Server render mode and gets NoOpNetworkDebugControl.</value>
+  </data>
+  <data name="Page_SyncDebug_NetworkPanel_NORMAL_Text" xml:space="preserve">
+    <value>NORMAL</value>
+  </data>
+  <data name="Page_SyncDebug_NetworkPanel_ForcedOffline_Button" xml:space="preserve">
+    <value>Forced offline</value>
+  </data>
+  <data name="Page_SyncDebug_NetworkPanel_ForcedOnline_Button" xml:space="preserve">
+    <value>Forced online</value>
+  </data>
+  <data name="Page_SyncDebug_NetworkPanel_Normal_Button" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="Page_Sidebar_InspirationIdeas_Title" xml:space="preserve">
+    <value>Inspiration Ideas</value>
+  </data>
+  <data name="Page_TodaysFocusSection_MarkAsNotDone_Text1" xml:space="preserve">
+    <value>Mark</value>
+  </data>
+  <data name="Page_TodaysFocusSection_MarkAsNotDone_Text2" xml:space="preserve">
+    <value>as not done</value>
+  </data>
+  <data name="Page_TodaysFocusSection_MarkAsDone_Text1" xml:space="preserve">
+    <value>Mark</value>
+  </data>
+  <data name="Page_TodaysFocusSection_MarkAsDone_Text2" xml:space="preserve">
+    <value>as done</value>
+  </data>
+  <data name="Page_TodaysFocusSection_Title" xml:space="preserve">
+    <value>Today's Focus</value>
+  </data>
+  <data name="Page_TodaysFocusSection_Empty_Text" xml:space="preserve">
+    <value>No focus points today.</value>
+  </data>
+  <data name="Common_Actions_ShowLess" xml:space="preserve">
+    <value>Show less</value>
+  </data>
+  <data name="Common_Actions_ShowMore" xml:space="preserve">
+    <value>Show more</value>
+  </data>
+  <data name="Page_TodaysFocusSection_Add_Header" xml:space="preserve">
+    <value>Add task</value>
+  </data>
+  <data name="Page_TodaysFocusSection_Add_Subtitle" xml:space="preserve">
+    <value>Create a new task for today</value>
+  </data>
+  <data name="Page_TodaysFocusSection_Add_Field_Title_Label" xml:space="preserve">
+    <value>Title</value>
+  </data>
+  <data name="Page_TodaysFocusSection_Add_Field_Title_Placeholder" xml:space="preserve">
+    <value>e.g. Plan your posts</value>
+  </data>
+  <data name="Page_TodaysFocusSection_Add_TitleRequired" xml:space="preserve">
+    <value>Title is required.</value>
+  </data>
+  <data name="Page_TodaysFocusSection_Add_Field_Description_Label" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Page_TodaysFocusSection_Add_Field_Description_Placeholder" xml:space="preserve">
+    <value>Short description (optional)</value>
+  </data>
+  <data name="Page_TodaysFocusSection_Add_Field_Icon_Label" xml:space="preserve">
+    <value>Icon</value>
+  </data>
+  <data name="Page_TodaysFocusSection_Add_Field_Icon_Hint" xml:space="preserve">
+    <value>Use a Bootstrap icon class, e.g. bi-bullseye</value>
+  </data>
+  <data name="Page_TodaysFocusSection_Add_Field_Link_Label" xml:space="preserve">
+    <value>Link</value>
+  </data>
+  <data name="Page_TodaysFocusSection_Add_Field_Link_Hint" xml:space="preserve">
+    <value>Optional. If set, the row becomes a link.</value>
+  </data>
+  <data name="Page_TodaysFocusSection_Add_Field_Icon_PickerHint" xml:space="preserve">
+    <value>Click an icon to use it. </value>
+  </data>
+  <data name="Common_Actions_Optional" xml:space="preserve">
+    <value>Optional</value>
+  </data>
+  <data name="Common_Action_NoIcon" xml:space="preserve">
+    <value>No icon</value>
+  </data>
+  <data name="Common_Actions_Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="Page_TodaysFocusSection_Edit_Header" xml:space="preserve">
+    <value>Edit task</value>
+  </data>
+  <data name="Page_TodaysFocusSection_Edit_Subtitle" xml:space="preserve">
+    <value>Update your task</value>
+  </data>
+  <data name="Page_ContentPostModal_Title_Label" xml:space="preserve">
+    <value>Title</value>
+  </data>
+  <data name="Page_ContentPostModal_Description_Label" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Page_ContentPostModal_Description_Placeholder" xml:space="preserve">
+    <value>Write your content (Markdown works great)…</value>
+  </data>
+  <data name="Page_ContentPostModal_Description_Hint" xml:space="preserve">
+    <value>You can use Markdown.</value>
+  </data>
+  <data name="Common_Actions_Draft" xml:space="preserve">
+    <value>Draft</value>
+  </data>
+  <data name="Common_Actions_Published" xml:space="preserve">
+    <value>Published</value>
+  </data>
+  <data name="Common_Actions_Archived" xml:space="preserve">
+    <value>Archived</value>
+  </data>
+  <data name="Page_ContentPostModal_Purpose_Label" xml:space="preserve">
+    <value>Purpose</value>
+  </data>
+  <data name="Page_ContentPostModal_Purpose_Placeholder" xml:space="preserve">
+    <value>Educate / Inspire / Promote</value>
+  </data>
+  <data name="Page_ContentPostModal_Pillar_Label" xml:space="preserve">
+    <value>Pillar</value>
+  </data>
+  <data name="Page_ContentPostModal_Pillar_Placeholder" xml:space="preserve">
+    <value>Education / Inspiration / Promotion</value>
+  </data>
+  <data name="Page_ContentPostModal_Tags_Label" xml:space="preserve">
+    <value>Tags</value>
+  </data>
+  <data name="Page_ContentPostModal_Tags_Placeholder" xml:space="preserve">
+    <value>AI, Productivity, Wellness</value>
+  </data>
+  <data name="Page_ContentPostModal_Tags_Hint" xml:space="preserve">
+    <value>Separate tags with commas.</value>
+  </data>
+  <data name="Page_ContentPostModal_Edit_Header" xml:space="preserve">
+    <value>Edit content</value>
+  </data>
+  <data name="Page_ContentPostModal_Create_Header" xml:space="preserve">
+    <value>Create content</value>
+  </data>
+  <data name="Page_ContentPostModal_Edit_Subtitle" xml:space="preserve">
+    <value>Update your content post</value>
+  </data>
+  <data name="Page_ContentPostModal_Create_Subtitle" xml:space="preserve">
+    <value>Create a new post</value>
+  </data>
+  <data name="Page_QuickCreateSection_Title" xml:space="preserve">
+    <value>Quick Create</value>
+  </data>
+  <data name="Common_Actions_New" xml:space="preserve">
+    <value>New</value>
+  </data>
+  <data name="Common_Actions_Content" xml:space="preserve">
+    <value>Content</value>
+  </data>
+  <data name="Page_ContentPostModal_Title_Placeholder" xml:space="preserve">
+    <value>e.g. Plan your posts</value>
+  </data>
+  <data name="Page_QuickCreateSection_SubTitle" xml:space="preserve">
+    <value>Create a new content post</value>
+  </data>
+  <data name="Common_Actions_ViewAll" xml:space="preserve">
+    <value>View all</value>
+  </data>
+  <data name="Common_Actions_More" xml:space="preserve">
+    <value>More</value>
+  </data>
+  <data name="Page_UpcomingContentSection_Title" xml:space="preserve">
+    <value>Upcoming Content</value>
+  </data>
+  <data name="Page_UpcomingContentSection_Empty" xml:space="preserve">
+    <value>No content yet. Create one to get started.</value>
+  </data>
+  <data name="Page_UpcomingContentSection_Untitled_Text" xml:space="preserve">
+    <value>(Untitled)</value>
+  </data>
+  <data name="Common_Actions_Updated" xml:space="preserve">
+    <value>Updated</value>
+  </data>
+  <data name="Page_UpcomingContentSection_SubTitle" xml:space="preserve">
+    <value>Your latest drafts</value>
+  </data>
+  <data name="Common_Actions_Previous" xml:space="preserve">
+    <value>Previous</value>
+  </data>
+  <data name="Common_Actions_Next" xml:space="preserve">
+    <value>Next</value>
+  </data>
+  <data name="Page_WeekAtAGlanceSection_Title" xml:space="preserve">
+    <value>Week at a Glance</value>
+  </data>
+  <data name="Page_WeekAtAGlanceSection_SubTitle" xml:space="preserve">
+    <value>Your agendas for this week</value>
+  </data>
+  <data name="Common_Actions_Today" xml:space="preserve">
+    <value>Today</value>
+  </data>
+  <data name="Common_Actions_Selected" xml:space="preserve">
+    <value>Selected</value>
+  </data>
+  <data name="Page_WeekAtAGlanceSection_NoAgendaForDay_Text" xml:space="preserve">
+    <value>No agenda items for this day.</value>
+  </data>
+  <data name="Page_WeekAtAGlanceSection_Agenda_Header" xml:space="preserve">
+    <value>Agenda</value>
+  </data>
+  <data name="Page_WeekAtAGlanceSection_HasAgenda_Text" xml:space="preserve">
+    <value>has agenda</value>
+  </data>
+  <data name="Common_Actions_MondayShort" xml:space="preserve">
+    <value>Mon</value>
+  </data>
+  <data name="Common_Actions_TuesdayShort" xml:space="preserve">
+    <value>Tue</value>
+  </data>
+  <data name="Common_Actions_WednesdayShort" xml:space="preserve">
+    <value>Wed</value>
+  </data>
+  <data name="Common_Actions_ThursdayShort" xml:space="preserve">
+    <value>Thu</value>
+  </data>
+  <data name="Common_Actions_FridayShort" xml:space="preserve">
+    <value>Fri</value>
+  </data>
+  <data name="Common_Actions_SaturdayShort" xml:space="preserve">
+    <value>Sat</value>
+  </data>
+  <data name="Common_Actions_SundayShort" xml:space="preserve">
+    <value>Sun</value>
+  </data>
+  <data name="Page_DreamCustomerSection_Empty" xml:space="preserve">
+    <value>No dream clients yet</value>
+  </data>
+  <data name="Page_DreamCustomerSection_Hint" xml:space="preserve">
+    <value>Tap a dream client to view details</value>
+  </data>
+  <data name="Page_DreamCustomerSection_Title" xml:space="preserve">
+    <value>Dream customer</value>
+  </data>
+  <data name="Page_DreamCustomerSection_SubTitle" xml:space="preserve">
+    <value>Your selected dream client</value>
+  </data>
+  <data name="Page_DreamCustomerSection_ClientPrefix" xml:space="preserve">
+    <value>Dream Client</value>
+  </data>
+  <data name="Common_Actions_Empty" xml:space="preserve">
+    <value>Empty</value>
+  </data>
+  <data name="Page_DreamCustomerModal_Persona_Label" xml:space="preserve">
+    <value>Persona</value>
+  </data>
+  <data name="Page_DreamCustomerModal_Goals_Label" xml:space="preserve">
+    <value>Goals</value>
+  </data>
+  <data name="Page_DreamCustomerModal_Challenges_Label" xml:space="preserve">
+    <value>Challenges</value>
+  </data>
+  <data name="Page_DreamCustomerModal_Notes_Label" xml:space="preserve">
+    <value>Notes</value>
+  </data>
+  <data name="Page_DreamCustomerModal_Title" xml:space="preserve">
+    <value>Dream customer</value>
+  </data>
+  <data name="Page_ContentPillarsSection_Empty" xml:space="preserve">
+    <value>No content pillars yet</value>
+  </data>
+  <data name="Page_ContentPillarsSection_Hint" xml:space="preserve">
+    <value>Tap a pillar to view details</value>
+  </data>
+  <data name="Page_ContentPillarsSection_Title" xml:space="preserve">
+    <value>Content pillars</value>
+  </data>
+  <data name="Page_ContentPillarsSection_SubTitle" xml:space="preserve">
+    <value>Your key themes</value>
+  </data>
+  <data name="Page_ContentPillarsModal_Empty" xml:space="preserve">
+    <value>No items</value>
+  </data>
+  <data name="Page_ContentPillarsModal_Title" xml:space="preserve">
+    <value>Content pillar</value>
+  </data>
+  <data name="Page_ContentPillarsModal_SubTitle" xml:space="preserve">
+    <value>Included ideas</value>
+  </data>
+  <data name="Page_DreamCustomerSection_Primary_Tooltip" xml:space="preserve">
+    <value>Primary dream customer</value>
+  </data>
+  <data name="Page_DreamCustomerSection_Primary" xml:space="preserve">
+    <value>Primary</value>
+  </data>
+  <data name="Page_Landing_LoginCard_FailedToLogin_Error" xml:space="preserve">
+    <value>Failed to log in. Incorrect email address or password.</value>
+  </data>
+  <data name="Page_Calendar_Title" xml:space="preserve">
+    <value>Calendar</value>
+  </data>
+  <data name="Page_Calendar_Subtitle" xml:space="preserve">
+    <value>Plan, track and create events for your content.</value>
+  </data>
+  <data name="Page_Calendar_View_Month_Button" xml:space="preserve">
+    <value>Month</value>
+  </data>
+  <data name="Page_Calendar_ViewToggle_Aria" xml:space="preserve">
+    <value>Choose view</value>
+  </data>
+  <data name="Page_Calendar_View_Week_Button" xml:space="preserve">
+    <value>Week</value>
+  </data>
+  <data name="Page_Calendar_View_Agenda_Button" xml:space="preserve">
+    <value>Agenda</value>
+  </data>
+  <data name="Page_Calendar_Loading" xml:space="preserve">
+    <value>Loading calendar…</value>
+  </data>
+  <data name="Page_Calendar_Loading_Events" xml:space="preserve">
+    <value>Loading events…</value>
+  </data>
+  <data name="Page_Calendar_Error_Generic" xml:space="preserve">
+    <value>Something went wrong while loading the calendar.</value>
+  </data>
+  <data name="Common_Error_TryAgain" xml:space="preserve">
+    <value>Try again</value>
+  </data>
+  <data name="Page_Calendar_Empty_Title" xml:space="preserve">
+    <value>No events yet</value>
+  </data>
+  <data name="Page_Calendar_Empty_Body" xml:space="preserve">
+    <value>Click a day or a timeslot to add an event.</value>
+  </data>
+  <data name="Page_CalendarQuickAddModal_Title" xml:space="preserve">
+    <value>Add event</value>
+  </data>
+  <data name="Page_CalendarQuickAddModal_SubTitle" xml:space="preserve">
+    <value>Create event / task / meeting</value>
+  </data>
+  <data name="Page_CalendarQuickAddModal_Title_Label" xml:space="preserve">
+    <value>Title</value>
+  </data>
+  <data name="Page_CalendarQuickAddModal_Type_Label" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Page_Calendar_Event_Options" xml:space="preserve">
+    <value>Event</value>
+  </data>
+  <data name="Page_Calendar_Meeting_Options" xml:space="preserve">
+    <value>Meeting</value>
+  </data>
+  <data name="Page_Calendar_Task_Options" xml:space="preserve">
+    <value>Task</value>
+  </data>
+  <data name="Page_Calendar_Checklist_Options" xml:space="preserve">
+    <value>Checklist</value>
+  </data>
+  <data name="Page_Calendar_FullDay_CheckBox" xml:space="preserve">
+    <value>Full day</value>
+  </data>
+  <data name="Common_Actions_From" xml:space="preserve">
+    <value>From</value>
+  </data>
+  <data name="Common_Actions_To" xml:space="preserve">
+    <value>To</value>
+  </data>
+  <data name="Page_CalendarQuickAddModal_Description_Label" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Common_Actions_Untitled" xml:space="preserve">
+    <value>Untitled</value>
+  </data>
+  <data name="Page_CalendarCreateModal_Title" xml:space="preserve">
+    <value>New calendar</value>
+  </data>
+  <data name="Page_CalendarCreateModal_SubTitle" xml:space="preserve">
+    <value>Create an additional calendar</value>
+  </data>
+  <data name="Page_CalendarCreateModal_Name_Label" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Page_CalendarCreateModal_Color_Label" xml:space="preserve">
+    <value>Color</value>
+  </data>
+  <data name="Page_AppGate_EventQuotaExceeded_Text" xml:space="preserve">
+    <value>Event quota exceeded</value>
+  </data>
+  <data name="Common_Actions_Accept" xml:space="preserve">
+    <value>Accept</value>
+  </data>
+  <data name="Common_Actions_Create" xml:space="preserve">
+    <value>Create</value>
+  </data>
+  <data name="Common_Actions_Decline" xml:space="preserve">
+    <value>Decline</value>
+  </data>
+  <data name="Common_Actions_DeleteAll" xml:space="preserve">
+    <value>Delete all</value>
+  </data>
+  <data name="Common_Actions_MoveAndDelete" xml:space="preserve">
+    <value>Move &amp; delete</value>
+  </data>
+  <data name="Common_Actions_Remove" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="Common_Auth_NotLoggedIn" xml:space="preserve">
+    <value>Not logged in.</value>
+  </data>
+  <data name="Common_Calendars" xml:space="preserve">
+    <value>Calendars</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Common_Loading" xml:space="preserve">
+    <value>Loading…</value>
+  </data>
+  <data name="Common_Max" xml:space="preserve">
+    <value>Max</value>
+  </data>
+  <data name="Common_Offline_Badge" xml:space="preserve">
+    <value>offline</value>
+  </data>
+  <data name="Common_Sending" xml:space="preserve">
+    <value>Sending…</value>
+  </data>
+  <data name="Invites_CanEdit" xml:space="preserve">
+    <value>Can edit</value>
+  </data>
+  <data name="Invites_CanShare" xml:space="preserve">
+    <value>Can share</value>
+  </data>
+  <data name="Invites_Error_Generic" xml:space="preserve">
+    <value>Could not complete invite action right now. Please try again.</value>
+  </data>
+  <data name="Invites_Error_Offline" xml:space="preserve">
+    <value>You must be online to manage invites.</value>
+  </data>
+  <data name="Invites_Error_Forbidden" xml:space="preserve">
+    <value>You do not have permission to manage invites for this calendar.</value>
+  </data>
+  <data name="Invites_Error_Unauthorized" xml:space="preserve">
+    <value>Your session has expired. Please sign in again.</value>
+  </data>
+  <data name="Invites_Error_NotFound" xml:space="preserve">
+    <value>This invite is no longer available.</value>
+  </data>
+  <data name="Invites_From" xml:space="preserve">
+    <value>From</value>
+  </data>
+  <data name="Invites_None" xml:space="preserve">
+    <value>No pending invites.</value>
+  </data>
+  <data name="Invites_Offline_Info" xml:space="preserve">
+    <value>You must be online to accept or decline invites.</value>
+  </data>
+  <data name="Invites_Status_Pending" xml:space="preserve">
+    <value>Pending</value>
+  </data>
+  <data name="Invites_Sub" xml:space="preserve">
+    <value>Pending calendar invitations</value>
+  </data>
+  <data name="Invites_Title" xml:space="preserve">
+    <value>Invites</value>
+  </data>
+  <data name="Page_CalendarEventModal_AddSub" xml:space="preserve">
+    <value>Create event / task / meeting</value>
+  </data>
+  <data name="Page_CalendarEventModal_AddTitle" xml:space="preserve">
+    <value>Add event</value>
+  </data>
+  <data name="Page_CalendarEventModal_EditSub" xml:space="preserve">
+    <value>Edit event / task / meeting</value>
+  </data>
+  <data name="Page_CalendarEventModal_EditTitle" xml:space="preserve">
+    <value>Edit event</value>
+  </data>
+  <data name="Page_CalendarManageModal_Color_Label" xml:space="preserve">
+    <value>Color</value>
+  </data>
+  <data name="Page_CalendarManageModal_DeleteConfirm_Text" xml:space="preserve">
+    <value>Do you want to move events to another calendar or delete everything?</value>
+  </data>
+  <data name="Page_CalendarManageModal_DeleteConfirm_Title" xml:space="preserve">
+    <value>Delete calendar?</value>
+  </data>
+  <data name="Page_CalendarManageModal_DeleteConfirm_TargetRequired" xml:space="preserve">
+    <value>Select a target calendar (or choose 'Delete all').</value>
+  </data>
+  <data name="Page_CalendarManageModal_DeleteConfirm_CalendarLabel" xml:space="preserve">
+    <value>Calendar</value>
+  </data>
+  <data name="Page_CalendarManageModal_DeleteConfirm_DeleteOption" xml:space="preserve">
+    <value>Delete the calendar and all events (cannot be undone)</value>
+  </data>
+  <data name="Page_CalendarManageModal_DeleteConfirm_MoveOption" xml:space="preserve">
+    <value>Move all events to another calendar and delete this calendar</value>
+  </data>
+  <data name="Page_CalendarManageModal_DeleteConfirm_NoTarget" xml:space="preserve">
+    <value>No other calendar exists. (Create a new calendar if you want to move events.)</value>
+  </data>
+  <data name="Page_CalendarManageModal_DeleteConfirm_Warn" xml:space="preserve">
+    <value>This action cannot be undone.</value>
+  </data>
+  <data name="Page_CalendarManageModal_Members_CanEdit" xml:space="preserve">
+    <value>Can edit</value>
+  </data>
+  <data name="Page_CalendarManageModal_Members_CanSeeDetails" xml:space="preserve">
+    <value>Can see details</value>
+  </data>
+  <data name="Page_CalendarManageModal_Members_CanShare" xml:space="preserve">
+    <value>Can share</value>
+  </data>
+  <data name="Page_CalendarManageModal_Members_Empty" xml:space="preserve">
+    <value>No members found.</value>
+  </data>
+  <data name="Page_CalendarManageModal_Members_Label" xml:space="preserve">
+    <value>Members</value>
+  </data>
+  <data name="Page_CalendarManageModal_Members_LoadError" xml:space="preserve">
+    <value>Could not load members for this calendar.</value>
+  </data>
+  <data name="Page_CalendarManageModal_Members_Offline" xml:space="preserve">
+    <value>You must be online to remove a member.</value>
+  </data>
+  <data name="Page_CalendarManageModal_Members_ReadOnly" xml:space="preserve">
+    <value>You can view members here, but you need share permission to edit roles or remove members.</value>
+  </data>
+  <data name="Page_CalendarManageModal_Members_RemoveError" xml:space="preserve">
+    <value>Could not remove member.</value>
+  </data>
+  <data name="Page_CalendarManageModal_Members_UpdateError" xml:space="preserve">
+    <value>Could not update member.</value>
+  </data>
+  <data name="Page_CalendarManageModal_Name_Label" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Page_CalendarManageModal_NoCalendars" xml:space="preserve">
+    <value>No calendars.</value>
+  </data>
+  <data name="Page_CalendarManageModal_PrimaryLocked" xml:space="preserve">
+    <value>Contista calendar is always available and cannot be edited here.</value>
+  </data>
+  <data name="Page_CalendarManageModal_Select_Label" xml:space="preserve">
+    <value>Calendar</value>
+  </data>
+  <data name="Page_CalendarManageModal_SubTitle" xml:space="preserve">
+    <value>Edit name/color or delete an extra calendar</value>
+  </data>
+  <data name="Page_CalendarManageModal_Title" xml:space="preserve">
+    <value>Manage calendars</value>
+  </data>
+  <data name="Page_CalendarQuickAddModal_Calendar_Label" xml:space="preserve">
+    <value>Calendar</value>
+  </data>
+  <data name="Page_CalendarShareModal_Calendar_Label" xml:space="preserve">
+    <value>Calendar</value>
+  </data>
+  <data name="Page_CalendarShareModal_CanEdit" xml:space="preserve">
+    <value>Can edit</value>
+  </data>
+  <data name="Page_CalendarShareModal_CanSeeDetails" xml:space="preserve">
+    <value>Can see details</value>
+  </data>
+  <data name="Page_CalendarShareModal_CanShare" xml:space="preserve">
+    <value>Can share</value>
+  </data>
+  <data name="Page_CalendarShareModal_Email_Hint" xml:space="preserve">
+    <value>The recipient must already have an account.</value>
+  </data>
+  <data name="Page_CalendarShareModal_Email_Invalid" xml:space="preserve">
+    <value>Enter a valid email address.</value>
+  </data>
+  <data name="Page_CalendarShareModal_Email_Label" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="Page_CalendarShareModal_Email_Placeholder" xml:space="preserve">
+    <value>name@email.com</value>
+  </data>
+  <data name="Page_CalendarShareModal_Invite_Forbidden" xml:space="preserve">
+    <value>You do not have permission to share this calendar.</value>
+  </data>
+  <data name="Page_CalendarShareModal_Invite_GenericError" xml:space="preserve">
+    <value>Could not send invite right now. Please try again.</value>
+  </data>
+  <data name="Page_CalendarShareModal_Invite_Self" xml:space="preserve">
+    <value>You cannot invite yourself.</value>
+  </data>
+  <data name="Page_CalendarShareModal_Invite_Sent" xml:space="preserve">
+    <value>Invite sent.</value>
+  </data>
+  <data name="Page_CalendarShareModal_Invite_Unauthorized" xml:space="preserve">
+    <value>Your session has expired. Please sign in again.</value>
+  </data>
+  <data name="Page_CalendarShareModal_Invite_UserNotFound" xml:space="preserve">
+    <value>No user found with that email address.</value>
+  </data>
+  <data name="Page_CalendarShareModal_Offline" xml:space="preserve">
+    <value>You must be online to share calendars.</value>
+  </data>
+  <data name="Page_CalendarShareModal_Role_Editor" xml:space="preserve">
+    <value>Editor</value>
+  </data>
+  <data name="Page_CalendarShareModal_Role_Label" xml:space="preserve">
+    <value>Role</value>
+  </data>
+  <data name="Page_CalendarShareModal_Role_Reader" xml:space="preserve">
+    <value>Reader</value>
+  </data>
+  <data name="Page_CalendarShareModal_SendInvite" xml:space="preserve">
+    <value>Send invite</value>
+  </data>
+  <data name="Page_CalendarShareModal_SubTitle" xml:space="preserve">
+    <value>Invite someone by email</value>
+  </data>
+  <data name="Page_CalendarShareModal_Title" xml:space="preserve">
+    <value>Share calendar</value>
+  </data>
+  <data name="Page_Calendar_CreateCalendar_Button" xml:space="preserve">
+    <value>New calendar</value>
+  </data>
+  <data name="Page_Calendar_CreateCalendar_QueuedOffline" xml:space="preserve">
+    <value>Calendar queued offline. It will be created when you are back online.</value>
+  </data>
+  <data name="Page_Calendar_DeleteCalendar_MoveRequiresTarget" xml:space="preserve">
+    <value>To move events you must select a target calendar.</value>
+  </data>
+  <data name="Page_Calendar_DeleteCalendar_QueuedOffline" xml:space="preserve">
+    <value>Calendar deletion queued offline. It will sync when you are back online.</value>
+  </data>
+  <data name="Page_Calendar_DeleteTemp_Disabled" xml:space="preserve">
+    <value>This event is still a temporary offline item. Delete is disabled until it has synced and received a real EventId.</value>
+  </data>
+  <data name="Page_Calendar_EditModal_SubTitle" xml:space="preserve">
+    <value>Update or delete this event</value>
+  </data>
+  <data name="Page_Calendar_EditModal_Title" xml:space="preserve">
+    <value>Edit event</value>
+  </data>
+  <data name="Page_Calendar_EventsInRange_Title" xml:space="preserve">
+    <value>Events in range</value>
+  </data>
+  <data name="Page_Calendar_Manage_Tooltip" xml:space="preserve">
+    <value>Manage calendars</value>
+  </data>
+  <data name="Page_Calendar_MaxExtraCalendars_Info" xml:space="preserve">
+    <value>You cannot create more extra calendars.</value>
+  </data>
+  <data name="Page_Calendar_MaxExtraCalendars_Tooltip" xml:space="preserve">
+    <value>Max extra calendars</value>
+  </data>
+  <data name="Page_Calendar_NoEvents" xml:space="preserve">
+    <value>No events.</value>
+  </data>
+  <data name="Page_Calendar_PrimaryCannotDelete" xml:space="preserve">
+    <value>The primary (Contista) calendar cannot be deleted.</value>
+  </data>
+  <data name="Page_Calendar_PrimaryCannotEdit" xml:space="preserve">
+    <value>The primary (Contista) calendar cannot be edited.</value>
+  </data>
+  <data name="Page_Calendar_QueuedOffline_Info" xml:space="preserve">
+    <value>Saved offline. It will sync when you are back online.</value>
+  </data>
+  <data name="Page_Calendar_Share_Disabled_Feature" xml:space="preserve">
+    <value>Calendar sharing requires a paid membership.</value>
+  </data>
+  <data name="Page_Calendar_Share_Disabled_NoPermission" xml:space="preserve">
+    <value>You don't have permission to share any calendar.</value>
+  </data>
+  <data name="Page_Calendar_Share_Disabled_Offline" xml:space="preserve">
+    <value>You must be online to share calendars.</value>
+  </data>
+  <data name="Page_Calendar_Share_Tooltip" xml:space="preserve">
+    <value>Share calendar</value>
+  </data>
+  <data name="Page_Calendar_UpdateCalendar_QueuedOffline" xml:space="preserve">
+    <value>Changes queued offline. They will sync when you are back online.</value>
+  </data>
+  <data name="Page_Home_WeekPlanSection_AgendaItems_Singular" xml:space="preserve">
+    <value>{0} agenda item</value>
+  </data>
+  <data name="Page_Home_WeekPlanSection_AgendaItems_Plural" xml:space="preserve">
+    <value>{0} agenda items</value>
+  </data>
+  <data name="Page_Calendar_View_Month_Title" xml:space="preserve">
+    <value>Month calendar</value>
+  </data>
+  <data name="Page_Calendar_View_Week_Title" xml:space="preserve">
+    <value>Week calendar</value>
+  </data>
+  <data name="Page_Calendar_View_Agenda_Title" xml:space="preserve">
+    <value>Agenda calendar</value>
+  </data>
+  <data name="Page_CalendarManageModal_PrimaryColorLocked" xml:space="preserve">
+    <value>Contista calendar uses the primary color and cannot be changed.</value>
+  </data>
+  <data name="Common_Color_Blue" xml:space="preserve">
+    <value>Blue</value>
+  </data>
+  <data name="Common_Color_Green" xml:space="preserve">
+    <value>Green</value>
+  </data>
+  <data name="Common_Color_Orange" xml:space="preserve">
+    <value>Orange</value>
+  </data>
+  <data name="Common_Color_Red" xml:space="preserve">
+    <value>Red</value>
+  </data>
+  <data name="Common_Color_Purple" xml:space="preserve">
+    <value>Purple</value>
+  </data>
+  <data name="Common_Color_Pink" xml:space="preserve">
+    <value>Pink</value>
+  </data>
+  <data name="Common_Color_Teal" xml:space="preserve">
+    <value>Teal</value>
+  </data>
+  <data name="Common_Color_Gray" xml:space="preserve">
+    <value>Gray</value>
+  </data>
+  <data name="Page_CalendarQuickAddModal_NoEditableCalendars" xml:space="preserve">
+    <value>You don't have permission to create events in any calendar.</value>
+  </data>
+  <data name="Page_Calendar_NoEventsForDay" xml:space="preserve">
+    <value>No events for this day.</value>
+  </data>
+  <data name="Page_Calendar_DayModal_Sub" xml:space="preserve">
+    <value>Todays {0} events</value>
+  </data>
+  <data name="Common_CreatedAt" xml:space="preserve">
+    <value>Created</value>
+  </data>
+  <data name="Common_UpdatedAt" xml:space="preserve">
+    <value>Updated</value>
+  </data>
+  <data name="Common_CreatedBy" xml:space="preserve">
+    <value>Created by</value>
+  </data>
+  <data name="Common_Checklist" xml:space="preserve">
+    <value>Checklist</value>
+  </data>
+  <data name="Common_Recurrence" xml:space="preserve">
+    <value>Recurrence</value>
+  </data>
+  <data name="Common_Reminders" xml:space="preserve">
+    <value>Reminders</value>
+  </data>
+  <data name="Common_Visibility" xml:space="preserve">
+    <value>Visibility</value>
+  </data>
+  <data name="Common_Availability" xml:space="preserve">
+    <value>Availability</value>
+  </data>
+  <data name="Common_Action_OpenMap" xml:space="preserve">
+    <value>Open map</value>
+  </data>
+  <data name="Common_Location" xml:space="preserve">
+    <value>Location</value>
+  </data>
+  <data name="Common_Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Page_Calendar_Dnd_Options" xml:space="preserve">
+    <value>Do not disturb</value>
+  </data>
+  <data name="Common_Calendars_Primary" xml:space="preserve">
+    <value>Primary</value>
+  </data>
+  <data name="Common_Date" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="Page_Calendar_Availability_Free" xml:space="preserve">
+    <value>Free</value>
+  </data>
+  <data name="Page_Calendar_Availability_Busy" xml:space="preserve">
+    <value>Busy</value>
+  </data>
+  <data name="Page_Calendar_Availability_OutOfOffice" xml:space="preserve">
+    <value>Out of office</value>
+  </data>
+  <data name="Page_Calendar_Visibility_Private" xml:space="preserve">
+    <value>Private (hide from others)</value>
+  </data>
+  <data name="Page_Calendar_Visibility_BusyOnly" xml:space="preserve">
+    <value>Show as busy</value>
+  </data>
+  <data name="Page_Calendar_Visibility_Details" xml:space="preserve">
+    <value>Show details</value>
+  </data>
+  <data name="Page_Calendar_RecurrenceFrequency_Daily" xml:space="preserve">
+    <value>Daily</value>
+  </data>
+  <data name="Page_Calendar_RecurrenceFrequency_Weekly" xml:space="preserve">
+    <value>Weekly</value>
+  </data>
+  <data name="Page_Calendar_RecurrenceFrequency_Monthly" xml:space="preserve">
+    <value>Monthly</value>
+  </data>
+  <data name="Page_Calendar_RecurrenceFrequency_Yearly" xml:space="preserve">
+    <value>Yearly</value>
+  </data>
+  <data name="Page_Calendar_ReminderChannel_InApp" xml:space="preserve">
+    <value>In app</value>
+  </data>
+  <data name="Page_Calendar_ReminderChannel_Email" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="Page_Calendar_ReminderChannel_Push" xml:space="preserve">
+    <value>Push message</value>
+  </data>
+  <data name="Common_None" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="Common_Until" xml:space="preserve">
+    <value>Until</value>
+  </data>
+  <data name="Common_Count" xml:space="preserve">
+    <value>Count</value>
+  </data>
+  <data name="Common_Enabled" xml:space="preserve">
+    <value>Enabled</value>
+  </data>
+  <data name="Common_EndMode" xml:space="preserve">
+    <value>Ends</value>
+  </data>
+  <data name="Common_Days" xml:space="preserve">
+    <value>Days</value>
+  </data>
+  <data name="Common_Day_Friday" xml:space="preserve">
+    <value>Friday</value>
+  </data>
+  <data name="Common_Day_Monday" xml:space="preserve">
+    <value>Monday</value>
+  </data>
+  <data name="Common_Day_Tuesday" xml:space="preserve">
+    <value>Tuesday</value>
+  </data>
+  <data name="Common_Day_Wednesday" xml:space="preserve">
+    <value>Wednesday</value>
+  </data>
+  <data name="Common_Day_Thursday" xml:space="preserve">
+    <value>Thursday</value>
+  </data>
+  <data name="Common_Day_Saturday" xml:space="preserve">
+    <value>Saturday</value>
+  </data>
+  <data name="Common_Day_Sunday" xml:space="preserve">
+    <value>Sunday</value>
+  </data>
+  <data name="Common_Actions_Discard" xml:space="preserve">
+    <value>Discard</value>
+  </data>
+  <data name="ConfirmModal_Title_UnsavedChanges" xml:space="preserve">
+    <value>Unsaved changes</value>
+  </data>
+  <data name="ConfirmModal_Message_UnsavedChanges" xml:space="preserve">
+    <value>You have unsaved changes. Do you want to discard them?</value>
+  </data>
+  <data name="Page_Samples_SampelsNav_ConfirmModal_Item" xml:space="preserve">
+    <value>Confirm modals</value>
+  </data>
+  <data name="Page_Samples_Normal_ConfirmModal" xml:space="preserve">
+    <value>Normal confirm modal</value>
+  </data>
+  <data name="Common_Recurrence_OccurrenceLocked" xml:space="preserve">
+    <value>This is a single occurrence. Edit the series from the original event.</value>
+  </data>
+  <data name="Common_WeekShort" xml:space="preserve">
+    <value>W</value>
+  </data>
+  <data name="Page_Calendar_Filter_Guard" xml:space="preserve">
+    <value>At least one calendar must be visible. Showing the primary calendar.</value>
+  </data>
+  <data name="CalendarManageModal_Name_DisabledHelp" xml:space="preserve">
+    <value>You cannot rename this calendar.</value>
+  </data>
+  <data name="Page_CalendarManageModal_Role_Owner" xml:space="preserve">
+    <value>Owner</value>
+  </data>
+  <data name="Common_Recurrence_Daily" xml:space="preserve">
+    <value>Daily</value>
+  </data>
+  <data name="Common_Recurrence_Weekly" xml:space="preserve">
+    <value>Weekly</value>
+  </data>
+  <data name="Common_Recurrence_Monthly" xml:space="preserve">
+    <value>Monthly</value>
+  </data>
+  <data name="Common_Recurrence_Yearly" xml:space="preserve">
+    <value>Yearly</value>
+  </data>
+  <data name="Common_Recurrence_Every" xml:space="preserve">
+    <value>Every</value>
+  </data>
+  <data name="Common_Recurrence_EveryN" xml:space="preserve">
+    <value>Every {0} {1}s</value>
+  </data>
+  <data name="Common_Recurrence_OnDays" xml:space="preserve">
+    <value>On {0}</value>
+  </data>
+  <data name="Common_Recurrence_Until" xml:space="preserve">
+    <value>Until {0}</value>
+  </data>
+  <data name="Common_Recurrence_Count" xml:space="preserve">
+    <value>{0} times</value>
+  </data>
+  <data name="Common_Recurrence_Ongoing" xml:space="preserve">
+    <value>Until further notice</value>
+  </data>
+  <data name="Common_Recurrence_Noun_Day" xml:space="preserve">
+    <value>day</value>
+  </data>
+  <data name="Common_Recurrence_Noun_Month" xml:space="preserve">
+    <value>month</value>
+  </data>
+  <data name="Common_Recurrence_Noun_Year" xml:space="preserve">
+    <value>year</value>
+  </data>
+  <data name="Common_Recurrence_Every_1" xml:space="preserve">
+    <value>Every {0}</value>
+  </data>
+  <data name="Common_Recurrence_Every_2" xml:space="preserve">
+    <value>Every other {0}</value>
+  </data>
+  <data name="Common_Recurrence_Noun_Week" xml:space="preserve">
+    <value>week</value>
+  </data>
+  <data name="Common_Actions_EditSeries" xml:space="preserve">
+    <value>Edit series</value>
+  </data>
+  <data name="Page_CalendarEventModal_EditThisEvent" xml:space="preserve">
+    <value>This instance only (deviation in the series)</value>
+  </data>
+  <data name="Page_CalendarEventModal_EditWholeEvent" xml:space="preserve">
+    <value>The entire series</value>
+  </data>
+  <data name="Calendar_Edit_This" xml:space="preserve">
+    <value>Edit this event</value>
+  </data>
+  <data name="Calendar_Edit_Series" xml:space="preserve">
+    <value>Edit entire series</value>
+  </data>
+  <data name="Common_Minutes" xml:space="preserve">
+    <value>minutes</value>
+  </data>
+  <data name="Page_TopBar_Reminders_Empty" xml:space="preserve">
+    <value>No reminders yet</value>
+  </data>
+  <data name="Common_In" xml:space="preserve">
+    <value>In</value>
+  </data>
+  <data name="Common_MinutesShort" xml:space="preserve">
+    <value>min</value>
+  </data>
+  <data name="Common_StartsAt" xml:space="preserve">
+    <value>Starts</value>
+  </data>
+  <data name="Common_MinutesBeforeShort" xml:space="preserve">
+    <value>min before</value>
+  </data>
+  <data name="Common_Actions_Open" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="Common_Reminder" xml:space="preserve">
+    <value>Reminder</value>
+  </data>
+  <data name="Common_StartsNow" xml:space="preserve">
+    <value>Starts now</value>
+  </data>
+  <data name="Common_ConfirmModel_Delete_Title" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Common_ConfirmModel_Delete_Message" xml:space="preserve">
+    <value>Are you sure your want to delete this?</value>
+  </data>
+  <data name="Common_OneDay" xml:space="preserve">
+    <value>1 day</value>
+  </data>
+  <data name="Common_Custom" xml:space="preserve">
+    <value>Custom</value>
+  </data>
+  <data name="Common_Action_Locked" xml:space="preserve">
+    <value>Locked</value>
+  </data>
+  <data name="Common_AtStart" xml:space="preserve">
+    <value>At start</value>
+  </data>
+  <data name="Page_Calendar_Availability_Tentative" xml:space="preserve">
+    <value>Tentative</value>
+  </data>
+  <data name="Page_Calendar_Conflict_Header" xml:space="preserve">
+    <value>Time conflict with:</value>
+  </data>
+  <data name="Page_Calendar_EventDetails_Sub" xml:space="preserve">
+    <value>Event details</value>
+  </data>
+  <data name="Page_Calendar_WeekView_NextWeek" xml:space="preserve">
+    <value>Next week</value>
+  </data>
+  <data name="Page_Calendar_WeekView_PrevWeek" xml:space="preserve">
+    <value>Previous week</value>
+  </data>
+  <data name="Page_Calendar_Agenda_OneEvent" xml:space="preserve">
+    <value>1 event</value>
+  </data>
+  <data name="Page_Calendar_Agenda_EventCount" xml:space="preserve">
+    <value>{0} events</value>
+  </data>
+  <data name="Page_Calendar_Agenda_EmptyDay" xml:space="preserve">
+    <value>No events. Click to add one.</value>
+  </data>
+  <data name="Common_Tomorrow" xml:space="preserve">
+    <value>Tomorrow</value>
+  </data>
+  <data name="Common_Today" xml:space="preserve">
+    <value>Today</value>
+  </data>
+  <data name="Page_Calendar_Agenda_Next" xml:space="preserve">
+    <value>Next 7 days</value>
+  </data>
+  <data name="Page_Calendar_Agenda_Prev" xml:space="preserve">
+    <value>Previous 7 days</value>
+  </data>
+  <data name="Common_Location_Placeholder" xml:space="preserve">
+    <value>Address / place / link</value>
+  </data>
+  <data name="Common_Location_LinkHint" xml:space="preserve">
+    <value>This will be treated as a link.</value>
+  </data>
+  <data name="Common_Location_MapHint" xml:space="preserve">
+    <value>This will be treated as a map location.</value>
+  </data>
+  <data name="Page_CalendarShareModal_Invite_Sent_WithEmail" xml:space="preserve">
+    <value>Invite sent to {0} and is now pending.</value>
+  </data>
+  <data name="Invites_RefreshFailed_Info_Accept" xml:space="preserve">
+    <value>The invitation was accepted, but the calendar view could not be updated right now.</value>
+  </data>
+  <data name="Invites_RefreshFailed_Info_Decline" xml:space="preserve">
+    <value>The invitation was declined, but the calendar view could not be updated right now.</value>
+  </data>
+  <data name="Invites_Accepted_Message" xml:space="preserve">
+    <value>You now have access to {0}.</value>
+  </data>
+  <data name="Invites_Declined_Message" xml:space="preserve">
+    <value>The invitation to {0} was declined.</value>
+  </data>
+  <data name="Invites_Accepted_Title" xml:space="preserve">
+    <value>Invitation accepted</value>
+  </data>
+  <data name="Invites_Declined_Title" xml:space="preserve">
+    <value>Invitation declined</value>
+  </data>
+  <data name="Page_CalendarManageModal_CanShare" xml:space="preserve">
+    <value>Can share</value>
+  </data>
+  <data name="Page_CalendarManageModal_RemoveMember_Aria" xml:space="preserve">
+    <value>Remove member</value>
+  </data>
+  <data name="Page_CalendarManageModal_RemoveMemberConfirm_Title" xml:space="preserve">
+    <value>Remove member?</value>
+  </data>
+  <data name="Page_CalendarManageModal_RemoveMemberConfirm_Text" xml:space="preserve">
+    <value>Are you sure you want to remove this member from the calendar?</value>
+  </data>
+  <data name="Common_Member" xml:space="preserve">
+    <value>Member</value>
+  </data>
+</root>

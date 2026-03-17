@@ -1,0 +1,22 @@
+﻿@* LocalizationProvider.razor component *@
+@implements IDisposable
+
+<CascadingValue Value="Loc" IsFixed="false">
+    @ChildContent
+</CascadingValue>
+
+@code {
+    [Inject] public ILocalizationService Loc { get; set; } = default!;
+    [Parameter] public RenderFragment ChildContent { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        Loc.LanguageChanged += OnLanguageChanged;
+    }
+
+    private void OnLanguageChanged()
+        => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+        => Loc.LanguageChanged -= OnLanguageChanged;
+}

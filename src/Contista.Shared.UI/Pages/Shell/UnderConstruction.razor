@@ -1,0 +1,17 @@
+﻿@* UnderConstruction.razor *@
+@page "/app/uc/{page?}"
+@inherits FormPageBase
+<div class="container">
+    <h1>@Loc["Page_UnderConstruction_Page_Title"]</h1>
+
+    <p>
+        @Loc["Page_UnderConstruction_Page_01_text"] <strong>@(page ?? Loc["Common_Errors_Unknown"])</strong> @Loc["Page_UnderConstruction_Page_02_text"]
+    </p>
+
+    <button class="btn btn-outline-primary" @onclick="@(() => Nav.NavigateTo("app/home"))">@(Loc["Common_Actions_Back"] ?? "Back")</button>
+</div>
+
+
+@code {
+    [Parameter] public string? page { get; set; }
+}

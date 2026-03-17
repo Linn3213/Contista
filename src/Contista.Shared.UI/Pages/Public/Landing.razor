@@ -1,0 +1,269 @@
+﻿@* Landing.razor *@
+@page "/"
+@using Contista.Shared.UI.Components.Landing
+@using Contista.Shared.UI.Components.Layout
+@using Contista.Shared.UI.Components.Loader
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Authorization
+
+@inherits FormPageBase
+@implements IDisposable
+
+@inject ICommonDataState<CommonDataDto> CommonState
+@inject IFirebaseAuthService Auth
+@inject AppAuthStateProvider AuthState
+@inject AuthenticationStateProvider AuthProvider
+@inject INetworkStatus Network
+@if (_loginBusy)
+{
+    <Loader Visible="true" Message="@(Loc["Common_Messages_Loading"] ?? "Loading...")" />
+}
+else if (_checkingOrRedirecting)
+{
+    // ✅ Viktigt: om vi håller på att auto-redirecta: rendera INGENTING
+    // (AppGate loader ska vara den enda)
+}
+else
+{
+    <div class="container my-4">
+
+        <div class="landing-brand-wrap">
+            <div class="landing-brand-bar mb-3">
+                <div class="landing-brand-inner">
+                    <div class="logo">@Loc["Common_Company_Title"]</div>
+                    <div class="subtitle">@Loc["Common_Company_Subtitle"]</div>
+                </div>
+            </div>
+        </div>
+
+        @* <div class="landing-hero mb-4 p-2">
+            <div class="landing-hero-inner">
+                <div class="landing-hero-left">
+                    <div class="landing-hero-badge">
+                        <i class="bi bi-stars me-2" aria-hidden="true"></i>
+                        @(Loc["Page_Landing_Hero_Badge"] ?? "Content System")
+                    </div>
+
+                    <div class="landing-hero-title">
+                        @(Loc["Page_Landing_Hero_Title"] ?? "A calm start — with full control of your content.")
+                    </div>
+
+                    <div class="landing-hero-subtitle">
+                        @(Loc["Page_Landing_Hero_Subtitle"] ?? "Plan weeks, build content pillars, and store ideas in one place. Create more — stress less.")
+                    </div>
+
+                    <div class="landing-hero-bullets">
+                        <div class="landing-hero-bullet">
+                            <i class="bi bi-shield-check me-2 bi-primary" aria-hidden="true"></i>
+                            @(Loc["Page_Landing_Hero_Bullet1"] ?? "Secure sign-in")
+                        </div>
+                        <div class="landing-hero-bullet">
+                            <i class="bi bi-translate me-2 bi-primary" aria-hidden="true"></i>
+                            @(Loc["Page_Landing_Hero_Bullet2"] ?? "Swedish & English")
+                        </div>
+                        <div class="landing-hero-bullet">
+                            <i class="bi bi-lightning-charge me-2 bi-primary" aria-hidden="true"></i>
+                            @(Loc["Page_Landing_Hero_Bullet3"] ?? "Fast, simple, structured")
+                        </div>
+                    </div>
+                </div>
+
+                <div class="landing-hero-right">
+                    <div class="landing-hero-cta">
+                        <div class="landing-hero-cta-title">@Loc["Page_Landing_Hero_CtaTitle"]</div>
+                        <div class="landing-hero-cta-subtitle">@Loc["Page_Landing_Hero_CtaSubtitle"]</div>
+
+                        <div class="d-flex gap-2 flex-wrap mt-3">
+                            <button class="btn btn-primary" @onclick="GoRegister">
+                                @Loc["Page_Landing_CreateAccount_Button"] <span aria-hidden="true">→</span>
+                            </button>
+                            <button class="btn btn-outline" @onclick="GoExplore">
+                                @Loc["Page_Landing_Explore_Button"] <span aria-hidden="true">→</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div> *@
+
+        <div class="row g-4 align-items-stretch">
+            <div class="col-12 col-lg-4 order-1 order-lg-2">
+                <div class="card p-4 h-100 landing-login-card landing-login-sticky">
+                    <div class="landing-login-hero mb-3">
+                        <div class="landing-badge">@Loc["Page_Landing_Login_Badge"]</div>
+                        <div class="fw-bold fs-5 mt-2">
+                            @(Loc["Page_Landing_LoginCard_Title"] ?? "Log in and keep creating")
+                        </div>
+                        <div class="muted">
+                            @(Loc["Page_Landing_LoginCard_Subtitle"] ?? "Access your content system and continue where you left off.")
+                        </div>
+                    </div>
+
+                    <OfflineStatusBanner Compact="true" HideWhenOnline="true" />
+
+                    <LoginCard ReturnUrl="@ReturnUrl"
+                               OnLoggedIn="OnLoggedInAsync"
+                               OnBusyChanged="OnLoginBusyChanged" />
+
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-8 order-2 order-lg-1">
+                <div class="card p-4 h-100">
+                    <h1 class="page-title mb-2">
+                        @(Loc["Page_Landing_Title"] ?? "Create content with clarity, calm, and purpose")
+                    </h1>
+                    <p class="page-subtitle mb-4">
+                        @(Loc["Page_Landing_Subtitle"] ?? "Contista helps you plan, create, and reuse content in a creative, structured, and sustainable way.")
+                    </p>
+
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <div class="card p-3 h-100">
+                                <div class="fw-bold mb-1">
+                                    ✨ @(Loc["Page_Landing_Feature1_Title"] ?? "Content that lasts")
+                                </div>
+                                <div class="muted">
+                                    @(Loc["Page_Landing_Feature1_Text"] ?? "Create content that aligns with your brand, your goals, and your energy — not just today’s trends.")
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <div class="card p-3 h-100">
+                                <div class="fw-bold mb-1">
+                                    📅 @(Loc["Page_Landing_Feature2_Title"] ?? "Plan with clarity")
+                                </div>
+                                <div class="muted">
+                                    @(Loc["Page_Landing_Feature2_Text"] ?? "Organize weeks, themes, and content pillars so you always know what to create — and why.")
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="card p-3 h-100">
+                                <div class="fw-bold mb-1">
+                                    📚 @(Loc["Page_Landing_Feature3_Title"] ?? "Everything in one place")
+                                </div>
+                                <div class="muted">
+                                    @(Loc["Page_Landing_Feature3_Text"] ?? "Save ideas, texts, hooks, and strategies in one system. Reuse, refine, and build when it suits you.")
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="h-line my-4" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+}
+
+@code {
+    // läses från query: /?returnUrl=%2Fapp%2Fhome
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "returnUrl")]
+    public string? ReturnUrl { get; set; }
+
+    private bool _loginBusy;
+    private bool _checkingOrRedirecting = true;
+
+    private Task OnLoginBusyChanged(bool busy)
+    {
+        _loginBusy = busy;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    protected override void OnInitialized()
+    {
+        CommonState.Changed += OnCommonChanged;
+        Network.OnlineChanged += OnOnlineChanged;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Håll kvar loader tills vi vet säkert
+        _checkingOrRedirecting = true;
+
+        var state = await AuthProvider.GetAuthenticationStateAsync();
+        if (state.User.Identity?.IsAuthenticated == true)
+        {
+            // Viktigt: håll kvar loader, rendera inte Landing
+            Nav.NavigateTo(ResolvePostLoginTarget(ReturnUrl), replace: true);
+            return;
+        }
+
+        // Bara här släpper vi fram Landing
+        _checkingOrRedirecting = false;
+    }
+
+    private void OnOnlineChanged(bool online)
+     => _ = InvokeAsync(StateHasChanged);
+
+    private void GoRegister()
+    {
+        // valfritt: behåll returnUrl även vid register så du kan hoppa tillbaka sen
+        var target = "/register";
+        var ru = NormalizeReturnUrl(ReturnUrl);
+        if (!string.IsNullOrWhiteSpace(ru) && ru != "/")
+            target += "?returnUrl=" + Uri.EscapeDataString(ru);
+
+        Nav.NavigateTo(target);
+    }
+
+    private void GoExplore() => Nav.NavigateTo("/about");
+
+    private void OnCommonChanged() => _ = InvokeAsync(StateHasChanged);
+
+    private Task OnLoggedInAsync(string? returnUrlFromLoginCard)
+    {
+        // LoginCard skickar tillbaka (oftast samma som ReturnUrl)
+        Nav.NavigateTo(ResolvePostLoginTarget(returnUrlFromLoginCard), replace: true);
+        return Task.CompletedTask;
+    }
+
+    private static string ResolvePostLoginTarget(string? returnUrl)
+    {
+        var ru = NormalizeReturnUrl(returnUrl);
+        return IsSafeReturnUrl(ru) ? ru! : "/app/home";
+    }
+
+    private static string? NormalizeReturnUrl(string? returnUrl)
+    {
+        var ru = (returnUrl ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(ru))
+            return null;
+
+        if (!ru.StartsWith("/"))
+            ru = "/" + ru;
+
+        return ru;
+    }
+
+    private static bool IsSafeReturnUrl(string? ru)
+    {
+        if (string.IsNullOrWhiteSpace(ru))
+            return false;
+
+        // måste vara local path
+        if (!ru.StartsWith("/"))
+            return false;
+
+        // blockera protocol-relative och backslash-varianter
+        if (ru.StartsWith("//") || ru.StartsWith("/\\"))
+            return false;
+
+        // blockera absolut-url i smyg
+        if (ru.Contains("://", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        return true;
+    }
+
+    public void Dispose()
+    {
+        CommonState.Changed -= OnCommonChanged;
+        Network.OnlineChanged -= OnOnlineChanged;
+    }
+}

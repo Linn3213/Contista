@@ -1,0 +1,52 @@
+﻿@* PillarsSection.razor component *@
+<div class="card mb-4 pillars">
+    <div class="card-body m-3">
+        <div class="pillars_section">
+            <h2 class="section-title">
+                <i class="bi bi-bullseye me-2" aria-hidden="true"></i>
+                @L("Page_Home_ContentPillarsOverview_Title", "Pillars Overview")
+            </h2>
+
+            <div class="pillars_grid">
+                @foreach (var p in Pillars)
+                {
+                    <div class="pillars-card @($"slot-{p.Slot}")"
+                         role="button"
+                         tabindex="0"
+                         @onclick="@(() => OnNavigate.InvokeAsync("pillars"))">
+                        <div class="pillars-icon">@p.Icon</div>
+                        <h3 class="pillars-title">@p.Name</h3>
+                        <p class="pillars-count">@p.PostCount</p>
+                        <p class="pillars-meta">posts</p>
+                    </div>
+                }
+            </div>
+
+            <button class="btn btn-primary"
+                    @onclick="@(() => OnNavigate.InvokeAsync("pillars"))">
+                @L("Page_Home_AllContentPillars_Button", "All content pillars") →
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<PillarCard> Pillars { get; set; } = Array.Empty<PillarCard>();
+    [Parameter, EditorRequired] public EventCallback<string> OnNavigate { get; set; }
+    [Parameter, EditorRequired] public dynamic Loc { get; set; } = default!;
+
+    private string L(string key, string fallback)
+    {
+        try
+        {
+            var value = (string?)Loc?[key];
+            return string.IsNullOrWhiteSpace(value) ? fallback : value;
+        }
+        catch
+        {
+            return fallback;
+        }
+    }
+
+    public record PillarCard(string Name, string Icon, int Slot, int PostCount);
+}

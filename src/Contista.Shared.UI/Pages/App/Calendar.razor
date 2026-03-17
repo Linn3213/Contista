@@ -1,0 +1,1863 @@
+﻿@* Calendar.razor *@
+@page "/app/calendar"
+@inherits AppPageBase
+@implements IDisposable
+
+@using System.Text.Json
+@using Contista.Shared.Core.DTO.Calendar
+@using Contista.Shared.Core.Models.Calendar
+@using Contista.Shared.Core.Offline.Interfaces
+@using Contista.Shared.Core.Offline.Models
+@using Contista.Shared.Core.Offline.Models.Calendar
+@using Contista.Shared.Core.Offline.Models.Operations
+@using Contista.Shared.Core.Interfaces.SyncDebug
+@using Contista.Shared.Core.Interfaces.Auth
+@using Contista.Shared.Core.Interfaces.Calendar
+@using Contista.Shared.Core.Models.Auth
+@using Contista.Shared.UI.Components.Calendar
+@using Contista.Shared.UI.Components.Modals
+@using Contista.Shared.UI.Components.Modals.Calendar
+@using Contista.Shared.UI.Utils
+
+@inject ICalendarState CalendarState
+
+@inject IOfflineWriteService OfflineWrite
+@inject ISyncRunner SyncRunner
+@inject INetworkStatus Network
+@inject IAutoSyncDispatcher AutoSync
+@inject IFeatureAccessService Features
+@inject IReminderScheduler ReminderScheduler
+
+@{
+    var allCals = CalendarState.Current?.My?.Calendars?.ToList() ?? new List<CalendarDto>();
+    var cals = allCals.Where(c => c is not null && !_hiddenCalendarIds.Contains(c.CalendarId)).ToList();
+
+    var hasMany = cals.Count > 1;
+    var primary = allCals.FirstOrDefault(x => x.IsPrimary);
+}
+
+<div class="card cal-card">
+    <div class="card-body">
+
+        <div class="cal-header">
+            <div class="cal-headerLeft">
+                <h2 class="cal-title">@GetViewTitle()</h2>
+                <div class="cal-subtitle">@Loc.GetOr("Page_Calendar_Subtitle", "Plan, track and create events for your content.")</div>
+            </div>
+
+            <div class="cal-toolbar">
+                <div class="cal-headerCenter">
+                    <div class="cal-viewToggle" role="group" aria-label="@Loc.GetOr("Page_Calendar_ViewToggle_Aria", "Calendar view")">
+                        <button type="button"
+                                class="cal-toggleBtn @(View == CalendarViewMode.Month ? "is-active" : "")"
+                                @onclick="() => SetViewAsync(CalendarViewMode.Month)">
+                            @Loc.GetOr("Page_Calendar_View_Month_Button", "Month")
+                        </button>
+                        <button type="button"
+                                class="cal-toggleBtn @(View == CalendarViewMode.Week ? "is-active" : "")"
+                                @onclick="() => SetViewAsync(CalendarViewMode.Week)">
+                            @Loc.GetOr("Page_Calendar_View_Week_Button", "Week")
+                        </button>
+                        <button type="button"
+                                class="cal-toggleBtn @(View == CalendarViewMode.Agenda ? "is-active" : "")"
+                                @onclick="() => SetViewAsync(CalendarViewMode.Agenda)">
+                            @Loc.GetOr("Page_Calendar_View_Agenda_Button", "Agenda")
+                        </button>
+                    </div>
+                </div>
+
+                <div class="cal-headerRight">
+                    @if (hasMany)
+                    {
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-ghost dropdown-toggle cal-calendarFilterBtn"
+                                    type="button"
+                                    data-bs-toggle="dropdown"
+                                    aria-expanded="false">
+                                <span class="text-truncate">@GetSelectedCalendarsLabel(cals)</span>
+                            </button>
+
+                            <div class="dropdown-menu p-2 cal-calendarFilterMenu">
+                                @foreach (var cal in cals)
+                                {
+                                    var checkedNow = VisibleCalendarIds.Contains(cal.CalendarId);
+
+                                    <div class="form-check">
+                                        <input class="form-check-input"
+                                               type="checkbox"
+                                               id="cal_@cal.CalendarId"
+                                               checked="@checkedNow"
+                                               @onchange="(e) => ToggleCalendar(cal.CalendarId, e)" />
+
+                                        <label class="form-check-label" for="cal_@cal.CalendarId">
+                                            @cal.Name
+                                        </label>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <button type="button"
+                            class="btn btn-sm btn-ghost cal-desktopAction"
+                            disabled="@(!CanCreateExtraCalendar)"
+                            title="@Loc.GetOr("Page_Calendar_CreateCalendar_Button", "New calendar")"
+                            @onclick="OpenCreateCalendar">
+                        <i class="bi bi-calendar-plus"></i>
+                    </button>
+
+                    <button type="button"
+                            class="btn btn-sm btn-ghost cal-desktopAction"
+                            title="@Loc.GetOr("Page_Calendar_Manage_Tooltip", "Manage calendars")"
+                            aria-label="@Loc.GetOr("Page_Calendar_Manage_Tooltip", "Manage calendars")"
+                            data-testid="calendar-open-manage"
+                            @onclick="OpenManageCalendars">
+                        <i class="bi bi-gear"></i>
+                    </button>
+
+                    <button type="button"
+                            class="btn btn-sm btn-ghost cal-desktopAction"
+                            disabled="@(!CanUseShareAction(cals))"
+                            title="@GetShareButtonTooltip(cals)"
+                            aria-label="@Loc.GetOr("Page_Calendar_Share_Tooltip", "Share calendar")"
+                            data-testid="calendar-open-share"
+                            @onclick="OpenShareModal">
+                        <i class="bi bi-person-plus"></i>
+                    </button>
+
+                    <div class="dropdown cal-mobileActions">
+                        <button class="btn btn-sm btn-ghost dropdown-toggle"
+                                type="button"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false"
+                                aria-label="@Loc.GetOr("Common_Actions_More", "More actions")">
+                            <i class="bi bi-three-dots"></i>
+                        </button>
+
+                        <div class="dropdown-menu dropdown-menu-end p-1">
+                            <button type="button"
+                                    class="dropdown-item"
+                                    disabled="@(!CanCreateExtraCalendar)"
+                                    @onclick="OpenCreateCalendar">
+                                @Loc.GetOr("Page_Calendar_CreateCalendar_Button", "New calendar")
+                            </button>
+                            <button type="button"
+                                    class="dropdown-item"
+                                    data-testid="calendar-open-manage-mobile"
+                                    @onclick="OpenManageCalendars">
+                                @Loc.GetOr("Page_Calendar_Manage_Tooltip", "Manage calendars")
+                            </button>
+                            <button type="button"
+                                    class="dropdown-item"
+                                    data-testid="calendar-open-share-mobile"
+                                    disabled="@(!CanUseShareAction(cals))"
+                                    @onclick="OpenShareModal">
+                                @Loc.GetOr("Page_Calendar_Share_Tooltip", "Share calendar")
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="cal-sep" aria-hidden="true"></div>
+
+        @if (!Auth.IsLoggedIn)
+        {
+            <div class="cal-statusPanel cal-statusPanel-neutral" role="status">
+                @Loc.GetOr("Common_Auth_NotLoggedIn", "Not logged in.")
+            </div>
+        }
+        else
+        {
+            var data = CalendarState.Current;
+            var hasData = data is not null;
+
+            if (!hasData && CalendarState.IsLoading)
+            {
+                <div class="cal-statusPanel cal-statusPanel-neutral" role="status" aria-live="polite">
+                    @Loc.GetOr("Page_Calendar_Loading", "Loading calendar…")
+                </div>
+            }
+            else if (!hasData && !string.IsNullOrWhiteSpace(CalendarState.LastError))
+            {
+                <div class="alert alert-danger my-2 cal-statusPanel" role="alert">
+                    @Loc.GetOr("Page_Calendar_Error_Generic", "Could not load the calendar.")
+                    @if (ShowTechnicalErrors)
+                    {
+                        <div class="small opacity-75">@CalendarState.LastError</div>
+                    }
+                </div>
+            }
+            else
+            {
+                var events = (data?.Events ?? new List<CalendarEventDto>())
+                .Where(e => !string.IsNullOrWhiteSpace(e.CalendarId) && VisibleCalendarIds.Contains(e.CalendarId))
+                .ToList();
+
+                <div class="cal-viewWrap">
+                    @if (View == CalendarViewMode.Month)
+                    {
+                        <CalendarMonthView CurrentMonth="@CurrentMonth"
+                                           Events="@events"
+                                           OnChecklistToggled="OnChecklistToggledAsync"
+                                           OnDayClicked="OnDayClicked"
+                                           OnAddClicked="OnAddClicked"
+                                           OnMonthChanged="OnMonthChangedAsync"
+                                           CalendarIdToHex="@GetCalendarHex"
+                                           CalendarIdToName="@GetCalendarName"
+                                           CurrentUserId="@CurrentUserId"
+                                           CanSeeDetailsForCalendar="@ViewerCanSeeDetailsForCalendar"
+                                           OnEditRequested="@(ev => { OpenEdit(ev); return Task.CompletedTask; })"
+                                           OnEditSeriesRequested="OpenEditSeries"
+                                           OnDeleteRequested="ConfirmDeleteFromListAsync" />
+                    }
+                    else if (View == CalendarViewMode.Week)
+                    {
+                        <CalendarWeekView WeekStart="@WeekStart"
+                                          Events="@events"
+                                          CalendarIdToHex="@GetCalendarHex"
+                                          OnTimeSlotClicked="OnTimeSlotClicked"
+                                          OnAddClicked="OnAddClicked"
+                                          OnWeekChanged="OnWeekChangedAsync"
+                                          OnDayHeaderClicked="@(day => { OpenDayModal(day); return Task.CompletedTask; })"
+                                          OnEventClicked="@(ev => { OpenEventModal(ev); return Task.CompletedTask; })"
+                                          CurrentUserId="@CurrentUserId" />
+                    }
+                    else
+                    {
+                        <CalendarAgendaView FromDate="@AnchorLocal"
+                                            DaysAhead="7"
+                                            Events="@events"
+                                            OnRangeChanged="OnAgendaRangeChangedAsync"
+                                            OnDayHeaderClicked="@(day => { OpenDayModal(day); return Task.CompletedTask; })"
+                                            OnDayBodyClicked="OnAddClicked"
+                                            OnAddClicked="OnAddClicked"
+                                            OnEventClicked="@(ev => { OpenEventModal(ev); return Task.CompletedTask; })"
+                                            CurrentUserId="@CurrentUserId"
+                                            CalendarIdToHex="@GetCalendarHex" />
+                    }
+
+                    @if (CalendarState.IsLoading)
+                    {
+                        <div class="cal-loadingOverlay" aria-hidden="true">
+                            <div class="cal-loadingChip">
+                                @Loc.GetOr("Page_Calendar_Loading", "Loading calendar…")
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
+            <div class="cal-sep" aria-hidden="true"></div>
+        }
+
+        @* Day modal stays mounted/open even when edit modal is opened *@
+        <CalendarDayEventsModal @key="_dayModalRenderKey"
+                                IsOpen="@_isDayModalOpen"
+                                IsOpenChanged="OnDayModalOpenChanged"
+                                DateLocal="@_dayModalDateLocal"
+                                Events="@(_dayModalEventId is null
+                                                                            ? GetVisibleEventsForDay(_dayModalDateLocal)
+                                                                            : new List<CalendarEventDto>())"
+                                SingleEvent="@CurrentDayModalSingleEvent"
+                                FocusEventId="@_dayModalFocusEventId"
+                                RefreshKey="@_dayModalRefreshKey"
+                                CurrentUserId="@CurrentUserId"
+                                CalendarIdToHex="@GetCalendarHex"
+                                CalendarIdToName="@GetCalendarName"
+                                UserIdToName="@ResolveUserName"
+                                OnAddRequested="OnAddClicked"
+                                OnEditRequested="@(ev => { OpenEdit(ev); return Task.CompletedTask; })"
+                                OnEditSeriesRequested="OpenEditSeries"
+                                OnDeleteRequested="ConfirmDeleteFromListAsync"
+                                OnChecklistToggled="OnChecklistToggledAsync" />
+
+        @if (IsQuickAddOpen)
+        {
+            <CalendarEventManageModal IsOpen="@IsQuickAddOpen"
+                                      IsOpenChanged="OnQuickAddOpenChanged"
+                                      DefaultStartLocal="@QuickAddDefaultStartLocal"
+                                      DefaultEndLocal="@QuickAddDefaultEndLocal"
+                                      Calendars="GetEditableCalendars(cals)"
+                                      DefaultCalendarId="@GetDefaultCreateCalendarIdForModal()"
+                                      CalendarIdToHex="@GetCalendarHex"
+                                      OnSave="OnQuickAddSaveAsync" />
+        }
+
+        @if (IsEditModalOpen && EditModel is not null)
+        {
+            <CalendarEventManageModal IsOpen="@IsEditModalOpen"
+                                      IsOpenChanged="OnEditOpenChanged"
+                                      ExistingEvent="EditModel"
+                                      Calendars="GetEditableCalendars(cals)"
+                                      OnSave="OnEditSaveAsync"
+                                      OnEditSeries="OpenEditSeries"
+                                      CalendarIdToHex="@GetCalendarHex"
+                                      OnDelete="OnEditDeleteAsync" />
+        }
+
+        @if (IsCreateCalendarOpen)
+        {
+            <CalendarCreateModal IsOpen="@IsCreateCalendarOpen"
+                                 IsOpenChanged="OnCreateCalendarOpenChanged"
+                                 OnSave="OnCreateCalendarSaveAsync" />
+        }
+
+        @if (IsManageCalendarOpen)
+        {
+            <CalendarManageModal IsOpen="@IsManageCalendarOpen"
+                                 IsOpenChanged="OnManageCalendarOpenChanged"
+                                 UserId="@UserState.Current.UserId"
+                                 Calendars="cals"
+                                 ManageableCalendarIds="@GetManageableCalendarIds(cals)"
+                                 OnSave="OnUpdateCalendarSaveAsync"
+                                 OnDeleteCalendarRequested="OnDeleteCalendarAsync" />
+        }
+
+        @if (IsShareModalOpen)
+        {
+            <CalendarShareModal IsOpen="@IsShareModalOpen"
+                                IsOpenChanged="OnShareOpenChanged"
+                                ShareableCalendars="@GetShareableCalendars(cals)"
+                                OnInviteSent="OnInviteSentAsync" />
+        }
+
+        <ConfirmModal @ref="_inviteSentConfirm"
+                      ModalOptions="@(new { backdrop = false, keyboard = false })"
+                      Variant="info"
+                      Title="@Loc.GetOr("Page_CalendarShareModal_Invite_Sent_Title", "Invitation sent")"
+                      ConfirmText="@Loc.GetOr("Common_Actions_Ok", "OK")"
+                      CancelText="@Loc.GetOr("Common_Actions_Close", "Close")"
+                      OnConfirm="OnInviteConfirmAsync">
+            <MessageContent>
+                <div>@_inviteSentMessage</div>
+            </MessageContent>
+        </ConfirmModal>
+
+    </div>
+</div>
+
+@code {
+    [Inject] public IUserDirectoryState Users { get; set; } = default!;
+    private static readonly JsonSerializerOptions JsonOpts = new(JsonSerializerDefaults.Web);
+
+    private CalendarViewMode View = CalendarViewMode.Month;
+    private bool IsShareModalOpen;
+    private bool CanUseCalendarShareFeature;
+    private ConfirmModal? _inviteSentConfirm;
+    private string _inviteSentMessage = "";
+
+    private DateTime TodayLocal => DateTime.Now.Date;
+    private DateTime AnchorLocal = DateTime.Now.Date;
+
+    private DateTime CurrentMonth => new DateTime(AnchorLocal.Year, AnchorLocal.Month, 1);
+
+    private DateTime WeekStart
+    {
+        get
+        {
+            var d = AnchorLocal.Date;
+            var diff = (7 + (d.DayOfWeek - DayOfWeek.Monday)) % 7;
+            return d.AddDays(-diff);
+        }
+    }
+
+    private readonly HashSet<string> _hiddenCalendarIds = new(StringComparer.Ordinal);
+
+    private static bool ShowTechnicalErrors
+    {
+        get
+        {
+#if DEBUG
+            return true;
+#else
+            return false;
+#endif
+        }
+    }
+
+    private bool IsQuickAddOpen;
+    private DateTime QuickAddDefaultStartLocal;
+    private DateTime QuickAddDefaultEndLocal;
+
+    private bool IsEditModalOpen;
+    private CalendarEventDto? EditModel;
+
+    private string? InlineInfo;
+
+    private int ExtraCalendarsCount =>
+        CalendarState.Current?.My?.Calendars?.Count(c => c is not null && !c.IsPrimary) ?? 0;
+
+    private string? UserMembershipKey => UserState.Current?.MembershipId;
+
+    private int MaxExtraCalendars => MembershipRules.GetMaxExtraCalendars(CommonState.Current, UserMembershipKey);
+    private bool CanCreateExtraCalendar => ExtraCalendarsCount < MaxExtraCalendars;
+
+    private HashSet<string> SelectedCalendarIds = new(StringComparer.Ordinal);
+    private HashSet<string> VisibleCalendarIds = new(StringComparer.Ordinal);
+
+    private bool _hasAppliedInitialCalendarSelection;
+    private bool _userHasChangedVisibleSelection;
+    private bool _lastToggleTriggeredGuard;
+
+    private bool _isDayModalOpen;
+    private DateTime _dayModalDateLocal;
+    private string? _dayModalFocusEventId;
+
+    // Stable modal state: store ids, never stale event object references
+    private string? _dayModalEventId;
+    private int _dayModalRefreshKey;
+    private string _dayModalRenderKey => $"{_dayModalDateLocal:yyyyMMdd}:{_dayModalEventId}:{_dayModalFocusEventId}:{_dayModalRefreshKey}";
+
+    private CalendarEventDto? CurrentDayModalSingleEvent
+        => string.IsNullOrWhiteSpace(_dayModalEventId)
+            ? null
+            : VisibleEventsForUi.FirstOrDefault(e => string.Equals(e.EventId, _dayModalEventId, StringComparison.Ordinal));
+
+    private List<CalendarEventDto> VisibleEventsForUi =>
+        (CalendarState.Current?.Events ?? new List<CalendarEventDto>())
+            .Where(e => !string.IsNullOrWhiteSpace(e.CalendarId) && VisibleCalendarIds.Contains(e.CalendarId))
+            .ToList();
+
+    private List<CalendarEventDto> GetVisibleEventsForDay(DateTime dayLocal)
+    {
+        var start = dayLocal.Date;
+        var end = start.AddDays(1);
+
+        return VisibleEventsForUi
+            .Where(e =>
+                DateTimes.ToLocalFromUtc(e.StartUtc) < end &&
+                DateTimes.ToLocalFromUtc(e.EndUtc) > start)
+            .OrderBy(e => e.StartUtc)
+            .ToList();
+    }
+
+    private string? GetPrimaryCalendarId()
+        => CalendarState.Current?.My?.Calendars?.FirstOrDefault(c => c.IsPrimary)?.CalendarId;
+
+    private bool IsCreateCalendarOpen;
+    private bool IsManageCalendarOpen;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CalendarState.Changed += OnCalendarStateChanged;
+
+        await CommonState.EnsureLoadedAsync();
+        CanUseCalendarShareFeature = await Features.CanAsync(FeatureKey.CalendarShare, CancellationToken.None);
+
+        if (Auth.IsLoggedIn && !string.IsNullOrWhiteSpace(Auth.Uid))
+        {
+            await UserState.EnsureLoadedAsync(Auth.Uid!, CancellationToken.None);
+
+            var cals = CalendarState.Current?.My?.Calendars?.ToList() ?? new List<CalendarDto>();
+            var primaryId = cals.FirstOrDefault(x => x.IsPrimary)?.CalendarId;
+
+            var validCalendarIds = cals
+                .Where(x => !string.IsNullOrWhiteSpace(x.CalendarId))
+                .Select(x => x.CalendarId)
+                .ToHashSet(StringComparer.Ordinal);
+
+            var fromSettings = CalendarState.Current?.Settings?.SelectedCalendarIds?
+                .Where(x => !string.IsNullOrWhiteSpace(x) && validCalendarIds.Contains(x))
+                .ToHashSet(StringComparer.Ordinal)
+                ?? new HashSet<string>(StringComparer.Ordinal);
+
+            if (fromSettings.Count > 0)
+                SelectedCalendarIds = new HashSet<string>(fromSettings, StringComparer.Ordinal);
+            else
+                SelectedCalendarIds = new HashSet<string>(StringComparer.Ordinal);
+
+            if (SelectedCalendarIds.Count == 0 && !string.IsNullOrWhiteSpace(primaryId))
+                SelectedCalendarIds.Add(primaryId!);
+
+            if (SelectedCalendarIds.Count == 0 && cals.Count > 0)
+                SelectedCalendarIds.Add(cals[0].CalendarId);
+
+            if (!string.IsNullOrWhiteSpace(primaryId))
+                SelectedCalendarIds.Add(primaryId!);
+
+            VisibleCalendarIds = new HashSet<string>(SelectedCalendarIds, StringComparer.Ordinal);
+
+            _hasAppliedInitialCalendarSelection = SelectedCalendarIds.Count > 0;
+
+            await RefreshNowAsync(force: true);
+            EnsureInitialCalendarSelection();
+        }
+    }
+
+    public void Dispose()
+    {
+        CalendarState.Changed -= OnCalendarStateChanged;
+    }
+
+    private void OnCalendarStateChanged()
+    {
+        EnsureInitialCalendarSelection();
+        RefreshDayModalStateFromCurrentData();
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void OpenDayModal(DateTime dayLocal)
+    {
+        IsQuickAddOpen = false;
+        IsEditModalOpen = false;
+
+        _dayModalEventId = null;
+        _dayModalDateLocal = dayLocal.Date;
+        _dayModalFocusEventId = null;
+        _isDayModalOpen = true;
+        TouchDayModal();
+    }
+
+    private void OpenEventModal(CalendarEventDto ev)
+    {
+        IsQuickAddOpen = false;
+        IsEditModalOpen = false;
+
+        _dayModalEventId = ev.EventId;
+        _dayModalDateLocal = DateTimes.ToLocalFromUtc(ev.StartUtc).Date;
+        _dayModalFocusEventId = ev.EventId;
+        _isDayModalOpen = true;
+        TouchDayModal();
+    }
+
+    private void TouchDayModal()
+    {
+        _dayModalRefreshKey++;
+    }
+
+    private void RefreshDayModalStateFromCurrentData()
+    {
+        if (!_isDayModalOpen)
+            return;
+
+        if (!string.IsNullOrWhiteSpace(_dayModalEventId))
+        {
+            var current = VisibleEventsForUi.FirstOrDefault(e =>
+                string.Equals(e.EventId, _dayModalEventId, StringComparison.Ordinal));
+
+            if (current is not null)
+            {
+                _dayModalDateLocal = DateTimes.ToLocalFromUtc(current.StartUtc).Date;
+                _dayModalFocusEventId = current.EventId;
+            }
+            else
+            {
+                // If the focused single event disappeared (deleted/moved), fall back to day list.
+                _dayModalEventId = null;
+                _dayModalFocusEventId = null;
+            }
+        }
+
+        TouchDayModal();
+    }
+
+    private void EnsureAtLeastOneVisible(string? fallbackId = null)
+    {
+        _lastToggleTriggeredGuard = false;
+
+        if (VisibleCalendarIds.Count > 0)
+            return;
+
+        var primaryId = GetPrimaryCalendarId();
+        if (!string.IsNullOrWhiteSpace(primaryId))
+        {
+            VisibleCalendarIds.Add(primaryId!);
+            _lastToggleTriggeredGuard = true;
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(fallbackId))
+        {
+            VisibleCalendarIds.Add(fallbackId!);
+            _lastToggleTriggeredGuard = true;
+            return;
+        }
+
+        var any = CalendarState.Current?.My?.Calendars?
+            .FirstOrDefault(c => !string.IsNullOrWhiteSpace(c.CalendarId))?.CalendarId;
+
+        if (!string.IsNullOrWhiteSpace(any))
+        {
+            VisibleCalendarIds.Add(any!);
+            _lastToggleTriggeredGuard = true;
+        }
+    }
+
+    private void EnsureInitialCalendarSelection()
+    {
+        if (!_userHasChangedVisibleSelection)
+        {
+            if (SelectedCalendarIds.Count > 0)
+                VisibleCalendarIds = new HashSet<string>(SelectedCalendarIds, StringComparer.Ordinal);
+            else
+                VisibleCalendarIds.Clear();
+
+            EnsureAtLeastOneVisible();
+        }
+
+        if (_hasAppliedInitialCalendarSelection)
+            return;
+
+        var cals = CalendarState.Current?.My?.Calendars?
+            .Where(c => c is not null && !string.IsNullOrWhiteSpace(c.CalendarId))
+            .ToList() ?? new List<CalendarDto>();
+
+        if (cals.Count == 0)
+            return;
+
+        var fromSettings = CalendarState.Current?.Settings?.SelectedCalendarIds?
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .ToHashSet(StringComparer.Ordinal)
+            ?? new HashSet<string>(StringComparer.Ordinal);
+
+        if (fromSettings.Count > 0)
+        {
+            SelectedCalendarIds = cals
+                .Where(c => fromSettings.Contains(c.CalendarId))
+                .Select(c => c.CalendarId)
+                .ToHashSet(StringComparer.Ordinal);
+        }
+
+        if (SelectedCalendarIds.Count == 0)
+        {
+            var primaryId = cals.FirstOrDefault(c => c.IsPrimary)?.CalendarId;
+            if (!string.IsNullOrWhiteSpace(primaryId))
+                SelectedCalendarIds.Add(primaryId!);
+        }
+
+        if (SelectedCalendarIds.Count == 0 && cals.Count > 0)
+            SelectedCalendarIds.Add(cals[0].CalendarId);
+
+        var p = cals.FirstOrDefault(c => c.IsPrimary)?.CalendarId;
+        if (!string.IsNullOrWhiteSpace(p))
+            SelectedCalendarIds.Add(p!);
+
+        _hasAppliedInitialCalendarSelection = SelectedCalendarIds.Count > 0;
+
+        if (!_userHasChangedVisibleSelection)
+        {
+            VisibleCalendarIds = new HashSet<string>(SelectedCalendarIds, StringComparer.Ordinal);
+            EnsureAtLeastOneVisible();
+        }
+
+        if (_hasAppliedInitialCalendarSelection && Auth.IsLoggedIn && !string.IsNullOrWhiteSpace(Auth.Uid))
+            _ = RefreshNowAsync(force: true);
+    }
+
+    private void OpenManageCalendars()
+    {
+        InlineInfo = null;
+        IsManageCalendarOpen = true;
+    }
+
+    private void OpenShareModal()
+    {
+        if (!CanUseShareAction(CalendarState.Current?.My?.Calendars?.ToList() ?? new List<CalendarDto>()))
+            return;
+
+        InlineInfo = null;
+        IsShareModalOpen = true;
+    }
+
+    private bool CanUseShareAction(List<CalendarDto> cals)
+    {
+        if (!Network.IsOnline)
+            return false;
+
+        if (!CanUseCalendarShareFeature)
+            return false;
+
+        return GetShareableCalendars(cals).Count > 0;
+    }
+
+    private string GetShareButtonTooltip(List<CalendarDto> cals)
+    {
+        if (!CanUseCalendarShareFeature)
+            return Loc.GetOr("Page_Calendar_Share_Disabled_Feature", "Calendar sharing requires a paid membership.");
+
+        if (!Network.IsOnline)
+            return Loc.GetOr("Page_Calendar_Share_Disabled_Offline", "You must be online to share calendars.");
+
+        if (GetShareableCalendars(cals).Count == 0)
+            return Loc.GetOr("Page_Calendar_Share_Disabled_NoPermission", "You don't have permission to share any calendar.");
+
+        return Loc.GetOr("Page_Calendar_Share_Tooltip", "Share calendar");
+    }
+
+    private Task OnShareOpenChanged(bool open)
+    {
+        IsShareModalOpen = open;
+        return Task.CompletedTask;
+    }
+
+    private async Task OnInviteSentAsync(string email)
+    {
+        _inviteSentMessage = string.Format(
+            Loc.GetOr("Page_CalendarShareModal_Invite_Sent_WithEmail", "Invite sent to {0} and is now pending."),
+            email);
+
+        await RefreshNowAsync(force: true);
+
+        if (_inviteSentConfirm is not null)
+            await _inviteSentConfirm.ShowAsync();
+    }
+
+    private Task OnInviteConfirmAsync()
+        => Task.CompletedTask;
+
+    private Task OnManageCalendarOpenChanged(bool open)
+    {
+        IsManageCalendarOpen = open;
+        return Task.CompletedTask;
+    }
+
+    private Task OnDayModalOpenChanged(bool open)
+    {
+        _isDayModalOpen = open;
+
+        if (!open)
+        {
+            _dayModalEventId = null;
+            _dayModalFocusEventId = null;
+            _dayModalDateLocal = default;
+            _dayModalRefreshKey = 0;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private string GetViewTitle()
+        => View switch
+        {
+            CalendarViewMode.Month => Loc.GetOr("Page_Calendar_View_Month_Title", "Month calendar"),
+            CalendarViewMode.Week => Loc.GetOr("Page_Calendar_View_Week_Title", "Week calendar"),
+            CalendarViewMode.Agenda => Loc.GetOr("Page_Calendar_View_Agenda_Title", "Agenda calendar"),
+            _ => Loc.GetOr("Page_Calendar_Title", "Calendar")
+        };
+
+    private async Task SetViewAsync(CalendarViewMode v)
+    {
+        View = v;
+
+        if (!Auth.IsLoggedIn || string.IsNullOrWhiteSpace(Auth.Uid))
+            return;
+
+        await RefreshNowAsync(force: true);
+    }
+
+    private async Task OnMonthChangedAsync(DateTime monthLocal)
+    {
+        AnchorLocal = new DateTime(monthLocal.Year, monthLocal.Month, 1);
+
+        if (!Auth.IsLoggedIn || string.IsNullOrWhiteSpace(Auth.Uid))
+            return;
+
+        await RefreshNowAsync(force: true);
+    }
+
+    private async Task OnWeekChangedAsync(DateTime weekStartLocal)
+    {
+        AnchorLocal = weekStartLocal.Date;
+
+        if (!Auth.IsLoggedIn || string.IsNullOrWhiteSpace(Auth.Uid))
+            return;
+
+        await RefreshNowAsync(force: true);
+    }
+
+    private Task OnAgendaRangeChangedAsync(DateTime fromDateLocal)
+        => OnWeekChangedAsync(fromDateLocal.Date);
+
+    private void OnDayClicked(DateTime dayLocal)
+        => OpenQuickAdd(GetDefaultStartLocalForDay(dayLocal), GetDefaultStartLocalForDay(dayLocal).AddHours(1));
+
+    private void OnTimeSlotClicked(DateTime startLocal)
+        => OpenQuickAdd(startLocal, startLocal.AddMinutes(30));
+
+    private void OnAddClicked(DateTime dayLocal)
+        => OpenQuickAdd(GetDefaultStartLocalForDay(dayLocal), GetDefaultStartLocalForDay(dayLocal).AddHours(1));
+
+    private void OpenQuickAdd(DateTime startLocal, DateTime endLocal)
+    {
+        QuickAddDefaultStartLocal = startLocal;
+        QuickAddDefaultEndLocal = endLocal;
+        IsQuickAddOpen = true;
+    }
+
+    private Task OnQuickAddOpenChanged(bool open)
+    {
+        IsQuickAddOpen = open;
+        return Task.CompletedTask;
+    }
+
+    private async Task OnQuickAddSaveAsync(CalendarEventDto created)
+    {
+        if (!Auth.IsLoggedIn || string.IsNullOrWhiteSpace(Auth.Uid))
+            return;
+
+        if (string.IsNullOrWhiteSpace(created.CalendarId))
+            created.CalendarId = GetDefaultCreateCalendarIdForModal();
+
+        if (string.IsNullOrWhiteSpace(created.CalendarId))
+            return;
+
+        var editable = GetEditableCalendars(CalendarState.Current?.My?.Calendars?.ToList() ?? new());
+        if (!editable.Any(c => c.CalendarId == created.CalendarId))
+            return;
+
+        var all = CalendarState.Current?.Events ?? new List<CalendarEventDto>();
+        var conflicts = CalendarConflictDetector.FindBlockingConflicts(
+            created,
+            all,
+            ev => EffectiveVisibilityForViewer(ev, CurrentUserId)
+        );
+
+        InlineInfo = conflicts.Count > 0
+            ? ConflictSummaryText(created, conflicts, CurrentUserId)
+            : null;
+
+        var opId = Guid.NewGuid().ToString("N");
+
+        created.EventId ??= "temp_" + opId;
+        created.LastMutationId = opId;
+        created.StartUtc = DateTimes.AsUtc(created.StartUtc);
+        created.EndUtc = DateTimes.AsUtc(created.EndUtc);
+        created.CreatedById = Auth.Uid;
+
+        await CalendarState.OptimisticAddEventAsync(created, CancellationToken.None);
+
+        if (created.Recurrence is not null && string.IsNullOrWhiteSpace(created.Recurrence.SeriesId))
+            created.Recurrence.SeriesId = Guid.NewGuid().ToString("N");
+
+        var dto = new CreateCalendarEventOperationDto { Event = created };
+
+        var env = new SyncOperationEnvelope
+        {
+            ClientOperationId = opId,
+            UserId = Auth.Uid!,
+            OperationType = SyncOperationType.CreateCalendarEvent,
+            ClientTimestampUtc = DateTime.UtcNow,
+            Payload = JsonSerializer.SerializeToElement(dto, JsonOpts)
+        };
+
+        await OfflineWrite.EnqueueAsync(env);
+
+        IsQuickAddOpen = false;
+
+        if (Network.IsOnline)
+        {
+            await AutoSync.TrySyncSoonAsync(async () =>
+            {
+                await SyncRunner.RunOnceAsync();
+                await RefreshNowAsync(force: true);
+                RefreshDayModalStateFromCurrentData();
+            });
+        }
+        else
+        {
+            InlineInfo = Loc.GetOr("Page_Calendar_QueuedOffline_Info", "Saved offline. It will sync when you are back online.");
+            RefreshDayModalStateFromCurrentData();
+        }
+    }
+
+    private Task OnEditOpenChanged(bool open)
+    {
+        IsEditModalOpen = open;
+        if (!open)
+            EditModel = null;
+
+        return Task.CompletedTask;
+    }
+
+    private Task OnEditSaveAsync(CalendarEventDto updated)
+        => SaveEditAsync(updated);
+
+    private Task OnEditDeleteAsync(CalendarEventDto ev)
+        => DeleteEventAsync(ev);
+
+    private List<CalendarDto> GetShareableCalendars(List<CalendarDto> cals)
+    {
+        var myUid = Auth?.Uid ?? "";
+        var memberRows = CalendarState.Current?.My?.MemberRows ?? new List<CalendarMemberRowDto>();
+
+        bool CanShareCal(CalendarDto cal)
+        {
+            if (cal is null || string.IsNullOrWhiteSpace(cal.CalendarId)) return false;
+            if (string.Equals(cal.OwnerUserId, myUid, StringComparison.Ordinal)) return true;
+
+            var row = memberRows.FirstOrDefault(r =>
+                string.Equals(r.CalendarId, cal.CalendarId, StringComparison.Ordinal) &&
+                string.Equals(r.UserId, myUid, StringComparison.Ordinal));
+
+            return row?.Membership?.CanShare == true;
+        }
+
+        return cals.Where(CanShareCal).ToList();
+    }
+
+    private List<CalendarDto> GetEditableCalendars(List<CalendarDto> cals)
+    {
+        var myUid = Auth?.Uid ?? "";
+        var memberRows = CalendarState.Current?.My?.MemberRows ?? new List<CalendarMemberRowDto>();
+
+        bool CanEditCal(CalendarDto cal)
+        {
+            if (cal is null || string.IsNullOrWhiteSpace(cal.CalendarId))
+                return false;
+
+            if (string.Equals(cal.OwnerUserId, myUid, StringComparison.Ordinal))
+                return true;
+
+            var row = memberRows.FirstOrDefault(r =>
+                string.Equals(r.CalendarId, cal.CalendarId, StringComparison.Ordinal) &&
+                string.Equals(r.UserId, myUid, StringComparison.Ordinal));
+
+            return row?.Membership?.CanEdit == true;
+        }
+
+        return cals.Where(CanEditCal).ToList();
+    }
+
+    private HashSet<string> GetManageableCalendarIds(List<CalendarDto> cals)
+        => new(
+            GetShareableCalendars(cals)
+                .Select(x => x.CalendarId)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x!),
+            StringComparer.Ordinal);
+
+    private static DateTime GetDefaultStartLocalForDay(DateTime dayLocal)
+    {
+        var day = dayLocal.Date;
+        var now = DateTime.Now;
+
+        if (day == now.Date)
+        {
+            var nextHour = new DateTime(now.Year, now.Month, now.Day, now.Hour, 0, 0).AddHours(1);
+            return nextHour;
+        }
+
+        return day.AddHours(9);
+    }
+
+    private static bool IsTempId(string? id)
+        => !string.IsNullOrWhiteSpace(id) && id.StartsWith("temp_", StringComparison.Ordinal);
+
+    private void OpenEdit(CalendarEventDto ev)
+    {
+        EditModel = CalendarState.CloneForEdit(ev);
+        IsEditModalOpen = true;
+        InlineInfo = null;
+    }
+
+    private void OpenEditSeries(CalendarEventDto occurrence)
+    {
+        var seriesId = occurrence.OccurrenceOverrideSeriesId;
+        if (string.IsNullOrWhiteSpace(seriesId))
+            return;
+
+        var master = CalendarState.FindMasterBySeriesId(seriesId);
+        if (master is null)
+        {
+            InlineInfo = "Hittade inte ursprungliga händelsen i listan (serien är kanske utanför laddat intervall).";
+            return;
+        }
+
+        OpenEdit(master);
+    }
+
+    private Task CloseEditModalAsync()
+    {
+        IsEditModalOpen = false;
+        EditModel = null;
+        return Task.CompletedTask;
+    }
+
+    private DateTime EditStartLocal
+    {
+        get => (EditModel?.StartUtc ?? DateTime.UtcNow).ToLocalTime();
+        set
+        {
+            if (EditModel is null) return;
+            EditModel.StartUtc = DateTime.SpecifyKind(value, DateTimeKind.Local).ToUniversalTime();
+        }
+    }
+
+    private DateTime EditEndLocal
+    {
+        get => (EditModel?.EndUtc ?? DateTime.UtcNow.AddMinutes(30)).ToLocalTime();
+        set
+        {
+            if (EditModel is null) return;
+            EditModel.EndUtc = DateTime.SpecifyKind(value, DateTimeKind.Local).ToUniversalTime();
+        }
+    }
+
+    private bool EditIsAllDay
+    {
+        get => EditModel?.IsAllDay ?? false;
+        set
+        {
+            if (EditModel is null) return;
+
+            EditModel.IsAllDay = value;
+
+            if (value)
+            {
+                var day = EditStartLocal.Date;
+                EditModel.StartUtc = DateTime.SpecifyKind(day, DateTimeKind.Local).ToUniversalTime();
+                EditModel.EndUtc = DateTime.SpecifyKind(day.AddDays(1), DateTimeKind.Local).ToUniversalTime();
+            }
+        }
+    }
+
+    private async Task OnChecklistToggledAsync((CalendarEventDto Ev, int Order, bool Done) arg)
+    {
+        var updated = CalendarState.CloneForEdit(arg.Ev);
+
+        updated.Checklist ??= new List<ChecklistItemDto>();
+
+        var it = updated.Checklist.FirstOrDefault(x => x.Order == arg.Order);
+        if (it is not null)
+            it.Done = arg.Done;
+
+        await SaveEditAsync(updated);
+    }
+
+    private async Task SaveEditFromModalAsync()
+    {
+        if (EditModel is null) return;
+
+        if (string.IsNullOrWhiteSpace(EditModel.Title))
+            EditModel.Title = Loc.GetOr("Common_Actions_Untitled", "Untitled");
+
+        if (EditModel.EndUtc <= EditModel.StartUtc)
+            EditModel.EndUtc = EditModel.StartUtc.AddMinutes(30);
+
+        await SaveEditAsync(EditModel);
+        await CloseEditModalAsync();
+    }
+
+    private async Task ConfirmDeleteFromModalAsync(CalendarEventDto ev)
+    {
+        InlineInfo = null;
+
+        if (IsTempId(ev.EventId))
+        {
+            InlineInfo = Loc.GetOr("Page_Calendar_DeleteTemp_Disabled",
+                "This event is still a temporary offline item. Delete is disabled until it has synced and received a real EventId.");
+            return;
+        }
+
+        await DeleteEventAsync(ev);
+        await CloseEditModalAsync();
+    }
+
+    private async Task ConfirmDeleteFromListAsync(CalendarEventDto ev)
+    {
+        InlineInfo = null;
+
+        if (IsTempId(ev.EventId))
+        {
+            InlineInfo = Loc.GetOr("Page_Calendar_DeleteTemp_Disabled",
+                "This event is still a temporary offline item. Delete is disabled until it has synced and received a real EventId.");
+            return;
+        }
+
+        await DeleteEventAsync(ev);
+    }
+
+    private string GetEventTimeText(CalendarEventDto ev)
+    {
+        if (ev.IsAllDay)
+        {
+            var dayLocal = DateTimes.ToLocalFromUtc(ev.StartUtc);
+            return $"{dayLocal:yyyy-MM-dd} ({Loc.GetOr("Common_Actions_AllDay", "All day")})";
+        }
+
+        var startLocal = DateTimes.ToLocalFromUtc(ev.StartUtc);
+        var endLocal = DateTimes.ToLocalFromUtc(ev.EndUtc);
+        return $"{startLocal:yyyy-MM-dd HH:mm} – {endLocal:HH:mm}";
+    }
+
+    private async Task SaveEditAsync(CalendarEventDto updated)
+    {
+        if (!Auth.IsLoggedIn || string.IsNullOrWhiteSpace(Auth.Uid))
+            return;
+
+        if (string.IsNullOrWhiteSpace(updated.CalendarId))
+            return;
+
+        var all = CalendarState.Current?.Events ?? new List<CalendarEventDto>();
+        var conflicts = FindBlockingConflicts(updated, CurrentUserId, all);
+
+        InlineInfo = conflicts.Count > 0
+            ? ConflictSummaryText(updated, conflicts, CurrentUserId)
+            : null;
+
+        if (IsSyntheticOccurrence(updated))
+        {
+            var opId = Guid.NewGuid().ToString("N");
+
+            var ex = BuildOverrideException(updated, Auth.Uid!);
+
+            ex.EventId = "temp_" + opId;
+            ex.LastMutationId = opId;
+            ex.StartUtc = DateTimes.AsUtc(ex.StartUtc);
+            ex.EndUtc = DateTimes.AsUtc(ex.EndUtc);
+
+            await CalendarState.OptimisticAddEventAsync(ex, CancellationToken.None);
+
+            var dto = new CreateCalendarEventOperationDto { Event = ex };
+
+            var env = new SyncOperationEnvelope
+            {
+                ClientOperationId = opId,
+                UserId = Auth.Uid!,
+                OperationType = SyncOperationType.CreateCalendarEvent,
+                ClientTimestampUtc = DateTime.UtcNow,
+                Payload = JsonSerializer.SerializeToElement(dto, JsonOpts)
+            };
+
+            await OfflineWrite.EnqueueAsync(env);
+
+            if (Network.IsOnline)
+            {
+                await AutoSync.TrySyncSoonAsync(async () =>
+                {
+                    await SyncRunner.RunOnceAsync();
+                    await RefreshNowAsync(force: true);
+                    RefreshDayModalStateFromCurrentData();
+                });
+            }
+            else
+            {
+                InlineInfo = Loc.GetOr("Page_Calendar_QueuedOffline_Info", "Saved offline. It will sync when you are back online.");
+                RefreshDayModalStateFromCurrentData();
+            }
+
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(updated.EventId))
+            return;
+
+        var opId2 = Guid.NewGuid().ToString("N");
+        updated.LastMutationId = opId2;
+        updated.StartUtc = DateTimes.AsUtc(updated.StartUtc);
+        updated.EndUtc = DateTimes.AsUtc(updated.EndUtc);
+
+        await CalendarState.OptimisticUpdateEventAsync(updated, CancellationToken.None);
+
+        var dto2 = new UpdateCalendarEventOperationDto
+        {
+            Event = updated,
+            LastKnownUpdatedAtUtc = updated.UpdatedAtUtc
+        };
+
+        var env2 = new SyncOperationEnvelope
+        {
+            ClientOperationId = opId2,
+            UserId = Auth.Uid!,
+            OperationType = SyncOperationType.UpdateCalendarEvent,
+            ClientTimestampUtc = DateTime.UtcNow,
+            Payload = JsonSerializer.SerializeToElement(dto2, JsonOpts)
+        };
+
+        await OfflineWrite.EnqueueAsync(env2);
+
+        if (_isDayModalOpen && !string.IsNullOrWhiteSpace(updated.EventId))
+        {
+            _dayModalEventId = updated.EventId;
+            _dayModalFocusEventId = updated.EventId;
+            _dayModalDateLocal = DateTimes.ToLocalFromUtc(updated.StartUtc).Date;
+            TouchDayModal();
+        }
+
+        if (Network.IsOnline)
+        {
+            await AutoSync.TrySyncSoonAsync(async () =>
+            {
+                await SyncRunner.RunOnceAsync();
+                await RefreshNowAsync(force: true);
+                RefreshDayModalStateFromCurrentData();
+            });
+        }
+        else
+        {
+            InlineInfo = Loc.GetOr("Page_Calendar_QueuedOffline_Info", "Saved offline. It will sync when you are back online.");
+            RefreshDayModalStateFromCurrentData();
+        }
+    }
+
+    private async Task DeleteEventAsync(CalendarEventDto ev)
+    {
+        if (!Auth.IsLoggedIn || string.IsNullOrWhiteSpace(Auth.Uid))
+            return;
+
+        if (string.IsNullOrWhiteSpace(ev.CalendarId))
+            return;
+
+        var deletedEventId = ev.EventId;
+        var deletedDay = DateTimes.ToLocalFromUtc(ev.StartUtc).Date;
+
+        if (IsSyntheticOccurrence(ev))
+        {
+            var opId = Guid.NewGuid().ToString("N");
+
+            var cancel = BuildCancelException(ev, Auth.Uid!);
+            cancel.EventId = "temp_" + opId;
+            cancel.LastMutationId = opId;
+
+            cancel.StartUtc = DateTimes.AsUtc(cancel.StartUtc);
+            cancel.EndUtc = DateTimes.AsUtc(cancel.EndUtc);
+
+            await CalendarState.OptimisticAddEventAsync(cancel, CancellationToken.None);
+
+            var dto = new CreateCalendarEventOperationDto { Event = cancel };
+
+            var env = new SyncOperationEnvelope
+            {
+                ClientOperationId = opId,
+                UserId = Auth.Uid!,
+                OperationType = SyncOperationType.CreateCalendarEvent,
+                ClientTimestampUtc = DateTime.UtcNow,
+                Payload = JsonSerializer.SerializeToElement(dto, JsonOpts)
+            };
+
+            await OfflineWrite.EnqueueAsync(env);
+
+            if (_isDayModalOpen && !string.IsNullOrWhiteSpace(deletedEventId) &&
+                string.Equals(_dayModalEventId, deletedEventId, StringComparison.Ordinal))
+            {
+                _dayModalEventId = null;
+                _dayModalFocusEventId = null;
+                _dayModalDateLocal = deletedDay;
+                TouchDayModal();
+            }
+
+            if (Network.IsOnline)
+            {
+                await AutoSync.TrySyncSoonAsync(async () =>
+                {
+                    await SyncRunner.RunOnceAsync();
+                    await RefreshNowAsync(force: true);
+                    RefreshDayModalStateFromCurrentData();
+                });
+            }
+            else
+            {
+                InlineInfo = Loc.GetOr("Page_Calendar_QueuedOffline_Info", "Saved offline. It will sync when you are back online.");
+                RefreshDayModalStateFromCurrentData();
+            }
+
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(ev.EventId))
+            return;
+
+        var opId2 = Guid.NewGuid().ToString("N");
+
+        await CalendarState.OptimisticDeleteEventAsync(ev.EventId!, CancellationToken.None);
+
+        var dto2 = new DeleteCalendarEventOperationDto
+        {
+            CalendarId = ev.CalendarId,
+            EventId = ev.EventId!
+        };
+
+        var env2 = new SyncOperationEnvelope
+        {
+            ClientOperationId = opId2,
+            UserId = Auth.Uid!,
+            OperationType = SyncOperationType.DeleteCalendarEvent,
+            ClientTimestampUtc = DateTime.UtcNow,
+            Payload = JsonSerializer.SerializeToElement(dto2, JsonOpts)
+        };
+
+        await OfflineWrite.EnqueueAsync(env2);
+
+        if (_isDayModalOpen && !string.IsNullOrWhiteSpace(deletedEventId) &&
+            string.Equals(_dayModalEventId, deletedEventId, StringComparison.Ordinal))
+        {
+            _dayModalEventId = null;
+            _dayModalFocusEventId = null;
+            _dayModalDateLocal = deletedDay;
+            TouchDayModal();
+        }
+
+        if (Network.IsOnline)
+        {
+            await AutoSync.TrySyncSoonAsync(async () =>
+            {
+                await SyncRunner.RunOnceAsync();
+                await RefreshNowAsync(force: true);
+                RefreshDayModalStateFromCurrentData();
+            });
+        }
+        else
+        {
+            InlineInfo = Loc.GetOr("Page_Calendar_QueuedOffline_Info", "Saved offline. It will sync when you are back online.");
+            RefreshDayModalStateFromCurrentData();
+        }
+    }
+
+    private string GetCalendarHex(string? calendarId)
+    {
+        if (string.IsNullOrWhiteSpace(calendarId))
+            return CalendarColors.GetHex(null);
+
+        var cal = CalendarState.Current?.My?.Calendars?.FirstOrDefault(c => c.CalendarId == calendarId);
+        return CalendarColors.GetHex(cal?.Color);
+    }
+
+    private static bool IsSyntheticOccurrence(CalendarEventDto e)
+    {
+        if (e is null) return false;
+        if (string.IsNullOrWhiteSpace(e.OccurrenceOverrideSeriesId)) return false;
+        if (!e.OriginalStartUtc.HasValue) return false;
+        if (e.IsOccurrenceOverride || e.IsOccurrenceCancelled) return false;
+        if (string.IsNullOrWhiteSpace(e.EventId)) return false;
+        if (!e.EventId.Contains(':')) return false;
+
+        return true;
+    }
+
+    private static CalendarEventDto BuildOverrideException(CalendarEventDto editedOccurrence, string uid)
+    {
+        return new CalendarEventDto
+        {
+            EventId = null,
+            CalendarId = editedOccurrence.CalendarId,
+            CreatedById = uid,
+            Type = editedOccurrence.Type,
+            Title = editedOccurrence.Title ?? "",
+            Description = editedOccurrence.Description,
+            Location = editedOccurrence.Location,
+            StartUtc = editedOccurrence.StartUtc,
+            EndUtc = editedOccurrence.EndUtc,
+            IsAllDay = editedOccurrence.IsAllDay,
+            Availability = editedOccurrence.Availability,
+            Visibility = editedOccurrence.Visibility,
+            Reminders = editedOccurrence.Reminders ?? new(),
+            Checklist = editedOccurrence.Checklist ?? new(),
+            IsDone = editedOccurrence.IsDone,
+            ContentPostId = editedOccurrence.ContentPostId,
+            OccurrenceOverrideSeriesId = editedOccurrence.OccurrenceOverrideSeriesId,
+            OriginalStartUtc = editedOccurrence.OriginalStartUtc,
+            IsOccurrenceOverride = true,
+            IsOccurrenceCancelled = false,
+            Recurrence = null,
+            CreatedAtUtc = DateTime.UtcNow,
+            UpdatedAtUtc = DateTime.UtcNow
+        };
+    }
+
+    private static CalendarEventDto BuildCancelException(CalendarEventDto occurrence, string uid)
+    {
+        return new CalendarEventDto
+        {
+            EventId = null,
+            CalendarId = occurrence.CalendarId,
+            CreatedById = uid,
+            Type = occurrence.Type,
+            Title = occurrence.Title ?? "",
+            Description = null,
+            Location = null,
+            StartUtc = occurrence.StartUtc,
+            EndUtc = occurrence.EndUtc,
+            IsAllDay = occurrence.IsAllDay,
+            OccurrenceOverrideSeriesId = occurrence.OccurrenceOverrideSeriesId,
+            OriginalStartUtc = occurrence.OriginalStartUtc,
+            IsOccurrenceOverride = false,
+            IsOccurrenceCancelled = true,
+            Recurrence = null,
+            CreatedAtUtc = DateTime.UtcNow,
+            UpdatedAtUtc = DateTime.UtcNow
+        };
+    }
+
+    private void OpenCreateCalendar()
+    {
+        InlineInfo = null;
+        IsCreateCalendarOpen = true;
+    }
+
+    private Task OnCreateCalendarOpenChanged(bool open)
+    {
+        IsCreateCalendarOpen = open;
+        return Task.CompletedTask;
+    }
+
+    private async Task OnCreateCalendarSaveAsync(CalendarDto cal)
+    {
+        if (!Auth.IsLoggedIn || string.IsNullOrWhiteSpace(Auth.Uid))
+            return;
+
+        if (!CanCreateExtraCalendar)
+        {
+            InlineInfo = $"{Loc.GetOr("Page_Calendar_MaxExtraCalendars_Info", "You cannot create more extra calendars.")} {Loc.GetOr("Common_Max", "Max")}: {MaxExtraCalendars}.";
+            return;
+        }
+
+        cal.IsPrimary = false;
+        cal.Color = CalendarColors.Normalize(cal.Color);
+
+        var opId = Guid.NewGuid().ToString("N");
+        var dto = new CreateCalendarOperationDto { Calendar = cal };
+
+        var env = new SyncOperationEnvelope
+        {
+            ClientOperationId = opId,
+            UserId = Auth.Uid!,
+            OperationType = SyncOperationType.CreateCalendar,
+            ClientTimestampUtc = DateTime.UtcNow,
+            Payload = JsonSerializer.SerializeToElement(dto, JsonOpts)
+        };
+
+        await OfflineWrite.EnqueueAsync(env);
+
+        IsCreateCalendarOpen = false;
+
+        if (Network.IsOnline)
+        {
+            await AutoSync.TrySyncSoonAsync(async () =>
+            {
+                await SyncRunner.RunOnceAsync();
+                await RefreshNowAsync(force: true);
+            });
+        }
+        else
+        {
+            InlineInfo = Loc.GetOr("Page_Calendar_CreateCalendar_QueuedOffline", "Calendar queued offline. It will be created when you are back online.");
+        }
+    }
+
+    private static bool GetChecked(ChangeEventArgs e)
+    {
+        return e?.Value switch
+        {
+            bool b => b,
+            string s when bool.TryParse(s, out var b) => b,
+            _ => false
+        };
+    }
+
+    private async Task ToggleCalendar(string calendarId, ChangeEventArgs e)
+    {
+        var isChecked = GetChecked(e);
+
+        var primaryId = GetPrimaryCalendarId();
+        var isPrimary = !string.IsNullOrWhiteSpace(primaryId) &&
+                        string.Equals(calendarId, primaryId, StringComparison.Ordinal);
+
+        _userHasChangedVisibleSelection = true;
+        _hasAppliedInitialCalendarSelection = true;
+
+        var beforeVisible = new HashSet<string>(VisibleCalendarIds, StringComparer.Ordinal);
+
+        if (isChecked) VisibleCalendarIds.Add(calendarId);
+        else VisibleCalendarIds.Remove(calendarId);
+
+        EnsureAtLeastOneVisible(fallbackId: calendarId);
+
+        var persistedChanged = false;
+
+        if (!isPrimary)
+        {
+            if (isChecked) persistedChanged = SelectedCalendarIds.Add(calendarId);
+            else persistedChanged = SelectedCalendarIds.Remove(calendarId);
+
+            if (!string.IsNullOrWhiteSpace(primaryId) && !SelectedCalendarIds.Contains(primaryId!))
+            {
+                SelectedCalendarIds.Add(primaryId!);
+                persistedChanged = true;
+            }
+        }
+
+        var visibleChanged = !beforeVisible.SetEquals(VisibleCalendarIds);
+
+        if (!visibleChanged && !persistedChanged)
+        {
+            _lastToggleTriggeredGuard = false;
+            return;
+        }
+
+        InlineInfo = _lastToggleTriggeredGuard
+            ? Loc.GetOr("Page_Calendar_Filter_Guard", "At least one calendar must be visible. Showing the primary calendar.")
+            : null;
+
+        if (persistedChanged)
+            await SaveCalendarSelectionAsync();
+
+        if (visibleChanged)
+        {
+            await RefreshNowAsync(force: true);
+            RefreshDayModalStateFromCurrentData();
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SaveCalendarSelectionAsync()
+    {
+        if (!Auth.IsLoggedIn || string.IsNullOrWhiteSpace(Auth.Uid))
+            return;
+
+        var current = CalendarState.Current?.Settings;
+        var opId = Guid.NewGuid().ToString("N");
+
+        var settings = new CalendarSettingsDto
+        {
+            UserId = current?.UserId ?? Auth.Uid!,
+            PrimaryCalendarId = current?.PrimaryCalendarId ?? "",
+            DefaultView = current?.DefaultView ?? View,
+            SelectedCalendarIds = SelectedCalendarIds.ToList(),
+            DndPeriods = current?.DndPeriods?.ToList() ?? new(),
+            UpdatedAtUtc = DateTime.UtcNow,
+            LastMutationId = opId
+        };
+
+        var dto = new UpdateCalendarSettingsOperationDto
+        {
+            Settings = settings,
+            LastKnownUpdatedAtUtc = current?.UpdatedAtUtc
+        };
+
+        var env = new SyncOperationEnvelope
+        {
+            ClientOperationId = opId,
+            UserId = Auth.Uid!,
+            OperationType = SyncOperationType.UpdateCalendarSettings,
+            ClientTimestampUtc = DateTime.UtcNow,
+            Payload = JsonSerializer.SerializeToElement(dto, JsonOpts)
+        };
+
+        await OfflineWrite.EnqueueAsync(env);
+
+        if (Network.IsOnline)
+        {
+            await AutoSync.TrySyncSoonAsync(async () =>
+            {
+                await SyncRunner.RunOnceAsync();
+            });
+        }
+    }
+
+    private string GetSelectedCalendarsLabel(List<CalendarDto> cals)
+    {
+        var selected = cals
+            .Where(c => VisibleCalendarIds.Contains(c.CalendarId))
+            .Select(c => c.Name)
+            .ToList();
+
+        if (selected.Count == 0) return Loc.GetOr("Common_Calendars", "Calendars");
+        if (selected.Count == 1) return selected[0];
+        return $"{selected[0]} +{selected.Count - 1}";
+    }
+
+    private async Task RefreshNowAsync(bool force = true)
+    {
+        if (!Auth.IsLoggedIn || string.IsNullOrWhiteSpace(Auth.Uid))
+            return;
+
+        await CalendarState.RefreshAsync(
+            Auth.Uid!,
+            View,
+            AnchorLocal,
+            force: force,
+            activeCalendarIdsOverride: VisibleCalendarIds.ToList(),
+            ct: CancellationToken.None);
+    }
+
+    private string? GetDefaultCreateCalendarIdForModal()
+    {
+        var cals = CalendarState.Current?.My?.Calendars?.ToList() ?? new List<CalendarDto>();
+
+        var selectedNonPrimary = cals
+            .Where(c => !c.IsPrimary && SelectedCalendarIds.Contains(c.CalendarId))
+            .ToList();
+
+        if (selectedNonPrimary.Count == 1)
+            return selectedNonPrimary[0].CalendarId;
+
+        return cals.FirstOrDefault(c => c.IsPrimary)?.CalendarId
+            ?? CalendarState.Current?.Settings?.PrimaryCalendarId
+            ?? cals.FirstOrDefault()?.CalendarId;
+    }
+
+    private async Task OnUpdateCalendarSaveAsync(CalendarDto cal)
+    {
+        if (!Auth.IsLoggedIn || string.IsNullOrWhiteSpace(Auth.Uid))
+            return;
+
+        if (cal is null || string.IsNullOrWhiteSpace(cal.CalendarId))
+            return;
+
+        if (cal.IsPrimary)
+        {
+            InlineInfo = Loc.GetOr("Page_Calendar_PrimaryCannotEdit", "The primary (Contista) calendar cannot be edited.");
+            return;
+        }
+
+        cal.Color = CalendarColors.Normalize(cal.Color);
+
+        var opId = Guid.NewGuid().ToString("N");
+        cal.LastMutationId = opId;
+
+        var dto = new UpdateCalendarOperationDto { Calendar = cal };
+
+        var env = new SyncOperationEnvelope
+        {
+            ClientOperationId = opId,
+            UserId = Auth.Uid!,
+            OperationType = SyncOperationType.UpdateCalendar,
+            ClientTimestampUtc = DateTime.UtcNow,
+            Payload = JsonSerializer.SerializeToElement(dto, JsonOpts)
+        };
+
+        await OfflineWrite.EnqueueAsync(env);
+
+        if (Network.IsOnline)
+        {
+            await AutoSync.TrySyncSoonAsync(async () =>
+            {
+                await SyncRunner.RunOnceAsync();
+                await RefreshNowAsync(force: true);
+                RefreshDayModalStateFromCurrentData();
+            });
+        }
+        else
+        {
+            InlineInfo = Loc.GetOr("Page_Calendar_UpdateCalendar_QueuedOffline", "Changes queued offline. They will sync when you are back online.");
+        }
+    }
+
+    private async Task OnDeleteCalendarAsync(CalendarDeleteRequest req)
+    {
+        InlineInfo = null;
+
+        if (!Auth.IsLoggedIn || string.IsNullOrWhiteSpace(Auth.Uid))
+            return;
+
+        if (req is null || string.IsNullOrWhiteSpace(req.SourceCalendarId))
+            return;
+
+        var source = CalendarState.Current?.My?.Calendars?.FirstOrDefault(c => c.CalendarId == req.SourceCalendarId);
+        if (source?.IsPrimary == true)
+        {
+            InlineInfo = Loc.GetOr("Page_Calendar_PrimaryCannotDelete", "The primary (Contista) calendar cannot be deleted.");
+            return;
+        }
+
+        var mode = string.IsNullOrWhiteSpace(req.Mode) ? "move" : req.Mode;
+        if (string.Equals(mode, "move", StringComparison.OrdinalIgnoreCase) &&
+            string.IsNullOrWhiteSpace(req.TargetCalendarId))
+        {
+            InlineInfo = Loc.GetOr("Page_Calendar_DeleteCalendar_MoveRequiresTarget",
+                "To move events you must select a target calendar.");
+            return;
+        }
+
+        CalendarState.HideCalendar(req.SourceCalendarId);
+
+        SelectedCalendarIds.Remove(req.SourceCalendarId);
+        VisibleCalendarIds.Remove(req.SourceCalendarId);
+
+        EnsureAtLeastOneVisible();
+
+        var opId = Guid.NewGuid().ToString("N");
+
+        var payload = new DeleteCalendarWithMoveOperationDto
+        {
+            SourceCalendarId = req.SourceCalendarId,
+            Mode = mode,
+            TargetCalendarId = string.Equals(mode, "move", StringComparison.OrdinalIgnoreCase) ? req.TargetCalendarId : null,
+            SetHasConflictOnMovedEvents = true
+        };
+
+        var env = new SyncOperationEnvelope
+        {
+            ClientOperationId = opId,
+            UserId = Auth.Uid!,
+            OperationType = SyncOperationType.DeleteCalendarWithMove,
+            ClientTimestampUtc = DateTime.UtcNow,
+            Payload = JsonSerializer.SerializeToElement(payload, JsonOpts)
+        };
+
+        await OfflineWrite.EnqueueAsync(env);
+
+        IsManageCalendarOpen = false;
+
+        if (Network.IsOnline)
+        {
+            await AutoSync.TrySyncSoonAsync(async () =>
+            {
+                await SyncRunner.RunOnceAsync();
+                await RefreshNowAsync(force: true);
+                RefreshDayModalStateFromCurrentData();
+            });
+        }
+        else
+        {
+            InlineInfo = Loc.GetOr("Page_Calendar_DeleteCalendar_QueuedOffline",
+                "Calendar deletion queued offline. It will sync when you are back online.");
+
+            await RefreshNowAsync(force: true);
+            RefreshDayModalStateFromCurrentData();
+        }
+    }
+
+    private string? GetCalendarName(string? calendarId)
+    {
+        if (string.IsNullOrWhiteSpace(calendarId)) return null;
+        return CalendarState.Current?.My?.Calendars?.FirstOrDefault(c => c.CalendarId == calendarId)?.Name;
+    }
+
+    private bool ViewerCanSeeDetailsForCalendar(string? calendarId)
+    {
+        if (string.IsNullOrWhiteSpace(calendarId)) return false;
+
+        var myUid = Auth?.Uid ?? "";
+        if (string.IsNullOrWhiteSpace(myUid)) return false;
+
+        var cal = CalendarState.Current?.My?.Calendars?.FirstOrDefault(c =>
+            string.Equals(c.CalendarId, calendarId, StringComparison.Ordinal));
+
+        if (cal is not null && string.Equals(cal.OwnerUserId, myUid, StringComparison.Ordinal))
+            return true;
+
+        var row = CalendarState.Current?.My?.MemberRows?.FirstOrDefault(r =>
+            string.Equals(r.CalendarId, calendarId, StringComparison.Ordinal) &&
+            string.Equals(r.UserId, myUid, StringComparison.Ordinal));
+
+        return row?.Membership?.CanSeeDetails == true;
+    }
+
+    private string CurrentUserId => Auth?.Uid ?? "";
+
+    private CalendarVisibility EffectiveVisibilityForViewer(CalendarEventDto ev, string viewerId)
+    {
+        if (ev is null) return CalendarVisibility.Private;
+
+        var isCreator = !string.IsNullOrWhiteSpace(viewerId)
+                        && !string.IsNullOrWhiteSpace(ev.CreatedById)
+                        && string.Equals(ev.CreatedById, viewerId, StringComparison.Ordinal);
+
+        if (ev.Visibility == CalendarVisibility.Private)
+            return isCreator ? CalendarVisibility.Details : CalendarVisibility.Private;
+
+        if (ev.Visibility == CalendarVisibility.BusyOnly)
+            return isCreator ? CalendarVisibility.Details : CalendarVisibility.BusyOnly;
+
+        return CalendarVisibility.Details;
+    }
+
+    private CalendarAvailability BlockingAvailabilityForViewer(CalendarEventDto ev, string viewerId)
+    {
+        var eff = EffectiveVisibilityForViewer(ev, viewerId);
+        return CalendarAvailabilityPolicy.GetDisplayAvailability(ev, eff);
+    }
+
+    private static bool Overlaps(DateTime aStart, DateTime aEnd, DateTime bStart, DateTime bEnd)
+        => aStart < bEnd && aEnd > bStart;
+
+    private List<CalendarEventDto> FindBlockingConflicts(CalendarEventDto candidate, string viewerId, IEnumerable<CalendarEventDto>? all)
+    {
+        if (candidate is null) return new();
+        if (all is null) return new();
+
+        var candStart = DateTimes.ToLocalFromUtc(candidate.StartUtc);
+        var candEnd = DateTimes.ToLocalFromUtc(candidate.EndUtc);
+
+        if (candidate.IsAllDay)
+        {
+            candStart = candStart.Date;
+            candEnd = candStart.AddDays(1);
+        }
+
+        var res = new List<CalendarEventDto>();
+
+        foreach (var ev in all)
+        {
+            if (ev is null) continue;
+            if (string.IsNullOrWhiteSpace(ev.CalendarId) || string.IsNullOrWhiteSpace(candidate.CalendarId)) continue;
+            if (!string.Equals(ev.CalendarId, candidate.CalendarId, StringComparison.Ordinal)) continue;
+
+            if (!string.IsNullOrWhiteSpace(candidate.EventId) &&
+                !string.IsNullOrWhiteSpace(ev.EventId) &&
+                string.Equals(ev.EventId, candidate.EventId, StringComparison.Ordinal))
+                continue;
+
+            var evAvail = BlockingAvailabilityForViewer(ev, viewerId);
+            if (!CalendarAvailabilityPolicy.IsBlocking(evAvail))
+                continue;
+
+            var evStart = DateTimes.ToLocalFromUtc(ev.StartUtc);
+            var evEnd = DateTimes.ToLocalFromUtc(ev.EndUtc);
+
+            if (ev.IsAllDay)
+            {
+                evStart = evStart.Date;
+                evEnd = evStart.AddDays(1);
+            }
+
+            if (Overlaps(candStart, candEnd, evStart, evEnd))
+                res.Add(ev);
+        }
+
+        return res.OrderBy(e => e.StartUtc).ToList();
+    }
+
+    private string? ResolveUserName(string? userId)
+    {
+        if (string.IsNullOrWhiteSpace(userId))
+            return null;
+
+        return Users.TryGetName(userId);
+    }
+
+    private string ConflictSummaryText(CalendarEventDto candidate, List<CalendarEventDto> conflicts, string viewerId)
+    {
+        if (conflicts is null || conflicts.Count == 0) return "";
+
+        string Describe(CalendarEventDto ev)
+        {
+            var eff = EffectiveVisibilityForViewer(ev, viewerId);
+
+            var start = DateTimes.ToLocalFromUtc(ev.StartUtc);
+            var end = DateTimes.ToLocalFromUtc(ev.EndUtc);
+
+            var time = ev.IsAllDay
+                ? Loc.GetOr("Common_Actions_AllDay", "All day")
+                : $"{start:HH:mm}-{end:HH:mm}";
+
+            if (eff == CalendarVisibility.Private)
+                return $"{time} · {Loc.GetOr("Page_Calendar_Availability_Busy", "Busy")}";
+
+            if (eff == CalendarVisibility.BusyOnly)
+                return $"{time} · {Loc.GetOr("Page_Calendar_Availability_Busy", "Busy")}";
+
+            var title = string.IsNullOrWhiteSpace(ev.Title)
+                ? Loc.GetOr("Common_Actions_Untitled", "Untitled")
+                : ev.Title;
+
+            return $"{time} · {title}";
+        }
+
+        var lines = conflicts.Take(2).Select(Describe).ToList();
+        var more = conflicts.Count - lines.Count;
+
+        var header = Loc.GetOr("Page_Calendar_Conflict_Header", "Time conflict with:");
+        var body = string.Join(" | ", lines);
+        if (more > 0) body += $" | +{more}";
+
+        var candLabel = CalendarAvailabilityPolicy.Label(Loc, candidate.Availability);
+        var prefix = $"{Loc.GetOr("Common_Availability", "Availability")}: {candLabel}. ";
+
+        return prefix + header + " " + body;
+    }
+}

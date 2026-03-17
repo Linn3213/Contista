@@ -1,0 +1,369 @@
+﻿@* CalendarAgendaView.razor *@
+@using Contista.Shared.Core.DTO.Calendar
+@using Contista.Shared.Core.Models.Calendar
+@using Contista.Shared.UI.Components.Common
+@using Contista.Shared.UI.Utils
+
+<div class="cal-agenda">
+    <div class="cal-monthTop">
+        <button type="button"
+                class="cal-navBtn"
+                @onclick="PrevRange"
+                aria-label="@Loc.GetOr("Page_Calendar_Agenda_Prev", "Previous 7 days")">
+            ‹
+        </button>
+
+        <div class="cal-monthLabel">@AgendaLabel</div>
+
+        @if (ShowTodayButton)
+        {
+            <button type="button"
+                    class="btn btn-sm btn-ghost cal-todayBtn"
+                    @onclick="GoToCurrentRange"
+                    title="@Loc.GetOr("Common_Actions_Today", "Today")"
+                    aria-label="@Loc.GetOr("Common_Actions_Today", "Today")">
+                <i class="bi bi-calendar-date" aria-hidden="true"></i>
+            </button>
+        }
+
+        <button type="button"
+                class="cal-navBtn"
+                @onclick="NextRange"
+                aria-label="@Loc.GetOr("Page_Calendar_Agenda_Next", "Next 7 days")">
+            ›
+        </button>
+    </div>
+
+    @if (DayGroups.Count == 0)
+    {
+        <div class="cal-agendaGlobalEmpty">
+            @Loc.GetOr("Page_Calendar_Agenda_Empty", "No upcoming events in the next 7 days.")
+        </div>
+    }
+    else
+    {
+        <div class="cal-agendaDayGrid">
+            @foreach (var day in DayGroups)
+            {
+                var hasMore = day.Rows.Count > 3;
+
+
+                <section class="cal-agendaDayCard">
+                    <div class="cal-agendaDayHeader">
+                        <button type="button"
+                                class="cal-agendaDayHeaderMain"
+                                @onclick="() => HandleDayHeaderClick(day.Date)">
+                            <div class="cal-agendaDayHeaderLeft">
+                                <div class="cal-agendaDayDow">@day.DayName</div>
+                                <div class="cal-agendaDayDate">@day.DateLabel</div>
+
+                                <div class="cal-agendaDayMeta">
+                                    @if (day.IsToday)
+                                    {
+                                        <span class="cal-agendaBadge is-today">
+                                            @Loc.GetOr("Common_Today", "Today")
+                                        </span>
+                                    }
+
+                                    @if (day.IsTomorrow)
+                                    {
+                                        <span class="cal-agendaBadge is-tomorrow">
+                                            @Loc.GetOr("Common_Tomorrow", "Tomorrow")
+                                        </span>
+                                    }
+
+                                    <span class="cal-agendaBadge">
+                                        @day.CountLabel
+                                    </span>
+                                </div>
+                            </div>
+                        </button>
+
+                        <IconButton IconClass="bi bi-plus-lg"
+                                    Title="@Loc.GetOr("Common_Actions_Add", "Add")"
+                                    AriaLabel="@Loc.GetOr("Common_Actions_Add", "Add")"
+                                    Size="sm"
+                                    Tone="ghost"
+                                    Class="cal-agendaAddBtn"
+                                    OnClick="@(e => HandleAddClick(day.Date))" />
+                    </div>
+
+                    <div class="cal-agendaDayBody">
+                        @if (day.Rows.Count == 0)
+                        {
+                            <button type="button"
+                                    class="cal-agendaEmptyDay"
+                                    @onclick="() => HandleDayBodyClick(day.Date)">
+                                @Loc.GetOr("Page_Calendar_Agenda_EmptyDay", "No events. Click to add one.")
+                            </button>
+                        }
+                        else
+                        {
+                            <div class="cal-agendaRows">
+                                @foreach (var row in day.Rows.Take(3))
+                                {
+                                    <button type="button"
+                                            class="cal-agendaRow @GetAgendaAvailabilityClass(row.Event)"
+                                            style="--cal-accent:@GetAccentHex(row.Event)"
+                                            @onclick="() => HandleEventClick(row.Event)">
+
+                                        <CalendarEventCard Ev="row.Event"
+                                                           Variant="agenda-row"
+                                                           AccentHex="@GetAccentHex(row.Event)"
+                                                           SpacedRange="false"
+                                                           ShowTime="true"
+                                                           CurrentUserId="@CurrentUserId" />
+
+                                        @if (ShouldShowDescription(row.Event, row.Description))
+                                        {
+                                            <div class="cal-agendaDesc">@row.Description</div>
+                                        }
+                                    </button>
+                                }
+
+                                @if (hasMore)
+                                {
+                                    <div class="cal-agendaMore @(IsExpanded(day.Date) ? "is-open" : "")">
+                                        <div class="cal-agendaMoreInner">
+                                            @foreach (var row in day.Rows.Skip(3))
+                                            {
+                                                <button type="button"
+                                                        class="cal-agendaRow @GetAgendaAvailabilityClass(row.Event)"
+                                                        style="--cal-accent:@GetAccentHex(row.Event)"
+                                                        @onclick="() => HandleEventClick(row.Event)">
+
+                                                    <CalendarEventCard Ev="row.Event"
+                                                                       Variant="agenda-row"
+                                                                       AccentHex="@GetAccentHex(row.Event)"
+                                                                       SpacedRange="false"
+                                                                       ShowTime="true"
+                                                                       CurrentUserId="@CurrentUserId" />
+
+                                                    @if (ShouldShowDescription(row.Event, row.Description))
+                                                    {
+                                                        <div class="cal-agendaDesc">@row.Description</div>
+                                                    }
+                                                </button>
+                                            }
+                                        </div>
+                                    </div>
+
+                                    <button type="button"
+                                            class="cal-agendaExpandBtn"
+                                            @onclick="() => ToggleExpanded(day.Date)"
+                                            aria-expanded="@IsExpanded(day.Date)">
+                                        <i class="bi @(IsExpanded(day.Date) ? "bi-chevron-up" : "bi-chevron-down")" aria-hidden="true"></i>
+
+                                        <span class="cal-agendaExpandText">
+                                            @(IsExpanded(day.Date)
+                                                                        ? Loc.GetOr("Common_Actions_ShowLess", "Show less")
+                                                                        : Loc.GetOr("Common_Actions_ShowMore", "Show more"))
+                                        </span>
+
+                                        @if (!IsExpanded(day.Date))
+                                        {
+                                            <span class="cal-agendaExpandCount">
+                                                +@(day.Rows.Count - 3)
+                                            </span>
+                                        }
+                                    </button>
+                                }
+                            </div>
+                        }
+                    </div>
+                </section>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [CascadingParameter] public ILocalizationService Loc { get; set; } = default!;
+
+    [Parameter] public DateTime FromDate { get; set; }
+    [Parameter] public int DaysAhead { get; set; } = 7;
+    [Parameter] public List<CalendarEventDto> Events { get; set; } = new();
+    [Parameter] public EventCallback<DateTime> OnRangeChanged { get; set; }
+    [Parameter] public EventCallback<DateTime> OnDayHeaderClicked { get; set; }
+    [Parameter] public EventCallback<DateTime> OnDayBodyClicked { get; set; }
+    [Parameter] public EventCallback<DateTime> OnAddClicked { get; set; }
+    [Parameter] public EventCallback<CalendarEventDto> OnEventClicked { get; set; }
+    [Parameter] public string? CurrentUserId { get; set; }
+    [Parameter] public Func<string?, string>? CalendarIdToHex { get; set; }
+
+    private string AgendaLabel
+        => $"{FromDate:dd MMM} – {FromDate.AddDays(Math.Max(1, DaysAhead) - 1):dd MMM}";
+
+    private bool ShowTodayButton => FromDate.Date != DateTime.Now.Date;
+
+    private readonly HashSet<DateTime> _expandedDays = new();
+
+    private List<AgendaDayGroup> DayGroups => BuildDayGroups();
+
+    private List<AgendaDayGroup> BuildDayGroups()
+    {
+        var days = Math.Max(1, DaysAhead);
+        var from = FromDate.Date;
+        var toExclusive = from.AddDays(days);
+        var today = DateTime.Now.Date;
+        var tomorrow = today.AddDays(1);
+
+        var groups = new List<AgendaDayGroup>(days);
+
+        for (var i = 0; i < days; i++)
+        {
+            var day = from.AddDays(i);
+            var dayStart = day;
+            var dayEnd = day.AddDays(1);
+
+            var rows = Events
+                .Where(e => OverlapsDay(e, dayStart, dayEnd))
+                .OrderBy(e => e.IsAllDay ? 0 : 1)
+                .ThenBy(e => GetDisplayStartForDay(e, day))
+                .ThenBy(e => e.Title ?? string.Empty)
+                .Select(e => BuildAgendaRow(e, day))
+                .ToList();
+
+            groups.Add(new AgendaDayGroup(
+                day,
+                day.ToString("ddd"),
+                day.ToString("dd MMM"),
+                day == today,
+                day == tomorrow,
+                rows,
+                GetCountLabel(rows.Count)));
+        }
+
+        return groups;
+    }
+
+    private AgendaEventRow BuildAgendaRow(CalendarEventDto e, DateTime day)
+    {
+        var localStart = e.StartUtc.ToLocalTime();
+        var localEnd = e.EndUtc.ToLocalTime();
+        var timeLabel = BuildTimeLabel(e, day, localStart, localEnd);
+
+        return new AgendaEventRow(
+            e,
+            timeLabel,
+            string.IsNullOrWhiteSpace(e.Description) ? null : e.Description.Trim());
+    }
+
+    private static bool OverlapsDay(CalendarEventDto e, DateTime dayStart, DateTime dayEnd)
+    {
+        var start = e.StartUtc.ToLocalTime();
+        var end = e.EndUtc.ToLocalTime();
+
+        return start < dayEnd && end > dayStart;
+    }
+
+    private static DateTime GetDisplayStartForDay(CalendarEventDto e, DateTime day)
+    {
+        var start = e.StartUtc.ToLocalTime();
+        return start.Date < day.Date ? day.Date : start;
+    }
+
+    private string BuildTimeLabel(CalendarEventDto e, DateTime day, DateTime localStart, DateTime localEnd)
+    {
+        if (e.IsAllDay)
+            return Loc.GetOr("Common_Actions_AllDay", "All day");
+
+        var isFirstDay = localStart.Date == day.Date;
+        var isLastDay = localEnd.Date == day.Date;
+        var spansMultipleDays = localStart.Date != localEnd.Date;
+
+        if (!spansMultipleDays)
+            return $"{localStart:HH:mm}–{localEnd:HH:mm}";
+
+        if (isFirstDay)
+            return $"{localStart:HH:mm}–24:00";
+
+        if (isLastDay)
+            return $"00:00–{localEnd:HH:mm}";
+
+        return Loc.GetOr("Common_Actions_AllDay", "All day");
+    }
+
+    private string GetCountLabel(int count)
+    {
+        if (count == 1)
+            return Loc.GetOr("Page_Calendar_Agenda_OneEvent", "1 event");
+
+        var template = Loc.GetOr("Page_Calendar_Agenda_EventCount", "{0} events");
+        return string.Format(template, count);
+    }
+
+    private bool ShouldShowDescription(CalendarEventDto e, string? description)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+            return false;
+
+        var effectiveVisibility = CalendarVisibilityPolicy.EffectiveVisibility(e, CurrentUserId);
+        return effectiveVisibility == CalendarVisibility.Details;
+    }
+
+    private bool IsExpanded(DateTime day)
+    => _expandedDays.Contains(day.Date);
+
+    private void ToggleExpanded(DateTime day)
+    {
+        day = day.Date;
+
+        if (_expandedDays.Contains(day))
+            _expandedDays.Remove(day);
+        else
+            _expandedDays.Add(day);
+    }
+
+    private string GetAgendaAvailabilityClass(CalendarEventDto e)
+    {
+        var visibility = CalendarVisibilityPolicy.EffectiveVisibility(e, CurrentUserId);
+        var availability = CalendarAvailabilityPolicy.GetDisplayAvailability(e, visibility);
+        var key = CalendarAvailabilityPolicy.CssKey(availability);
+        return $"avail-{key}";
+    }
+
+    private string GetAccentStyle(CalendarEventDto e)
+    => $"background:{GetAccentHex(e)};";
+
+    private string GetAccentHex(CalendarEventDto e)
+    {
+        var hex = CalendarIdToHex?.Invoke(e.CalendarId);
+        return string.IsNullOrWhiteSpace(hex) ? "#2B2622" : hex;
+    }
+
+    private Task HandleDayHeaderClick(DateTime day)
+        => OnDayHeaderClicked.InvokeAsync(day);
+
+    private Task HandleDayBodyClick(DateTime day)
+        => OnDayBodyClicked.InvokeAsync(day);
+
+    private Task HandleAddClick(DateTime day)
+        => OnAddClicked.InvokeAsync(day);
+
+    private Task HandleEventClick(CalendarEventDto e)
+        => OnEventClicked.InvokeAsync(e);
+
+    private Task PrevRange()
+        => OnRangeChanged.InvokeAsync(FromDate.AddDays(-Math.Max(1, DaysAhead)));
+
+    private Task NextRange()
+        => OnRangeChanged.InvokeAsync(FromDate.AddDays(Math.Max(1, DaysAhead)));
+
+    private Task GoToCurrentRange()
+        => OnRangeChanged.InvokeAsync(DateTime.Now.Date);
+
+    private sealed record AgendaDayGroup(
+        DateTime Date,
+        string DayName,
+        string DateLabel,
+        bool IsToday,
+        bool IsTomorrow,
+        List<AgendaEventRow> Rows,
+        string CountLabel);
+
+    private sealed record AgendaEventRow(
+    CalendarEventDto Event,
+    string TimeLabel,
+    string? Description);
+}

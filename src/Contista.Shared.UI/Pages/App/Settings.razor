@@ -1,0 +1,18 @@
+﻿@* Settings.razor *@
+@attribute [Feature(FeatureKey.Settings)]
+@attribute [Authorize]
+@page "/app/settings"
+@inherits AppPageBase
+
+@inject IAppResetService ResetSvc
+
+<div class="container my-4">
+    <div class="header h-line-accent mb-3">
+        <h1 class="page-title">@Loc["Page_Settings_Title"]</h1>
+        <p class="page-subtitle text-muted">@Loc["Page_Settings_SubTitle"]</p>
+    </div>
+</div>
+
+@code {
+
+}

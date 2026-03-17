@@ -1,0 +1,48 @@
+﻿/* =========================
+   ToastHost
+   ========================= */
+
+.toastHost, .toastHost * {
+    font-family: var(--font-sans);
+}
+.toastHost {
+    position: fixed;
+    right: 16px;
+    top: 88px; /* under topbar */
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 360px;
+}
+
+.toastItem {
+    background: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--s543222hadow-dropdown);
+    padding: 10px 10px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.toastTitle {
+    font-weight: 600;
+}
+
+.toastMsg {
+    font-size: .9rem;
+    opacity: .85;
+}
+
+.toastClose {
+    margin-top: -4px;
+}
+
+.toastActions {
+    margin-top: 6px;
+    display: flex;
+    gap: 8px;
+}

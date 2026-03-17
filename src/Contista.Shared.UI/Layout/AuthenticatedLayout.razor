@@ -1,0 +1,116 @@
+﻿@*AuthenticatedLayout.razor*@
+@using Contista.Shared.UI.Components.Layout
+@using Contista.Shared.UI.Components.Loader
+@using Contista.Shared.UI.Components.Toasts
+@using Contista.Shared.UI.State
+@using Contista.Shared.UI.Routing
+
+@inherits LayoutComponentBase
+@inject ILocalizationService Loc
+@inject NavigationManager Nav
+@inject AppBusyService Busy
+@inject IFirebaseAuthService Auth
+@inject IUserDataState<UserDataDto> UserState
+@inject AppAuthStateProvider AuthState
+@inject ICommonDataState<CommonDataDto> CommonState
+@inject AppReadyState AppReady
+
+
+<div class="app-root" data-bs-theme="light">
+    <ErrorBoundary>
+        <ChildContent>
+            <LocalizationProvider>
+
+                <TopBar ToggleSidebar="ToggleSidebar"
+                        Logout="Logout" />
+                <ToastHost @ref="_toastHost" />
+
+                <div class="d-flex app-shell">
+                    <SidebarNav IsOpen="@SidebarOpen"
+                                IsOpenChanged="@(v => SidebarOpen = v)"
+                                CurrentOpenSection="@_openSection"
+                                CurrentOpenSectionChanged="@(v => _openSection = v)" />
+
+                    <main class="app-main flex-grow-1">
+                        <div class="app-content px-3 px-lg-4 py-3 mb-3">
+                            <OfflineStatusBanner HideWhenOnline="true" />
+                            @Body
+                        </div>
+                    </main>
+                </div>
+
+            </LocalizationProvider>
+        </ChildContent>
+
+        <ErrorContent Context="ex">
+            <div class="error-content">
+                <h3>@Loc["Page_MainLayout_ErrorOnPage_Text"]</h3>
+                <p>@ex.Message</p>
+                <pre class="error-content-pre">@ex.ToString()</pre>
+            </div>
+        </ErrorContent>
+    </ErrorBoundary>
+
+    <div id="blazor-error-ui" data-nosnippet>
+        @Loc["Page_MainLayout_UnhandledErrorOccurred_Text"]
+        <a href="." class="reload">@Loc["Page_MainLayout_Reload_Text"]</a>
+        <span class="dismiss">🗙</span>
+    </div>
+</div>
+
+@code {
+    private bool SidebarOpen;
+    private string _openSection = "";
+    private ToastHost? _toastHost;
+
+    protected override void OnInitialized()
+    {
+        AppReady.Changed += OnReadyChanged;
+        Busy.Changed += OnBusyChanged;
+        Nav.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnAnyChanged() => _ = InvokeAsync(StateHasChanged);
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        SidebarOpen = false;
+
+        Busy.Reset("navigation");
+
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void OnReadyChanged() => InvokeAsync(StateHasChanged);
+
+    private void OnBusyChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        AppReady.Changed -= OnAnyChanged;
+        Busy.Changed -= OnAnyChanged;
+        Nav.LocationChanged -= OnLocationChanged;
+    }
+
+    private Task ToggleSidebar()
+    {
+        SidebarOpen = !SidebarOpen;
+        return Task.CompletedTask;
+    }
+
+
+    private async Task Logout()
+    {
+        using var _ = Busy.Begin(Loc["Common_Messages_LoggingOut"]);
+        SidebarOpen = false;
+
+        await Auth.LogoutAsync();
+        await AuthState.RefreshAsync(isLogout: true);
+
+        UserState.Clear();
+#if DEBUG
+        CommonState.Clear();
+#endif
+        Nav.NavigateTo("/", replace: true);
+    }
+}

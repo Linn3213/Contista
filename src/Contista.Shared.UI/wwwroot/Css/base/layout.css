@@ -1,0 +1,23 @@
+﻿/* =========================================================
+   🧱 LAYOUT (WCAG palette)
+   ========================================================= */
+.app-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.main-content {
+    padding: 50px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+}
+
+.header {
+    margin-bottom: 40px;
+}
+
+.content {
+    padding-top: 1.1rem;
+}

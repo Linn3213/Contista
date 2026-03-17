@@ -1,0 +1,74 @@
+﻿/* =========================================================
+   Horizontella linjer (token-only)
+   ========================================================= */
+
+/* Klassisk <hr class="rounded"> */
+hr.rounded {
+    border: none;
+    border-top: 8px solid var(--ui-focus);
+    border-radius: 3px;
+    margin: var(--space-lg) 0;
+}
+
+/*
+  Baslinje
+  OBS: tidigare användes transparent i gradienten.
+  Nu “fadar” vi istället till en bakgrundstoken så det blir mjukt men token-only.
+*/
+
+/* Kan användas som <hr class="h-line" /> eller <div class="h-line"></div> */
+.h-line {
+    display: block;
+    height: 2px;
+    background: linear-gradient(90deg, var(--ui-focus) 0%, var(--bg-primary) 100%);
+}
+
+/* <hr class="h-line" /> variant */
+hr.h-line {
+    border: none;
+    height: 2px;
+    background: linear-gradient(90deg, var(--ui-focus) 0%, var(--ui-focus) 45%, var(--bg-primary) 100%);
+    margin: var(--space-lg) 0;
+}
+
+/* Gradient line under headings (wrappar rubrik + linje) */
+.h-line-accent {
+    position: relative;
+    padding-bottom: 10px;
+}
+
+    .h-line-accent::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 200px;
+        height: 2px;
+        background: linear-gradient(90deg, var(--ui-focus) 0%, var(--bg-primary) 100%);
+    }
+
+    /* Storleksvarianter */
+    .h-line-accent.sm::after {
+        width: 120px;
+        height: 2px;
+    }
+
+    .h-line-accent.lg::after {
+        width: 280px;
+        height: 3px;
+    }
+
+/* Separator-block (helbredd, lite snällare) */
+.h-line-separator {
+    margin: var(--space-lg) 0;
+}
+
+    .h-line-separator .h-line {
+        width: 100%;
+    }
+
+/* Superdiskret divider utan gradient */
+.h-divider {
+    height: 1px;
+    background: var(--border-default);
+}

@@ -1,0 +1,364 @@
+﻿@* CalendarInvitesModal.razor *@
+@using Contista.Shared.Core.DTO.Calendar
+@using Contista.Shared.Core.Http
+@using Contista.Shared.Core.Interfaces.Calendar
+@using Contista.Shared.Core.Models.Calendar
+@using Contista.Shared.UI.Components.Modals
+
+@inject ICalendarInvitesService Invites
+@inject ICalendarState CalendarState
+@inject INetworkStatus Network
+
+@if (IsOpen)
+{
+    <div class="cal-modalOverlay" @onclick="Close">
+        <div class="cal-modal" @onclick:stopPropagation="true">
+            <div class="cal-modalHeader">
+                <div>
+                    <div class="cal-modalTitle">@Loc.GetOr("Invites_Title", "Invites")</div>
+                    <div class="cal-modalSub">@Loc.GetOr("Invites_Sub", "Pending calendar invitations")</div>
+                </div>
+                <button type="button"
+                        class="cal-modalClose"
+                        @onclick="Close"
+                        aria-label="@Loc.GetOr("Common_Actions_Close", "Close")">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+
+            <div class="cal-modalBody">
+                @if (!Network.IsOnline)
+                {
+                    <div class="alert alert-info">
+                        @Loc.GetOr("Invites_Offline_Info", "You must be online to accept or decline invites.")
+                    </div>
+                }
+
+                @if (_loading)
+                {
+                    <div class="text-muted" data-testid="calendar-invites-loading">
+                        @Loc.GetOr("Common_Loading", "Loading…")
+                    </div>
+                }
+                else if (!string.IsNullOrWhiteSpace(_error))
+                {
+                    <div class="alert alert-danger" data-testid="calendar-invites-error">@_error</div>
+                }
+                else if (_items.Count == 0)
+                {
+                    <div class="text-muted" data-testid="calendar-invites-empty">
+                        @Loc.GetOr("Invites_None", "No pending invites.")
+                    </div>
+                }
+                else
+                {
+                    <div class="d-flex flex-column gap-2">
+                        @foreach (var inv in _items)
+                        {
+                            <div class="border rounded-3 p-3 bg-body">
+                                <div class="d-flex justify-content-between align-items-start gap-2">
+                                    <div class="min-w-0">
+                                        <div class="d-flex align-items-center gap-2 min-w-0">
+                                            <span class="cal-dot" style="background:@GetHex(inv.Color)"></span>
+                                            <div class="fw-semibold text-truncate">@inv.CalendarName</div>
+                                        </div>
+
+                                        <div class="small text-muted text-truncate">
+                                            @Loc.GetOr("Invites_From", "From"):
+                                            @inv.OwnerDisplayName
+                                            @if (!string.IsNullOrWhiteSpace(inv.OwnerEmail))
+                                            {
+                                                <span> (@inv.OwnerEmail)</span>
+                                            }
+                                        </div>
+
+                                        <div class="small text-muted">
+                                            @inv.Role.ToString()
+                                            @if (inv.CanEdit)
+                                            {
+                                                <span> • @Loc.GetOr("Invites_CanEdit", "Can edit")</span>
+                                            }
+                                            @if (inv.CanShare)
+                                            {
+                                                <span> • @Loc.GetOr("Invites_CanShare", "Can share")</span>
+                                            }
+                                        </div>
+                                    </div>
+
+                                    <span class="badge text-bg-warning border">
+                                        @Loc.GetOr("Invites_Status_Pending", "Pending")
+                                    </span>
+                                </div>
+
+                                <div class="d-flex gap-2 mt-3">
+                                    <button class="btn btn-sm btn-primary"
+                                            disabled="@(!CanRunAction())"
+                                            data-testid="calendar-invites-accept"
+                                            data-calendar-id="@inv.CalendarId"
+                                            @onclick="() => Accept(inv)">
+                                        @Loc.GetOr("Common_Actions_Accept", "Accept")
+                                    </button>
+
+                                    <button class="btn btn-sm btn-outline-secondary"
+                                            disabled="@(!CanRunAction())"
+                                            data-testid="calendar-invites-decline"
+                                            data-calendar-id="@inv.CalendarId"
+                                            @onclick="() => Decline(inv)">
+                                        @Loc.GetOr("Common_Actions_Decline", "Decline")
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="cal-modalFooter">
+                <button type="button" class="btn btn-ghost" @onclick="Close">
+                    @Loc.GetOr("Common_Actions_Close", "Close")
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <ConfirmModal @ref="_inviteResultConfirm"
+                  ModalOptions="@(new { backdrop = false, keyboard = false })"
+                  Variant="info"
+                  Title="@_inviteResultTitle"
+                  ConfirmText="@Loc.GetOr("Common_Actions_Ok", "OK")"
+                  CancelText="@Loc.GetOr("Common_Actions_Close", "Close")"
+                  OnConfirm="OnInviteResultConfirmAsync">
+        <MessageContent>
+            <div>@_inviteResultMessage</div>
+        </MessageContent>
+    </ConfirmModal>
+}
+
+@code {
+    [CascadingParameter] public ILocalizationService Loc { get; set; } = default!;
+
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public EventCallback<bool> IsOpenChanged { get; set; }
+    [Parameter] public string? UserId { get; set; }
+
+    private bool _loading;
+    private bool _busy;
+    private string? _error;
+    private List<CalendarInviteDto> _items = new();
+    private int _loadVersion;
+    private int _actionVersion;
+
+    private ConfirmModal? _inviteResultConfirm;
+    private string _inviteResultTitle = "";
+    private string _inviteResultMessage = "";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!IsOpen)
+            return;
+
+        var loadVersion = ++_loadVersion;
+        await Load(loadVersion);
+    }
+
+    private async Task Load(int loadVersion)
+    {
+        _loading = true;
+        _error = null;
+
+        try
+        {
+            var list = await Invites.GetInvitesAsync();
+
+            if (loadVersion != _loadVersion || !IsOpen)
+                return;
+
+            _items = list
+                .Where(x => x.InviteStatus == CalendarInviteStatus.Pending)
+                .OrderByDescending(x => x.UpdatedAtUtc)
+                .ToList();
+        }
+        catch (ApiFailureException afx)
+        {
+            if (loadVersion != _loadVersion || !IsOpen)
+                return;
+
+            _error = ToFriendlyError(afx.Failure);
+        }
+        catch
+        {
+            if (loadVersion != _loadVersion || !IsOpen)
+                return;
+
+            _error = GetFriendlyErrorMessage();
+        }
+        finally
+        {
+            if (loadVersion == _loadVersion)
+                _loading = false;
+        }
+    }
+
+    private Task Accept(CalendarInviteDto invite)
+        => RespondToInviteAsync(
+            invite,
+            id => Invites.AcceptAsync(id),
+            accepted: true);
+
+    private Task Decline(CalendarInviteDto invite)
+        => RespondToInviteAsync(
+            invite,
+            id => Invites.DeclineAsync(id),
+            accepted: false);
+
+    private async Task RespondToInviteAsync(
+        CalendarInviteDto invite,
+        Func<string, Task> action,
+        bool accepted)
+    {
+        if (_busy)
+            return;
+
+        if (invite is null || string.IsNullOrWhiteSpace(invite.CalendarId))
+            return;
+
+        _busy = true;
+        _error = null;
+        var actionVersion = ++_actionVersion;
+
+        try
+        {
+            await action(invite.CalendarId);
+
+            if (actionVersion != _actionVersion || !IsOpen)
+                return;
+
+            _items.RemoveAll(x => x.CalendarId == invite.CalendarId);
+
+            BuildInviteResultMessage(invite, accepted);
+        }
+        catch (ApiFailureException afx)
+        {
+            if (actionVersion != _actionVersion || !IsOpen)
+                return;
+
+            _error = ToFriendlyError(afx.Failure);
+            return;
+        }
+        catch
+        {
+            if (actionVersion != _actionVersion || !IsOpen)
+                return;
+
+            _error = GetFriendlyErrorMessage();
+            return;
+        }
+
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(UserId))
+            {
+                var view = CalendarState.Current?.View ?? CalendarViewMode.Month;
+                var anchor = CalendarState.Current?.AnchorLocal ?? DateTime.Now.Date;
+
+                await CalendarState.RefreshAsync(
+                    UserId!,
+                    view,
+                    anchor,
+                    force: true,
+                    activeCalendarIdsOverride: null,
+                    ct: CancellationToken.None);
+            }
+        }
+        catch
+        {
+            if (actionVersion != _actionVersion || !IsOpen)
+                return;
+
+            if (accepted)
+            {
+                _inviteResultMessage += " " + Loc.GetOr(
+                    "Invites_RefreshFailed_Info_Accept",
+                    "The invitation was accepted, but the calendar view could not be updated right now.");
+            }
+            else
+            {
+                _inviteResultMessage += " " + Loc.GetOr(
+                    "Invites_RefreshFailed_Info_Decline",
+                    "The invitation was declined, but the calendar view could not be updated right now.");
+            }
+        }
+        finally
+        {
+            if (actionVersion == _actionVersion)
+                _busy = false;
+        }
+
+        if (_inviteResultConfirm is not null && actionVersion == _actionVersion && IsOpen)
+            await _inviteResultConfirm.ShowAsync();
+    }
+
+    private void BuildInviteResultMessage(CalendarInviteDto invite, bool accepted)
+    {
+        var calendarName = string.IsNullOrWhiteSpace(invite.CalendarName)
+            ? Loc.GetOr("Common_Actions_Unknown", "Unknown")
+            : invite.CalendarName;
+
+        if (accepted)
+        {
+            _inviteResultTitle = Loc.GetOr("Invites_Accepted_Title", "Invitation accepted");
+            _inviteResultMessage = string.Format(
+                Loc.GetOr("Invites_Accepted_Message", "You now have access to {0}."),
+                calendarName);
+        }
+        else
+        {
+            _inviteResultTitle = Loc.GetOr("Invites_Declined_Title", "Invitation declined");
+            _inviteResultMessage = string.Format(
+                Loc.GetOr("Invites_Declined_Message", "The invitation to {0} was declined."),
+                calendarName);
+        }
+    }
+
+    private Task OnInviteResultConfirmAsync()
+        => Task.CompletedTask;
+
+    private bool CanRunAction()
+        => Network.IsOnline && !_busy;
+
+    private string GetHex(string? color)
+        => CalendarColors.GetHex(color);
+
+    private string GetFriendlyErrorMessage()
+    {
+        if (!Network.IsOnline)
+            return Loc.GetOr("Invites_Error_Offline", "You must be online to manage invites.");
+
+        return Loc.GetOr("Invites_Error_Generic", "Could not complete invite action right now. Please try again.");
+    }
+
+    private string ToFriendlyError(ApiFailure failure)
+    {
+        if (failure.Kind == ApiFailureKind.Forbidden)
+            return Loc.GetOr("Invites_Error_Forbidden", "You do not have permission to manage invites for this calendar.");
+
+        if (failure.Kind == ApiFailureKind.Unauthorized)
+            return Loc.GetOr("Invites_Error_Unauthorized", "Your session has expired. Please sign in again.");
+
+        return failure.Kind switch
+        {
+            ApiFailureKind.NotFound => Loc.GetOr("Invites_Error_NotFound", "This invite is no longer available."),
+            ApiFailureKind.Offline or ApiFailureKind.Timeout => Loc.GetOr("Invites_Error_Offline", "You must be online to manage invites."),
+            _ => Loc.GetOr("Invites_Error_Generic", "Could not complete invite action right now. Please try again.")
+        };
+    }
+
+    private async Task Close()
+    {
+        _loadVersion++;
+        _actionVersion++;
+        _busy = false;
+        _loading = false;
+        await IsOpenChanged.InvokeAsync(false);
+    }
+}

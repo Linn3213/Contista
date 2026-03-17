@@ -1,0 +1,78 @@
+﻿/* =========================================================
+   Bootstrap bridge (DesignTokens -> Bootstrap variables)
+   Lägg efter Bootstrap (och efter dina tokens om du vill)
+   ========================================================= */
+
+/* Bas (light) */
+:root,
+[data-bs-theme="light"] {
+    /* Fonts */
+    --bs-font-sans-serif: var(--font-sans);
+    --bs-font-monospace: var(--font-mono);
+    --bs-body-font-family: var(--font-sans);
+    --bs-heading-font-family: var(--font-serif);
+    /* Body */
+    --bs-body-color: var(--text-primary);
+    --bs-body-bg: var(--bg-primary);
+    /* General text */
+    --bs-secondary-color: var(--text-secondary);
+    --bs-tertiary-color: var(--text-disabled);
+    /* Links */
+    --bs-link-color: var(--ui-focus);
+    --bs-link-hover-color: var(--ui-primary);
+    /* Borders + radius */
+    --bs-border-color: var(--ui-secondary);
+    --bs-border-color-translucent: rgba(0,0,0,0.08);
+    --bs-border-radius: var(--radius-md);
+    --bs-border-radius-sm: var(--radius-sm);
+    --bs-border-radius-lg: var(--radius-lg);
+    --bs-border-radius-pill: var(--radius-full);
+    /* Focus ring */
+    --bs-focus-ring-color: rgba(63,58,53,0.15); /* din shadow-focus */
+    --bs-focus-ring-width: 0.2rem;
+    /* Surfaces (cards, dropdowns etc) */
+    --bs-card-bg: var(--bg-card);
+    --bs-dropdown-bg: var(--bg-card);
+    --bs-dropdown-border-color: var(--ui-secondary);
+    --bs-dropdown-link-color: var(--text-primary);
+    --bs-dropdown-link-hover-bg: var(--bg-secondary);
+    /* Shadows */
+    --bs-box-shadow: var(--shadow-card);
+    --bs-box-shadow-sm: 0 2px 10px rgba(0,0,0,0.08);
+    --bs-box-shadow-lg: var(--shadow-dropdown);
+    /* Muted / subtle bg */
+    --bs-secondary-bg: var(--bg-secondary);
+    --bs-tertiary-bg: var(--bg-glass);
+    /* Feedback colors */
+    --bs-primary: var(--ui-focus);
+    --bs-secondary: var(--ui-primary);
+    --bs-light: var(--bg-secondary);
+    --bs-dark: #1c1a18;
+    --bs-success: var(--color-success);
+    --bs-success-bg-subtle: var(--color-success-bg);
+    --bs-danger: var(--color-error);
+    --bs-danger-bg-subtle: var(--color-error-bg);
+    --bs-warning: var(--color-warning);
+    --bs-warning-bg-subtle: var(--color-warning-bg);
+    --bs-info: var(--color-info);
+    --bs-info-bg-subtle: var(--color-info-bg);
+}
+
+/* Dark theme (du har tomt idag – här är en rimlig start som matchar dina inverse tokens) */
+[data-bs-theme="dark"] {
+    --bs-body-bg: var(--bg-inverse);
+    --bs-body-color: var(--text-inverse);
+    --bs-secondary-color: var(--text-inverse-muted);
+    --bs-tertiary-color: rgba(255,255,255,0.65);
+    --bs-border-color: var(--border-inverse-muted);
+    --bs-secondary-bg: var(--bg-inverse-soft);
+    --bs-tertiary-bg: var(--bg-inverse-glass);
+    --bs-card-bg: rgba(255,255,255,0.06);
+    --bs-dropdown-bg: rgba(255,255,255,0.08);
+    --bs-dropdown-border-color: var(--border-inverse-muted);
+    --bs-dropdown-link-color: var(--text-inverse);
+    --bs-dropdown-link-hover-bg: rgba(255,255,255,0.10);
+    --bs-link-color: var(--highlight-inverse);
+    --bs-link-hover-color: var(--text-inverse);
+    --bs-focus-ring-color: rgba(255,255,255,0.18);
+}

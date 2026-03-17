@@ -1,0 +1,61 @@
+﻿@* OnlineRequiredRouteGuard.razor component *@
+@using Contista.Shared.UI.Routing
+@implements IDisposable
+@inject NavigationManager Nav
+@inject IFeatureAccessService Features
+@inject AuthenticationStateProvider AuthProvider
+
+@code {
+    protected override void OnInitialized()
+    {
+        Nav.LocationChanged += OnLocationChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await EvaluateAsync();
+    }
+
+    private async void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        try { await EvaluateAsync(); }
+        catch { }
+    }
+
+    private async Task EvaluateAsync()
+    {
+        var path = new Uri(Nav.Uri).AbsolutePath;
+
+        // Bara /app/ routes
+        if (!path.StartsWith("/app", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        // Hitta feature kopplad till route (om ingen -> låt vara)
+        if (!RouteFeatureMap.TryGetFeature(path, out var feature))
+            return;
+
+        // Om feature ok -> låt vara
+        var ok = await Features.CanAsync(feature);
+        if (ok) return;
+
+        // Redirect-logik (matchar din UX)
+        var state = await AuthProvider.GetAuthenticationStateAsync();
+        var isAuth = state.User?.Identity?.IsAuthenticated == true;
+
+        if (!isAuth)
+        {
+            // du vill till "/" (Landing)
+            Nav.NavigateTo("/", replace: true);
+            return;
+        }
+
+        // Inloggad men saknar access / offline -> hem
+        Nav.NavigateTo("/app/home", replace: true);
+    }
+
+    public void Dispose()
+    {
+        Nav.LocationChanged -= OnLocationChanged;
+    }
+}

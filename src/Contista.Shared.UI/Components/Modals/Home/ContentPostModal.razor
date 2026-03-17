@@ -1,0 +1,274 @@
+﻿@* ContentPostModal.razor *@
+@inject IJSRuntime JS
+
+@if (IsOpen)
+{
+    <div class="cp-modalOverlay" role="presentation" @onclick="OnOverlayClick">
+        <div class="cp-modal"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="@_titleId"
+             @onclick:stopPropagation="true"
+             @onkeydown="OnModalKeyDown">
+
+            <div class="cp-modal__header">
+                <div class="cp-modal__titleWrap">
+                    <h3 id="@_titleId" class="cp-modal__title">@HeaderTitle</h3>
+                    <div class="cp-modal__subtitle">@HeaderSubtitle</div>
+                </div>
+
+                <button type="button"
+                        class="cp-modal__close"
+                        aria-label="@(Loc?["Common_Actions_Close"] ?? "Close")"
+                        @onclick="CloseAsync">
+                    <i class="bi bi-x-lg" aria-hidden="true"></i>
+                </button>
+            </div>
+
+            <div class="cp-modal__body">
+
+                <div class="cp-formRow">
+                    <label class="cp-label">
+                        @(Loc?["Page_ContentPostModal_Title_Label"] ?? "Title")
+                        <span class="cp-required">*</span>
+                    </label>
+
+                    <input id="@_titleInputId"
+                           class="form-control cp-input"
+                           @bind="_title"
+                           @bind:event="oninput"
+                           maxlength="140"
+                           placeholder="@(Loc?["Page_ContentPostModal_Title_Placeholder"] ?? "e.g. Plan your posts")" />
+
+                    @if (_showValidation && string.IsNullOrWhiteSpace(_title))
+                    {
+                        <div class="cp-error">
+                            @(Loc?["Page_ContentPostModal_TitleRequired_Text"] ?? "Title is required.")
+                        </div>
+                    }
+                </div>
+
+                <div class="cp-formRow">
+                    <label class="cp-label">
+                        @(Loc?["Page_ContentPostModal_Description_Label"] ?? "Description")
+                        <span class="cp-optional">@((Loc?["Common_Actions_Optional"] ?? "Optional"))</span>
+                    </label>
+
+                    <textarea class="form-control cp-input cp-textarea"
+                              @bind="_body"
+                              @bind:event="oninput"
+                              rows="6"
+                              maxlength="6000"
+                              placeholder="@(Loc?["Page_ContentPostModal_Description_Placeholder"] ?? "Write your content (Markdown works great)…")"></textarea>
+
+                    <div class="cp-hint">
+                        @(Loc?["Page_ContentPostModal_Description_Hint"] ?? "You can use Markdown.")
+                    </div>
+                </div>
+
+                <div class="cp-grid2">
+                    <div class="cp-formRow">
+                        <label class="cp-label">@(Loc?["Common_Actions_Status"] ?? "Status")</label>
+                        <select class="form-select cp-input" @bind="_status">
+                            <option value="Draft">@Loc["Common_Actions_Draft"]</option>
+                            <option value="Published">@Loc["Common_Actions_Published"]</option>
+                            <option value="Archived">@Loc["Common_Actions_Archived"]</option>
+                        </select>
+                    </div>
+
+                    <div class="cp-formRow">
+                        <label class="cp-label">
+                            @(Loc?["Page_ContentPostModal_Purpose_Label"] ?? "Purpose")
+                            <span class="cp-optional">@((Loc?["Common_Actions_Optional"] ?? "Optional"))</span>
+                        </label>
+                        <input class="form-control cp-input"
+                               @bind="_purpose"
+                               @bind:event="oninput"
+                               maxlength="80"
+                               placeholder="@Loc["Page_ContentPostModal_Purpose_Placeholder"]" />
+                    </div>
+                </div>
+
+                <div class="cp-formRow">
+                    <label class="cp-label">
+                        @(Loc?["Page_ContentPostModal_Pillar_Label"] ?? "Pillar")
+                        <span class="cp-optional">@((Loc?["Common_Actions_Optional"] ?? "Optional"))</span>
+                    </label>
+                    <input class="form-control cp-input"
+                           @bind="_pillar"
+                           @bind:event="oninput"
+                           maxlength="80"
+                           placeholder="@Loc["Page_ContentPostModal_Pillar_Placeholder"]" />
+                </div>
+
+                <div class="cp-formRow">
+                    <label class="cp-label">
+                        @(Loc?["Page_ContentPostModal_Tags_Label"] ?? "Tags")
+                        <span class="cp-optional">@((Loc?["Common_Actions_Optional"] ?? "Optional"))</span>
+                    </label>
+                    <input class="form-control cp-input"
+                           @bind="_tagsCsv"
+                           @bind:event="oninput"
+                           maxlength="240"
+                           placeholder="@Loc["Page_ContentPostModal_Tags_Placeholder"]" />
+                    <div class="cp-hint">
+                        @(Loc?["Page_ContentPostModal_Tags_Hint"] ?? "Separate tags with commas.")
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="cp-modal__footer">
+                <button type="button" class="btn btn-outline-secondary" @onclick="CloseAsync">
+                    @(Loc?["Common_Actions_Cancel"] ?? "Cancel")
+                </button>
+
+                <button type="button" class="btn btn-primary" @onclick="SaveAsync">
+                    @(Loc?["Common_Actions_Save"] ?? "Save")
+                </button>
+            </div>
+
+        </div>
+    </div>
+}
+
+@code {
+    [CascadingParameter] public ILocalizationService? Loc { get; set; }
+
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public EventCallback<bool> IsOpenChanged { get; set; }
+
+    [Parameter] public ContentPostModalMode Mode { get; set; } = ContentPostModalMode.Create;
+
+    // Edit senare: skicka in en post
+    [Parameter] public ContentPost? InitialPost { get; set; }
+
+    [Parameter] public EventCallback<ContentPostModalResult> OnSave { get; set; }
+
+    private bool _showValidation;
+    private bool _focusTitleOnNextRender;
+    private bool _hasLoadedForThisOpen;
+
+    private string _title = "";
+    private string _body = "";
+    private string _status = "Draft";
+    private string _purpose = "";
+    private string _pillar = "";
+    private string _tagsCsv = "";
+
+    private readonly string _titleInputId = $"cpTitle_{Guid.NewGuid():N}";
+    private readonly string _titleId = $"cpHdr_{Guid.NewGuid():N}";
+
+    private string HeaderTitle =>
+        Mode == ContentPostModalMode.Edit
+            ? (Loc?["Page_ContentPostModal_Edit_Header"] ?? "Edit content")
+            : (Loc?["Page_ContentPostModal_Create_Header"] ?? "Create content");
+
+    private string HeaderSubtitle =>
+        Mode == ContentPostModalMode.Edit
+            ? (Loc?["Page_ContentPostModal_Edit_Subtitle"] ?? "Update your content post")
+            : (Loc?["Page_ContentPostModal_Create_Subtitle"] ?? "Create a new post");
+
+    protected override void OnParametersSet()
+    {
+        if (IsOpen && !_hasLoadedForThisOpen)
+        {
+            LoadFromParameters();
+            _focusTitleOnNextRender = true;
+            _hasLoadedForThisOpen = true;
+        }
+
+        if (!IsOpen)
+            _hasLoadedForThisOpen = false;
+    }
+
+    private void LoadFromParameters()
+    {
+        _showValidation = false;
+
+        if (Mode == ContentPostModalMode.Edit && InitialPost is not null)
+        {
+            _title = InitialPost.Title ?? "";
+            _body = InitialPost.Body ?? "";
+            _status = string.IsNullOrWhiteSpace(InitialPost.Status) ? "Draft" : InitialPost.Status;
+            _purpose = InitialPost.Purpose ?? "";
+            _pillar = InitialPost.Pillar ?? "";
+            _tagsCsv = InitialPost.Tags is { Count: > 0 } ? string.Join(", ", InitialPost.Tags) : "";
+            return;
+        }
+
+        // Create defaults
+        _title = "";
+        _body = "";
+        _status = "Draft";
+        _purpose = "";
+        _pillar = "";
+        _tagsCsv = "";
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (IsOpen && _focusTitleOnNextRender)
+        {
+            _focusTitleOnNextRender = false;
+            await JS.InvokeVoidAsync("contista.focus.focusById", _titleInputId);
+        }
+    }
+
+    private async Task CloseAsync()
+    {
+        if (IsOpenChanged.HasDelegate)
+            await IsOpenChanged.InvokeAsync(false);
+    }
+
+    private Task OnOverlayClick() => CloseAsync();
+
+    private async Task OnModalKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key is "Escape")
+            await CloseAsync();
+    }
+
+    private async Task SaveAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_title))
+        {
+            _showValidation = true;
+            return;
+        }
+
+        var tags = ParseCsv(_tagsCsv);
+
+        var post = new ContentPost
+        {
+            // PostId/UserId/LastMutationId sätts av parent/service när den köas
+            Title = _title.Trim(),
+            Body = _body ?? "",
+            Status = string.IsNullOrWhiteSpace(_status) ? "Draft" : _status.Trim(),
+            Purpose = _purpose?.Trim() ?? "",
+            Pillar = string.IsNullOrWhiteSpace(_pillar) ? null : _pillar.Trim(),
+            Tags = tags,
+
+            // Låt parent bestämma timestamps, men vi sätter rimliga defaults
+            CreatedDate = DateTime.UtcNow,
+            UpdatedDate = DateTime.UtcNow,
+            PublishDate = DateTime.UtcNow
+        };
+
+        if (OnSave.HasDelegate)
+            await OnSave.InvokeAsync(new ContentPostModalResult(Mode, post));
+
+        await CloseAsync();
+    }
+
+    private static List<string> ParseCsv(string? csv)
+    {
+        if (string.IsNullOrWhiteSpace(csv))
+            return new List<string>();
+
+        return csv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                  .Where(x => !string.IsNullOrWhiteSpace(x))
+                  .Distinct(StringComparer.OrdinalIgnoreCase)
+                  .ToList();
+    }
+}

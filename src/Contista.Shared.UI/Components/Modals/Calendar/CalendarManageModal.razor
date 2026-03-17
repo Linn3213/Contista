@@ -1,0 +1,1154 @@
+﻿@* CalendarManageModal.razor *@
+@using Contista.Shared.Core.DTO.Calendar
+@using Contista.Shared.Core.Interfaces.Calendar
+@using Contista.Shared.Core.Models.Calendar
+@using Contista.Shared.Core.Offline.Interfaces
+@using Contista.Shared.UI.Components.Common
+
+@inject ICalendarPermissionService Perms
+@inject ICalendarDataProvider CalendarData
+@inject INetworkStatus Network
+
+@if (IsOpen)
+{
+    <div class="cal-modalOverlay cal-manageOverlay">
+        <div class="cal-modal cal-manageModal" tabindex="0"
+             @onkeydown="HandleKeyDown"
+             @onclick:stopPropagation="true">
+            <div class="cal-modalHeader">
+                <div>
+                    <div class="cal-modalTitle">@Loc.GetOr("Page_CalendarManageModal_Title", "Manage calendars")</div>
+                    <div class="cal-modalSub">@Loc.GetOr("Page_CalendarManageModal_SubTitle", "Edit name/color or delete an extra calendar")</div>
+                </div>
+
+                <button type="button" class="cal-modalClose" @onclick="CloseAsync" aria-label="@Loc.GetOr("Common_Actions_Close", "Close")">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+
+            <div class="cal-modalBody">
+                @if (Calendars is null || Calendars.Count == 0)
+                {
+                    <div class="text-muted py-2">@Loc.GetOr("Page_CalendarManageModal_NoCalendars", "No calendars.")</div>
+                }
+                else
+                {
+                    <div class="cal-formRow w-100">
+                        <label class="cal-label">@Loc.GetOr("Page_CalendarManageModal_Select_Label", "Calendar")</label>
+
+                        <div class="dropdown w-100 cal-dd">
+                            <button type="button"
+                                    class="cal-input dropdown-toggle w-100 d-flex align-items-center justify-content-between"
+                                    data-bs-toggle="dropdown"
+                                    aria-expanded="false"
+                                    disabled="@_isSaving"
+                                    data-testid="calendar-manage-select">
+                                <span class="text-truncate">@GetSelectedCalendarLabel()</span>
+                            </button>
+
+                            <ul class="dropdown-menu w-100 p-1 cal-dd-menu">
+                                @foreach (var cal in Calendars.OrderByDescending(x => x.IsPrimary).ThenBy(x => x.Name))
+                                {
+                                    var isActive = string.Equals(cal.CalendarId, SelectedCalendarId, StringComparison.Ordinal);
+
+                                    <li>
+                                        <button type="button"
+                                                class="dropdown-item d-flex align-items-center justify-content-between @(isActive ? "active" : "")"
+                                                @onclick="() => SelectCalendar(cal.CalendarId)">
+                                            <span class="text-truncate">@cal.Name@(cal.IsPrimary ? " (Contista)" : "")</span>
+
+                                            @if (isActive)
+                                            {
+                                                <i class="bi bi-check2"></i>
+                                            }
+                                        </button>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="cal-formRow">
+                        <label class="cal-label">@Loc.GetOr("CalendarManageModal_Name_Label", "Name")</label>
+
+                        <input class="cal-input"
+                               value="@EditModel.Name"
+                               @oninput="OnNameInput"
+                               disabled="@(!_canEditThisCalendar || _isSaving)"
+                               maxlength="60" />
+
+                        @if (!_canEditThisCalendar)
+                        {
+                            <div class="small text-muted mt-1">
+                                @Loc.GetOr("CalendarManageModal_Name_DisabledHelp", "You cannot rename this calendar.")
+                            </div>
+                        }
+                    </div>
+
+                    <div class="cal-formRow">
+                        <label class="cal-label">@Loc.GetOr("Page_CalendarManageModal_Color_Label", "Color")</label>
+
+                        @if (IsPrimarySelected)
+                        {
+                            <div class="small text-muted">
+                                @Loc.GetOr("Page_CalendarManageModal_PrimaryColorLocked",
+                                                "Contista calendar uses the primary color and cannot be changed.")
+                </div>
+                                }
+                        else
+                        {
+                            <div class="cal-colorPicker">
+                                <button type="button"
+                                        class="cal-input cal-colorPickerBtn dropdown-toggle"
+                                        data-bs-toggle="dropdown"
+                                        aria-expanded="false"
+                                        disabled="@(IsPrimarySelected || _isSaving || !_canEditThisCalendar)">
+
+                                    <span class="cal-colorLeft">
+                                        <span class="cal-colorSwatch"
+                                              style="background:@(CalendarColors.GetHex(EditModel.Color))"></span>
+                                        <span class="cal-colorLabel">@(GetColorLabel(EditModel.Color))</span>
+                                    </span>
+                                </button>
+
+                                <ul class="dropdown-menu cal-colorMenu">
+                                    @foreach (var key in ColorOptions)
+                                    {
+                                        <li>
+                                            <button type="button"
+                                                    class="dropdown-item cal-colorItem"
+                                                    disabled="@(!_canEditThisCalendar)"
+                                                    @onclick="() => SetColor(key)">
+                                                <span class="cal-colorSwatch"
+                                                      style="background:@(CalendarColors.GetHex(key))"></span>
+                                                <span>@GetColorLabel(key)</span>
+                                            </button>
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="cal-formRow">
+                        <label class="cal-label">@Loc.GetOr("Page_CalendarManageModal_Members_Label", "Members")</label>
+
+                        @if (!CanManageMembersForSelectedCalendar())
+                        {
+                            <div class="small text-muted mb-2">
+                                @Loc.GetOr("Page_CalendarManageModal_Members_ReadOnly",
+                                "You can view members here, but you need share permission to edit roles or remove members.")
+                            </div>
+                        }
+
+                        <div class="cal-membersWrap">
+                            @if (!string.IsNullOrWhiteSpace(_membersError))
+                            {
+                                <div class="small text-muted">@_membersError</div>
+                            }
+                            else if (_memberRows.Count == 0)
+                            {
+                                <div class="small text-muted">
+                                    @Loc.GetOr("Page_CalendarManageModal_Members_Empty", "No members found.")
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="d-flex flex-column gap-2">
+                                    @foreach (var row in _memberRows.OrderByDescending(r => r.Membership.Role == CalendarMemberRole.Owner).ThenBy(r => r.DisplayName))
+                                    {
+                                        var label = string.IsNullOrWhiteSpace(row.DisplayName) ? row.UserId : row.DisplayName;
+
+                                        <div class="border rounded px-2 py-2 @(IsPendingMember(row) ? "border-warning-subtle bg-warning-subtle" : "") cal-memberCard">
+                                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                                <div class="small fw-semibold cal-memberCardTitle">@label</div>
+
+                                                <div class="d-inline-flex align-items-center gap-2 flex-shrink-0">
+                                                    @if (IsPendingMember(row))
+                                                    {
+                                                        <span class="badge text-bg-warning">@Loc.GetOr("Invites_Status_Pending", "Pending")</span>
+                                                    }
+
+                                                    @if (CanRemoveMember(row))
+                                                    {
+                                                        <IconButton IconClass="bi bi-person-dash"
+                                                                    Title="@Loc.GetOr("Common_Actions_Remove", "Remove")"
+                                                                    AriaLabel="@Loc.GetOr("Page_CalendarManageModal_RemoveMember_Aria", "Remove member")"
+                                                                    Size="md"
+                                                                    Tone="ghost"
+                                                                    Class="cal-memberRemoveBtn"
+                                                                    Disabled="@(!Network.IsOnline || _memberActionBusy || _isSaving)"
+                                                                    OnClick="@(e => OpenRemoveMemberConfirmAsync(row))" />
+                                                    }
+                                                </div>
+                                            </div>
+                                            <!-- TODO fixa space mellan första och andra raden när borttagningsikonen visas -->
+                                            @if (!string.IsNullOrWhiteSpace(row.Email))
+                                            {
+                                                <div class="small text-muted cal-memberEmail">@row.Email</div>
+                                            }
+
+                                            <div class="mt-2">
+                                                @if (row.Membership.Role == CalendarMemberRole.Owner)
+                                                {
+                                                    <div class="small text-muted">@GetRoleLabel(CalendarMemberRole.Owner)</div>
+                                                }
+                                                else if (!CanManageMembersForSelectedCalendar())
+                                                {
+                                                    <div class="small text-muted">@GetRoleLabel(row.Membership.Role)</div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="d-flex align-items-center gap-3 flex-wrap">
+                                                        <div class="dropdown">
+                                                            <button type="button"
+                                                                    class="form-select form-select-sm dropdown-toggle d-flex align-items-center justify-content-between cal-memberRoleBtn"
+                                                                    data-bs-toggle="dropdown"
+                                                                    aria-expanded="false"
+                                                                    disabled="@(!Network.IsOnline || _memberActionBusy || _isSaving)">
+                                                                <span class="text-truncate">@GetRoleLabel(GetDraftRole(row))</span>
+                                                            </button>
+
+                                                            <ul class="dropdown-menu p-1 cal-memberRoleMenu">
+                                                                @{
+                                                                    var current = GetDraftRole(row);
+                                                                }
+
+                                                                <li>
+                                                                    <button type="button"
+                                                                            class="dropdown-item d-flex align-items-center justify-content-between @(current == CalendarMemberRole.Reader ? "active" : "")"
+                                                                            @onclick="async () => await SelectMemberRole(row, CalendarMemberRole.Reader)">
+                                                                        <span class="text-truncate">@GetRoleLabel(CalendarMemberRole.Reader)</span>
+                                                                        @if (current == CalendarMemberRole.Reader)
+                                                                        {
+                                                                            <i class="bi bi-check2"></i>
+                                                                        }
+                                                                    </button>
+                                                                </li>
+
+                                                                <li>
+                                                                    <button type="button"
+                                                                            class="dropdown-item d-flex align-items-center justify-content-between @(current == CalendarMemberRole.Editor ? "active" : "")"
+                                                                            @onclick="async () => await SelectMemberRole(row, CalendarMemberRole.Editor)">
+                                                                        <span class="text-truncate">@GetRoleLabel(CalendarMemberRole.Editor)</span>
+                                                                        @if (current == CalendarMemberRole.Editor)
+                                                                        {
+                                                                            <i class="bi bi-check2"></i>
+                                                                        }
+                                                                    </button>
+                                                                </li>
+                                                            </ul>
+                                                        </div>
+
+                                                        @if (IsOwnerForSelectedCalendar())
+                                                        {
+                                                            <label class="d-inline-flex align-items-center gap-2 mb-0">
+                                                                <span class="cal-sectionSwitch">
+                                                                    <input type="checkbox"
+                                                                           class="cal-switch"
+                                                                           checked="@GetDraftCanShare(row)"
+                                                                           disabled="@(!CanEditMemberCanShare(row))"
+                                                                           @onchange="e => ToggleMemberCanShare(row, e.Value is bool b && b)" />
+
+                                                                    <span class="cal-memberShareLabel ms-2">@Loc.GetOr("Page_CalendarManageModal_CanShare", "Can share")</span>
+                                                                </span>
+                                                            </label>
+                                                        }
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+
+                            @* Overlay istället för att byta ut innehåll *@
+                            @if (_membersLoading)
+                            {
+                                <div class="cal-inlineOverlay" aria-hidden="true">
+                                    <div class="cal-inlineChip">
+                                        @Loc.GetOr("Common_Loading", "Loading…")
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(InlineInfo))
+                    {
+                        <div class="alert alert-info my-2">
+                            <div class="small">@InlineInfo</div>
+                        </div>
+                    }
+                }
+            </div>
+
+            <div class="cal-modalFooter">
+                @if (CanShowDeleteButton)
+                {
+                    <button type="button"
+                            class="btn btn-ghost"
+                            data-testid="calendar-manage-delete"
+                            disabled="@_isSaving"
+                            @onclick="OpenDeleteConfirmAsync">
+                        @Loc.GetOr("Common_Actions_Delete", "Delete")
+                    </button>
+                }
+
+                <div style="flex:1"></div>
+
+                <button type="button"
+                        class="btn btn-ghost"
+                        data-testid="calendar-manage-close"
+                        disabled="@_isSaving"
+                        @onclick="CloseAsync">
+                    @(_isDirty
+                                    ? Loc.GetOr("Common_Actions_Cancel", "Cancel")
+                                    : Loc.GetOr("Common_Actions_Close", "Close"))
+                </button>
+
+                @if (_isDirty && _canEditThisCalendar)
+                {
+                    <button type="button"
+                            class="btn btn-primary"
+                            data-testid="calendar-manage-save"
+                            disabled="@_isSaving"
+                            @onclick="SaveAsync">
+
+                        @if (_isSaving)
+                        {
+                            <span>@Loc.GetOr("Common_Saving", "Saving…")</span>
+                        }
+                        else
+                        {
+                            <span>@Loc.GetOr("Common_Actions_Save", "Save")</span>
+                        }
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@* ✅ ConfirmModal: alltid varning före delete *@
+<ConfirmModal @ref="_confirmDeleteCal"
+              ModalOptions="@(new { backdrop = false, keyboard = false })"
+              Title="@Loc.GetOr("Page_CalendarManageModal_DeleteConfirm_Title", "Delete calendar?")"
+              Variant="danger"
+              CancelText="@Loc.GetOr("Common_Actions_Cancel", "Cancel")"
+              ConfirmText="@GetConfirmButtonText()"
+              OnConfirm="ConfirmDeleteAsync">
+    <MessageContent>
+        <div class="mb-2">
+            @Loc.GetOr("Page_CalendarManageModal_DeleteConfirm_Text",
+                "Do you want to move events to another calendar or delete everything?")
+        </div>
+
+        @if (_pendingDelete is not null)
+        {
+            <div class="small text-muted">
+                @Loc.GetOr("Page_CalendarManageModal_DeleteConfirm_CalendarLabel", "Calendar"):
+                <strong>@_pendingDelete.Name</strong>
+            </div>
+        }
+
+        <div class="mt-3">
+            <div class="form-check">
+                <input class="form-check-input"
+                       type="radio"
+                       name="delMode"
+                       id="delModeMove"
+                       value="move"
+                       checked="@(_deleteMode == "move")"
+                       @onchange="@(() => SetDeleteMode("move"))" />
+                <label class="form-check-label" for="delModeMove">
+                    @Loc.GetOr("Page_CalendarManageModal_DeleteConfirm_MoveOption",
+                        "Move all events to another calendar and delete this calendar")
+                </label>
+            </div>
+
+            <div class="mt-2 ms-4">
+                <select class="form-select"
+                        data-testid="calendar-manage-delete-target"
+                        disabled="@IsTargetDropdownDisabled"
+                        @bind="_deleteTargetCalendarId">
+                    @foreach (var cal in GetMoveTargets())
+                    {
+                        <option value="@cal.CalendarId">@cal.Name@(cal.IsPrimary ? " (Contista)" : "")</option>
+                    }
+                </select>
+
+                @if (IsTargetDropdownDisabled)
+                {
+                    <div class="small text-muted mt-1">
+                        @Loc.GetOr("Page_CalendarManageModal_DeleteConfirm_NoTarget",
+                                "No other calendar exists. (Create a new calendar if you want to move events.)")
+                </div>
+                                }
+            </div>
+
+            <div class="form-check mt-3">
+                <input class="form-check-input"
+                       type="radio"
+                       name="delMode"
+                       id="delModeDelete"
+                       value="delete"
+                       checked="@(_deleteMode == "delete")"
+                       @onchange="@(() => SetDeleteMode("delete"))" />
+                <label class="form-check-label" for="delModeDelete">
+                    @Loc.GetOr("Page_CalendarManageModal_DeleteConfirm_DeleteOption",
+                        "Delete the calendar and all events (cannot be undone)")
+                </label>
+            </div>
+        </div>
+
+        <div class="alert alert-warning mt-3 mb-0">
+            @Loc.GetOr("Page_CalendarManageModal_DeleteConfirm_Warn", "This action cannot be undone.")
+        </div>
+    </MessageContent>
+</ConfirmModal>
+
+<ConfirmModal @ref="_confirmRemoveMember"
+              ModalOptions="@(new { backdrop = false, keyboard = false })"
+              Title="@Loc.GetOr("Page_CalendarManageModal_RemoveMemberConfirm_Title", "Remove member?")"
+              Variant="danger"
+              CancelText="@Loc.GetOr("Common_Actions_Cancel", "Cancel")"
+              ConfirmText="@Loc.GetOr("Common_Actions_Remove", "Remove")"
+              OnConfirm="ConfirmRemoveMemberAsync">
+    <MessageContent>
+        <div class="mb-2">
+            @Loc.GetOr("Page_CalendarManageModal_RemoveMemberConfirm_Text",
+                                "Are you sure you want to remove this member from the calendar?")
+        </div>
+
+        @if (_pendingRemoveMember is not null)
+        {
+            var pendingLabel = string.IsNullOrWhiteSpace(_pendingRemoveMember.DisplayName)
+            ? _pendingRemoveMember.UserId
+            : _pendingRemoveMember.DisplayName;
+
+            <div class="small text-muted">
+                @Loc.GetOr("Common_Member", "Member"):
+                <strong>@pendingLabel</strong>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(_pendingRemoveMember.Email))
+            {
+                <div class="small text-muted">@_pendingRemoveMember.Email</div>
+            }
+        }
+    </MessageContent>
+</ConfirmModal>
+
+
+
+@code {
+    [CascadingParameter] public ILocalizationService Loc { get; set; } = default!;
+
+    [Parameter] public string UserId { get; set; } = "";
+    [Parameter] public EventCallback<CalendarDeleteRequest> OnDeleteCalendarRequested { get; set; }
+
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public EventCallback<bool> IsOpenChanged { get; set; }
+
+    [Parameter] public List<CalendarDto> Calendars { get; set; } = new();
+    [Parameter] public HashSet<string> ManageableCalendarIds { get; set; } = new(StringComparer.Ordinal);
+
+    [Parameter] public EventCallback<CalendarDto> OnSave { get; set; }
+    [Parameter] public EventCallback<string> OnDelete { get; set; } // calendarId
+
+
+    private bool _initializedForOpen;
+    private string? _lastMembersCalendarId;
+
+    private string? _selectedCalendarId;
+
+    private bool _canEditThisCalendar;
+    private bool _isDirty;
+
+    private bool _isSaving;
+    private string? _savingText;
+
+    private string? SelectedCalendarId
+    {
+        get => _selectedCalendarId;
+        set
+        {
+            if (string.Equals(_selectedCalendarId, value, StringComparison.Ordinal))
+                return;
+
+            _selectedCalendarId = value;
+            InlineInfo = null;
+            LoadEditModelFromSelected();
+            _ = LoadMembersAsync();
+        }
+    }
+
+    private CalendarDto EditModel = new();
+
+    private List<string> ColorOptions =>
+        CalendarColors.Map.Keys
+            .Where(k => !string.Equals(k, CalendarColors.Primary, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(k => k, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    private void SetColor(string key)
+    {
+        if (!_canEditThisCalendar)
+            return;
+
+        var normalized = CalendarColors.Normalize(key);
+        if (string.Equals(normalized, CalendarColors.Primary, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        // Om ingen ändring – gör inget
+        if (string.Equals(CalendarColors.Normalize(EditModel.Color), normalized, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        EditModel.Color = normalized;
+
+        RecomputeDirty();
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private string GetColorLabel(string colorKey)
+        => (CalendarColors.Normalize(colorKey)) switch
+        {
+            "Blue" => Loc.GetOr("Common_Color_Blue", "Blue"),
+            "Green" => Loc.GetOr("Common_Color_Green", "Green"),
+            "Orange" => Loc.GetOr("Common_Color_Orange", "Orange"),
+            "Red" => Loc.GetOr("Common_Color_Red", "Red"),
+            "Purple" => Loc.GetOr("Common_Color_Purple", "Purple"),
+            "Pink" => Loc.GetOr("Common_Color_Pink", "Pink"),
+            "Teal" => Loc.GetOr("Common_Color_Teal", "Teal"),
+            "Gray" => Loc.GetOr("Common_Color_Gray", "Gray"),
+            _ => colorKey
+        };
+
+    private string? InlineInfo;
+    private bool _membersLoading;
+    private string? _membersError;
+    private List<CalendarMemberRowDto> _memberRows = new();
+    private bool _memberActionBusy;
+    private readonly Dictionary<string, CalendarMemberRole> _roleDrafts = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, bool> _canEditDrafts = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, bool> _canShareDrafts = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, bool> _canSeeDetailsDrafts = new(StringComparer.Ordinal);
+
+    private CalendarDto? SelectedCalendar =>
+        Calendars?.FirstOrDefault(c => string.Equals(c.CalendarId, SelectedCalendarId, StringComparison.Ordinal));
+
+    private bool IsPrimarySelected => SelectedCalendar?.IsPrimary == true;
+
+    private bool IsPendingMember(CalendarMemberRowDto row)
+        => row.Membership?.InviteStatus == CalendarInviteStatus.Pending;
+
+    // ---- confirm delete state ----
+    private ConfirmModal? _confirmDeleteCal;
+    private CalendarDto? _pendingDelete;
+
+    private ConfirmModal? _confirmRemoveMember;
+    private CalendarMemberRowDto? _pendingRemoveMember;
+
+    private string _deleteMode = "move"; // "move" | "delete"
+    private string? _deleteTargetCalendarId;
+
+    private bool CanShowDeleteButton =>
+        Perms.CanDeleteCalendar(UserId, SelectedCalendar);
+
+    private bool IsTargetDropdownDisabled => GetMoveTargets().Count <= 1;
+
+    private List<CalendarDto> GetMoveTargets()
+    {
+        var sourceId = SelectedCalendarId ?? "";
+
+        return (Calendars ?? new List<CalendarDto>())
+            .Where(c =>
+                !string.IsNullOrWhiteSpace(c.CalendarId) &&
+                !string.Equals(c.CalendarId, sourceId, StringComparison.Ordinal) &&
+                Perms.IsOwner(UserId, c))
+            .OrderByDescending(x => x.IsPrimary)
+            .ThenBy(x => x.Name)
+            .ToList();
+    }
+
+    private string GetSelectedCalendarLabel()
+    {
+        var cal = SelectedCalendar;
+        if (cal is null) return Loc.GetOr("Common_Calendars", "Calendars");
+        return $"{cal.Name}{(cal.IsPrimary ? " (Contista)" : "")}";
+    }
+
+    private void SelectCalendar(string? calendarId)
+    {
+        if (string.IsNullOrWhiteSpace(calendarId))
+            return;
+
+        if (string.Equals(_selectedCalendarId, calendarId, StringComparison.Ordinal))
+            return;
+
+        _selectedCalendarId = calendarId;
+        _lastMembersCalendarId = calendarId;
+
+        InlineInfo = null;
+
+        LoadEditModelFromSelected();
+        _ = LoadMembersAsync();
+
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void OnNameInput(ChangeEventArgs e)
+    {
+        if (!_canEditThisCalendar)
+            return;
+
+        EditModel.Name = e?.Value?.ToString() ?? "";
+        RecomputeDirty();
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void SetDeleteMode(string mode)
+    {
+        _deleteMode = mode;
+
+        if (_deleteMode == "move")
+        {
+            var targets = GetMoveTargets();
+            _deleteTargetCalendarId = targets.FirstOrDefault()?.CalendarId;
+        }
+    }
+
+    private string GetConfirmButtonText()
+        => _deleteMode == "move"
+            ? Loc.GetOr("Common_Actions_MoveAndDelete", "Move & delete")
+            : Loc.GetOr("Common_Actions_DeleteAll", "Delete all");
+
+    private async Task OpenDeleteConfirmAsync()
+    {
+        if (!CanShowDeleteButton) return;
+
+        _pendingDelete = SelectedCalendar;
+        _deleteMode = "move";
+        var targets = GetMoveTargets();
+        _deleteTargetCalendarId = targets.FirstOrDefault()?.CalendarId;
+
+        if (_confirmDeleteCal is not null)
+            await _confirmDeleteCal.ShowAsync();
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_pendingDelete is null) return;
+
+        var req = new CalendarDeleteRequest
+        {
+            SourceCalendarId = _pendingDelete.CalendarId ?? "",
+            Mode = _deleteMode,
+            TargetCalendarId = _deleteMode == "move" ? _deleteTargetCalendarId : null
+        };
+
+        if (req.Mode == "move" && string.IsNullOrWhiteSpace(req.TargetCalendarId))
+        {
+            InlineInfo = Loc.GetOr("Page_CalendarManageModal_DeleteConfirm_TargetRequired",
+                "Select a target calendar (or choose 'Delete all').");
+            return;
+        }
+
+        await OnDeleteCalendarRequested.InvokeAsync(req);
+
+        _pendingDelete = null;
+        await CloseAsync();
+    }
+
+    private void RecomputeDirty()
+    {
+        var orig = SelectedCalendar;
+
+        if (orig is null)
+        {
+            _isDirty = false;
+            return;
+        }
+
+        var nameNow = (EditModel.Name ?? "").Trim();
+        var nameOrig = (orig.Name ?? "").Trim();
+
+        var colorNow = CalendarColors.Normalize(EditModel.Color);
+        var colorOrig = CalendarColors.Normalize(orig.Color);
+
+        _isDirty =
+            !string.Equals(nameNow, nameOrig, StringComparison.Ordinal) ||
+            !string.Equals(colorNow, colorOrig, StringComparison.Ordinal);
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (!IsOpen)
+        {
+            _initializedForOpen = false;
+            return;
+        }
+
+        InlineInfo = null;
+        Calendars ??= new();
+
+        if (!_initializedForOpen)
+        {
+            SelectedCalendarId ??=
+                Calendars.FirstOrDefault(c => !c.IsPrimary)?.CalendarId
+                ?? Calendars.FirstOrDefault()?.CalendarId;
+
+            LoadEditModelFromSelected();
+
+            _lastMembersCalendarId = SelectedCalendarId;
+            _ = LoadMembersAsync();
+
+            _initializedForOpen = true;
+            return;
+        }
+
+        // Modal är redan öppen: synca EditModel från nya Calendars endast om användaren inte håller på att edit:a
+        if (!_isDirty && !_isSaving)
+            LoadEditModelFromSelected();
+
+        // Ladda bara members om kalendern faktiskt byttes
+        if (!string.Equals(_lastMembersCalendarId, SelectedCalendarId, StringComparison.Ordinal))
+        {
+            _lastMembersCalendarId = SelectedCalendarId;
+            _ = LoadMembersAsync();
+        }
+    }
+
+    private void LoadEditModelFromSelected()
+    {
+        var cal = SelectedCalendar;
+
+        if (cal is null)
+        {
+            EditModel = new CalendarDto { Color = CalendarColors.Primary, Name = "" };
+            _canEditThisCalendar = false;
+            _isDirty = false;
+            return;
+        }
+
+        EditModel = new CalendarDto
+        {
+            CalendarId = cal.CalendarId,
+            Name = cal.Name ?? "",
+            Color = CalendarColors.Normalize(cal.Color),
+            IsPrimary = cal.IsPrimary,
+            OwnerUserId = cal.OwnerUserId,
+            IsShared = cal.IsShared,
+            ConflictPolicy = cal.ConflictPolicy,
+            DefaultVisibility = cal.DefaultVisibility,
+            Provider = cal.Provider,
+            ExternalCalendarId = cal.ExternalCalendarId,
+            ExternalReadOnly = cal.ExternalReadOnly,
+            CreatedAtUtc = cal.CreatedAtUtc,
+            UpdatedAtUtc = cal.UpdatedAtUtc,
+            LastMutationId = cal.LastMutationId
+        };
+
+        _canEditThisCalendar =
+            !EditModel.IsPrimary &&
+            !string.IsNullOrWhiteSpace(EditModel.CalendarId) &&
+            (ManageableCalendarIds?.Contains(EditModel.CalendarId) == true);
+
+        _isDirty = false;
+    }
+
+    private async Task CloseAsync()
+    {
+        IsOpen = false;
+        InlineInfo = null;
+        _pendingDelete = null;
+        _pendingRemoveMember = null;
+        await IsOpenChanged.InvokeAsync(false);
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_isSaving)
+            return;
+
+        if (!_canEditThisCalendar)
+            return;
+
+        var orig = SelectedCalendar;
+        if (orig is null)
+            return;
+
+        _isSaving = true;
+        InlineInfo = null;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            // normalisera namn
+            var name = (EditModel.Name ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(name))
+                name = Loc.GetOr("Common_Actions_Untitled", "Untitled");
+
+            EditModel.Name = name;
+            EditModel.Color = CalendarColors.Normalize(EditModel.Color);
+
+            RecomputeDirty();
+            if (!_isDirty)
+                return;
+
+            // Skicka upp en DTO (copy) så parent får en ren payload
+            var updated = new CalendarDto
+            {
+                CalendarId = EditModel.CalendarId,
+                Name = EditModel.Name,
+                Color = EditModel.Color,
+                IsPrimary = EditModel.IsPrimary,
+                OwnerUserId = EditModel.OwnerUserId,
+                IsShared = EditModel.IsShared,
+                ConflictPolicy = EditModel.ConflictPolicy,
+                DefaultVisibility = EditModel.DefaultVisibility,
+                Provider = EditModel.Provider,
+                ExternalCalendarId = EditModel.ExternalCalendarId,
+                ExternalReadOnly = EditModel.ExternalReadOnly,
+                CreatedAtUtc = EditModel.CreatedAtUtc,
+                UpdatedAtUtc = EditModel.UpdatedAtUtc,
+                LastMutationId = EditModel.LastMutationId
+            };
+
+            if (OnSave.HasDelegate)
+                await OnSave.InvokeAsync(updated);
+
+            _isDirty = false;
+        }
+        finally
+        {
+            _isSaving = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+            await CloseAsync();
+    }
+
+    private bool CanEditMemberRole(CalendarMemberRowDto row)
+    {
+        if (row is null || row.Membership is null) return false;
+        if (!CanManageMembersForSelectedCalendar()) return false;
+
+        // ✅ Owner ska aldrig kunna ändras
+        if (row.Membership.Role == CalendarMemberRole.Owner) return false;
+
+        // lås även pending invites här
+        if (row.Membership.InviteStatus == CalendarInviteStatus.Pending) return false;
+
+        return true;
+    }
+
+    private CalendarMemberRole GetDraftRole(CalendarMemberRowDto row)
+        => row is not null && !string.IsNullOrWhiteSpace(row.UserId) && _roleDrafts.TryGetValue(row.UserId, out var role)
+            ? role
+            : row?.Membership?.Role ?? CalendarMemberRole.Reader;
+
+    private bool GetDraftCanShare(CalendarMemberRowDto row)
+        => row is not null
+           && !string.IsNullOrWhiteSpace(row.UserId)
+           && _canShareDrafts.TryGetValue(row.UserId, out var canShare)
+                ? canShare
+                : row?.Membership?.CanShare ?? false;
+
+    private bool CanEditMemberCanShare(CalendarMemberRowDto row)
+    {
+        if (row is null || row.Membership is null) return false;
+        if (!CanManageMembersForSelectedCalendar()) return false;
+        if (!IsOwnerForSelectedCalendar()) return false;
+        if (!Network.IsOnline || _memberActionBusy || _isSaving) return false;
+
+        if (row.Membership.Role == CalendarMemberRole.Owner)
+            return false;
+
+        if (row.Membership.InviteStatus == CalendarInviteStatus.Pending)
+            return false;
+
+        return true;
+    }
+
+    private async Task ToggleMemberCanShare(CalendarMemberRowDto row, bool value)
+    {
+        if (row is null || string.IsNullOrWhiteSpace(row.UserId))
+            return;
+
+        if (!CanEditMemberCanShare(row))
+            return;
+
+        var current = GetDraftCanShare(row);
+        if (current == value)
+            return;
+
+        _canShareDrafts[row.UserId] = value;
+
+        await SaveMemberRoleAsync(row);
+    }
+
+    private string GetRoleLabel(CalendarMemberRole role)
+    {
+        return role switch
+        {
+            CalendarMemberRole.Owner
+                => Loc.GetOr("Page_CalendarManageModal_Role_Owner", "Owner"),
+
+            CalendarMemberRole.Editor
+                => Loc.GetOr("Page_CalendarShareModal_Role_Editor", "Editor"),
+
+            _ // Reader
+                => Loc.GetOr("Page_CalendarShareModal_Role_Reader", "Reader")
+        };
+    }
+
+    private async Task SelectMemberRole(CalendarMemberRowDto row, CalendarMemberRole role)
+    {
+        if (row is null || string.IsNullOrWhiteSpace(row.UserId))
+            return;
+
+        if (!CanEditMemberRole(row))
+            return;
+
+        var current = GetDraftRole(row);
+        if (current == role)
+            return;
+
+        OnMemberRoleChanged(row, role.ToString());
+
+        await SaveMemberRoleAsync(row);
+    }
+
+    private static (bool canEdit, bool canSeeDetails) ResolvePermissionsFromRole(CalendarMemberRole role)
+    {
+        return role switch
+        {
+            CalendarMemberRole.Owner => (true, true),
+            CalendarMemberRole.Editor => (true, true),
+            _ => (false, true) 
+        };
+    }
+
+    private void OnMemberRoleChanged(CalendarMemberRowDto row, string? roleValue)
+    {
+        if (row is null || string.IsNullOrWhiteSpace(row.UserId))
+            return;
+
+        if (!Enum.TryParse<CalendarMemberRole>(roleValue, true, out var role))
+            role = CalendarMemberRole.Reader;
+
+        _roleDrafts[row.UserId] = role;
+
+        var perms = ResolvePermissionsFromRole(role);
+        _canEditDrafts[row.UserId] = perms.canEdit;
+        _canSeeDetailsDrafts[row.UserId] = perms.canSeeDetails;
+
+        if (!_canShareDrafts.ContainsKey(row.UserId))
+            _canShareDrafts[row.UserId] = false;
+    }
+
+    private bool CanSaveMemberRole(CalendarMemberRowDto row)
+    {
+        if (!Network.IsOnline || _memberActionBusy) return false;
+        if (!CanEditMemberRole(row)) return false;
+        if (string.IsNullOrWhiteSpace(row.UserId)) return false;
+
+        var currentRole = row.Membership.Role;
+        var currentCanEdit = row.Membership.CanEdit;
+        var currentCanShare = row.Membership.CanShare;
+        var currentCanSeeDetails = row.Membership.CanSeeDetails;
+
+        var draftRole = _roleDrafts.TryGetValue(row.UserId, out var role) ? role : currentRole;
+        var draftCanShare = _canShareDrafts.TryGetValue(row.UserId, out var canShare) ? canShare : currentCanShare;
+
+        var perms = ResolvePermissionsFromRole(draftRole);
+        var draftCanEdit = perms.canEdit;
+        var draftCanSeeDetails = perms.canSeeDetails;
+
+        return draftRole != currentRole
+            || draftCanEdit != currentCanEdit
+            || draftCanShare != currentCanShare
+            || draftCanSeeDetails != currentCanSeeDetails;
+    }
+
+    private async Task SaveMemberRoleAsync(CalendarMemberRowDto row)
+    {
+        if (row is null || row.Membership is null || string.IsNullOrWhiteSpace(SelectedCalendarId) || string.IsNullOrWhiteSpace(row.UserId))
+            return;
+
+        if (!_roleDrafts.TryGetValue(row.UserId, out var draftRole))
+            draftRole = row.Membership.Role;
+
+        var draftCanShare = _canShareDrafts.TryGetValue(row.UserId, out var canShare)
+            ? canShare
+            : row.Membership.CanShare;
+
+        var perms = ResolvePermissionsFromRole(draftRole);
+        var draftCanEdit = perms.canEdit;
+        var draftCanSeeDetails = perms.canSeeDetails;
+
+        _memberActionBusy = true;
+        _membersError = null;
+
+        try
+        {
+            var req = new UpdateCalendarMemberRequest
+            {
+                Role = draftRole,
+                CanEdit = draftCanEdit,
+                CanShare = draftCanShare,
+                CanSeeDetails = draftCanSeeDetails
+            };
+
+            await CalendarData.UpdateMemberAsync(SelectedCalendarId!, row.UserId, req, CancellationToken.None);
+            await LoadMembersAsync();
+        }
+        catch
+        {
+            _membersError = Loc.GetOr("Page_CalendarManageModal_Members_UpdateError", "Could not update member.");
+        }
+        finally
+        {
+            _memberActionBusy = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private bool CanRemoveMember(CalendarMemberRowDto row)
+    {
+        if (row is null || row.Membership is null) return false;
+        if (!CanManageMembersForSelectedCalendar()) return false;
+
+        if (row.Membership.Role == CalendarMemberRole.Owner)
+            return false;
+
+        if (string.Equals(row.UserId, UserId, StringComparison.Ordinal))
+            return false;
+
+        return true;
+    }
+
+    private bool CanManageMembersForSelectedCalendar()
+    {
+        if (string.IsNullOrWhiteSpace(SelectedCalendarId)) return false;
+        return ManageableCalendarIds?.Contains(SelectedCalendarId) == true;
+    }
+
+    private async Task OpenRemoveMemberConfirmAsync(CalendarMemberRowDto row)
+    {
+        if (row is null || !CanRemoveMember(row))
+            return;
+
+        _pendingRemoveMember = row;
+
+        if (_confirmRemoveMember is not null)
+            await _confirmRemoveMember.ShowAsync();
+    }
+
+    private async Task ConfirmRemoveMemberAsync()
+    {
+        if (_pendingRemoveMember is null)
+            return;
+
+        var row = _pendingRemoveMember;
+        _pendingRemoveMember = null;
+
+        await RemoveMemberAsync(row);
+    }
+
+    private async Task RemoveMemberAsync(CalendarMemberRowDto row)
+    {
+        if (row is null || string.IsNullOrWhiteSpace(row.UserId) || string.IsNullOrWhiteSpace(SelectedCalendarId))
+            return;
+
+        if (!Network.IsOnline)
+        {
+            _membersError = Loc.GetOr("Page_CalendarManageModal_Members_Offline", "You must be online to remove a member.");
+            return;
+        }
+
+        _memberActionBusy = true;
+        _membersError = null;
+
+        try
+        {
+            await CalendarData.RemoveMemberAsync(SelectedCalendarId!, row.UserId, CancellationToken.None);
+            await LoadMembersAsync();
+        }
+        catch
+        {
+            _membersError = Loc.GetOr("Page_CalendarManageModal_Members_RemoveError", "Could not remove member.");
+        }
+        finally
+        {
+            _memberActionBusy = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task LoadMembersAsync()
+    {
+        var calendarId = SelectedCalendarId;
+        if (string.IsNullOrWhiteSpace(calendarId))
+        {
+            _memberRows = new();
+            _membersError = null;
+            return;
+        }
+
+        _membersLoading = true;
+        _membersError = null;
+
+        try
+        {
+            var rows = await CalendarData.GetMembersAsync(calendarId, CancellationToken.None);
+
+            if (!string.Equals(SelectedCalendarId, calendarId, StringComparison.Ordinal))
+                return;
+
+            _memberRows = rows;
+            _roleDrafts.Clear();
+            _canEditDrafts.Clear();
+            _canShareDrafts.Clear();
+            _canSeeDetailsDrafts.Clear();
+            foreach (var r in _memberRows)
+            {
+                if (string.IsNullOrWhiteSpace(r.UserId))
+                    continue;
+
+                var role = r.Membership?.Role ?? CalendarMemberRole.Reader;
+                _roleDrafts[r.UserId] = role;
+                _canShareDrafts[r.UserId] = r.Membership?.CanShare ?? false;
+
+                var perms = ResolvePermissionsFromRole(role);
+                _canEditDrafts[r.UserId] = perms.canEdit;
+                _canSeeDetailsDrafts[r.UserId] = perms.canSeeDetails;
+            }
+        }
+        catch
+        {
+            if (string.Equals(SelectedCalendarId, calendarId, StringComparison.Ordinal))
+                _membersError = Loc.GetOr("Page_CalendarManageModal_Members_LoadError", "Could not load members for this calendar.");
+        }
+        finally
+        {
+            _membersLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private bool IsOwnerForSelectedCalendar()
+    {
+        if (string.IsNullOrWhiteSpace(SelectedCalendarId))
+            return false;
+
+        return SelectedCalendar is not null &&
+               string.Equals(SelectedCalendar.OwnerUserId, UserId, StringComparison.Ordinal);
+    }
+}

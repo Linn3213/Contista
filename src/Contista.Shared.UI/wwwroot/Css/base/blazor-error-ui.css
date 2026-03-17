@@ -1,0 +1,102 @@
+﻿/* =========================================================
+   🌙 Blazor error UI
+   ========================================================= */
+#blazor-error-ui {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 12px 16px;
+    z-index: 999999;
+    box-shadow: 0 -6px 24px rgba(0,0,0,0.18);
+    display: none;
+    font-family: var(--font-sans);
+    border-top: 1px solid var(--ui-secondary);
+}
+
+    #blazor-error-ui .dismiss {
+        cursor: pointer;
+        float: right;
+        font-weight: var(--font-bold);
+        padding-left: 12px;
+    }
+
+.error-content {
+    padding: 16px;
+    background: var(--color-error-bg);
+    color: var(--color-error);
+    border-radius: var(--radius-md);
+    margin: 16px;
+    border: 1px solid rgba(139,30,30,0.25);
+}
+
+.error-content-pre {
+    white-space: pre-wrap;
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+/* Reconnect modal */
+#components-reconnect-modal {
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+    width: 20rem;
+    margin: 20vh auto;
+    padding: 2rem;
+    border: 1px solid var(--ui-secondary);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-dropdown);
+    opacity: 0;
+    transition: display 0.5s allow-discrete, overlay 0.5s allow-discrete;
+    animation: components-reconnect-modal-fadeOutOpacity 0.5s both;
+
+    &[open] {
+        animation: components-reconnect-modal-slideUp 1.5s cubic-bezier(.05, .89, .25, 1.02) 0.3s, components-reconnect-modal-fadeInOpacity 0.5s ease-in-out 0.3s;
+        animation-fill-mode: both;
+    }
+}
+
+    #components-reconnect-modal::backdrop {
+        background-color: var(--bg-overlay);
+        animation: components-reconnect-modal-fadeInOpacity 0.5s ease-in-out;
+        opacity: 1;
+    }
+
+    #components-reconnect-modal p {
+        margin: 0;
+        text-align: center;
+        color: var(--text-secondary);
+    }
+
+    /* Modal button – använd din “primary button”-logik */
+    #components-reconnect-modal button {
+        border: 0;
+        background-color: var(--ui-focus);
+        color: var(--bg-card);
+        padding: 10px 18px;
+        border-radius: var(--radius-md);
+        font-weight: var(--font-semibold);
+        box-shadow: var(--shadow-card);
+        transition: all 200ms var(--ease-default);
+    }
+
+        #components-reconnect-modal button:hover {
+            background-color: var(--text-primary);
+            box-shadow: var(--shadow-hover);
+        }
+
+        #components-reconnect-modal button:focus {
+            outline: 3px solid var(--ui-primary);
+            outline-offset: 2px;
+        }
+
+/* Rejoining animation – byt blå till neutral focus */
+.components-rejoining-animation div {
+    position: absolute;
+    border: 3px solid var(--ui-focus);
+    opacity: 1;
+    border-radius: 50%;
+    animation: components-rejoining-animation 1.5s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+}

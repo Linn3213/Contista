@@ -1,0 +1,3 @@
+﻿export function trapFocus(containerId) {
+    // senare…
+}

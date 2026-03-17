@@ -1,0 +1,46 @@
+﻿/* =========================================================
+   Progress bars
+   ========================================================= */
+.progress {
+    background-color: var(--bg-secondary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    border: 1px solid var(--border-default);
+    box-shadow: inset 0 1px 0 rgba(0,0,0,0.03);
+}
+
+.progress-bar {
+    color: var(--bg-card);
+    font-weight: var(--font-medium);
+}
+
+    /* Bootstrap variants -> mappa till WCAG feedback */
+    .progress-bar.bg-success {
+        background-color: var(--color-success) !important;
+    }
+
+    .progress-bar.bg-danger {
+        background-color: var(--color-error) !important;
+    }
+
+    .progress-bar.bg-warning {
+        background-color: var(--color-warning) !important;
+    }
+
+    .progress-bar.bg-info {
+        background-color: var(--color-info) !important;
+    }
+
+    /* Neutrala */
+    .progress-bar.bg-primary {
+        background-color: var(--ui-focus) !important;
+    }
+
+    .progress-bar.bg-secondary {
+        background-color: var(--ui-primary) !important;
+    }
+
+    /* Om du vill ha en “success-gradient” (valfri) – men fortfarande WCAG-mässigt */
+    .progress-bar.bg-success.progress-bar-gradient {
+        background: linear-gradient( 90deg, var(--color-success) 0%, var(--color-warning) 55%, var(--color-error) 100% ) !important;
+    }

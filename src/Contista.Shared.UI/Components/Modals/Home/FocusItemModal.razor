@@ -1,0 +1,311 @@
+﻿@* FocusItemModal.razor *@
+@inject IJSRuntime JS
+
+@if (IsOpen)
+{
+    <div class="focus-modalOverlay" role="presentation" @onclick="OnOverlayClick">
+        <div class="focus-modal"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="@_titleId"
+             @onclick:stopPropagation="true"
+             @onkeydown="OnModalKeyDown">
+
+            <div class="focus-modal__header">
+                <div class="focus-modal__titleWrap">
+                    <h3 id="@_titleId" class="focus-modal__title">@HeaderTitle</h3>
+                    <div class="focus-modal__subtitle">@HeaderSubtitle</div>
+                </div>
+
+                <button type="button"
+                        class="focus-modal__close"
+                        aria-label="@(Loc?["Common_Actions_Close"] ?? "Close")"
+                        @onclick="CloseAsync">
+                    <i class="bi bi-x-lg" aria-hidden="true"></i>
+                </button>
+            </div>
+
+            <div class="focus-modal__body">
+
+                <div class="focus-formRow">
+                    <label class="focus-label">
+                        @(Loc?["Page_TodaysFocusSection_Add_Field_Title_Label"] ?? "Title")
+                        <span class="focus-required">*</span>
+                    </label>
+
+                    <input id="@_titleInputId"
+                           class="form-control focus-input"
+                           @bind="_title"
+                           @bind:event="oninput"
+                           maxlength="120"
+                           placeholder="@(Loc?["Page_TodaysFocusSection_Add_Field_Title_Placeholder"] ?? "e.g. Plan your posts")" />
+
+                    @if (_showValidation && string.IsNullOrWhiteSpace(_title))
+                    {
+                        <div class="focus-error">
+                            @(Loc?["Page_TodaysFocusSection_Add_TitleRequired"] ?? "Title is required.")
+                        </div>
+                    }
+                </div>
+
+                <div class="focus-formRow">
+                    <label class="focus-label">
+                        @(Loc?["Page_TodaysFocusSection_Add_Field_Description_Label"] ?? "Description")
+                        <span class="focus-optional">
+                            @(Loc?["Common_Actions_Optional"] ?? "Optional")
+                        </span>
+                    </label>
+
+                    <textarea class="form-control focus-input focus-textarea"
+                              @bind="_description"
+                              @bind:event="oninput"
+                              maxlength="260"
+                              rows="3"
+                              placeholder="@(Loc?["Page_TodaysFocusSection_Add_Field_Description_Placeholder"] ?? "Short description (optional)")"></textarea>
+                </div>
+
+                <div class="focus-formRow">
+                    <label class="focus-label">
+                        @(Loc?["Page_TodaysFocusSection_Add_Field_Icon_Label"] ?? "Icon")
+                        <span class="focus-optional me-2">
+                            @(Loc?["Common_Actions_Optional"] ?? "Optional")
+                        </span>
+                    </label>
+
+                    <div class="focus-iconPicker" aria-label="Bootstrap icon picker">
+
+                        <!-- Ingen ikon -->
+                        @{
+                            var noneSelected = string.IsNullOrEmpty(_iconClass);
+                        }
+                        <button type="button"
+                                class="focus-iconOption focus-iconOption--none @(string.IsNullOrEmpty(_iconClass) ? "is-selected" : "")"
+                                aria-pressed="@noneSelected"
+                                title="@(Loc?["Common_Action_NoIcon"] ?? "No icon")"
+                                @onclick="ClearIcon">
+                            <i class="bi bi-slash-circle" aria-hidden="true"></i>
+                            <span>@(Loc?["Common_Action_NoIcon"] ?? "No icon")</span>
+                        </button>
+
+                        <!-- Vanliga ikoner -->
+                        @foreach (var icon in EffectiveIcons)
+                        {
+                            var selected = string.Equals(_iconClass, icon, StringComparison.Ordinal);
+
+                            <button type="button"
+                                    class="focus-iconOption @(selected ? "is-selected" : "")"
+                                    aria-pressed="@selected"
+                                    title="@icon"
+                                    @onclick="() => SelectIcon(icon)">
+                                <i class="bi @icon" aria-hidden="true"></i>
+                            </button>
+                        }
+                    </div>
+
+                    <div class="focus-hint">
+                        @(Loc?["Page_TodaysFocusSection_Add_Field_Icon_PickerHint"] ?? "Choose an icon or leave empty.")
+                    </div>
+                </div>
+
+                <div class="focus-formGrid">
+                    <div class="focus-formRow">
+                        <label class="focus-label">
+                            @(Loc?["Page_TodaysFocusSection_Add_Field_Link_Label"] ?? "Link")
+                            <span class="focus-optional">
+                                @(Loc?["Common_Actions_Optional"] ?? "Optional")
+                            </span>
+                        </label>
+
+                        <input class="form-control focus-input"
+                               @bind="_href"
+                               @bind:event="oninput"
+                               maxlength="200"
+                               placeholder="/app/calendar" />
+
+                        <div class="focus-hint">
+                            @(Loc?["Page_TodaysFocusSection_Add_Field_Link_Hint"] ?? "Optional. If set, the row becomes a link.")
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="focus-modal__footer">
+                <button type="button" class="btn btn-outline-secondary" @onclick="CloseAsync">
+                    @(Loc?["Common_Actions_Cancel"] ?? "Cancel")
+                </button>
+
+                <button type="button"
+                        class="btn btn-primary"
+                        @onclick="SaveAsync">
+                    @(Loc?["Common_Actions_Save"] ?? "Save")
+                </button>
+            </div>
+
+        </div>
+    </div>
+}
+
+@code {
+    [CascadingParameter] public ILocalizationService? Loc { get; set; }
+
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public EventCallback<bool> IsOpenChanged { get; set; }
+
+    [Parameter] public FocusItemModalMode Mode { get; set; } = FocusItemModalMode.Add;
+    [Parameter] public FocusItem? InitialItem { get; set; }
+
+    [Parameter] public EventCallback<FocusItemModalResult> OnSave { get; set; }
+
+    [Parameter] public string[]? IconExamples { get; set; }
+    [Parameter] public string? DefaultIconClass { get; set; } = "bi-check2-circle";
+
+    [Parameter] public string? HeaderTitleOverride { get; set; }
+    [Parameter] public string? HeaderSubtitleOverride { get; set; }
+
+    private bool _showValidation;
+    private bool _focusTitleOnNextRender;
+    private bool _hasLoadedForThisOpen;
+
+    private string _title = "";
+    private string _description = "";
+    private string _iconClass = "";
+    private string _href = "";
+
+    private readonly string _titleInputId = $"focusTitle_{Guid.NewGuid():N}";
+    private readonly string _titleId = $"focusHdr_{Guid.NewGuid():N}";
+
+    private string[] EffectiveIcons => (IconExamples is { Length: > 0 }) ? IconExamples : DefaultIcons;
+
+    private string HeaderTitle =>
+        HeaderTitleOverride
+        ?? (Mode == FocusItemModalMode.Edit
+            ? (Loc?["Page_TodaysFocusSection_Edit_Header"] ?? "Edit task")
+            : (Loc?["Page_TodaysFocusSection_Add_Header"] ?? "Add task"));
+
+    private string HeaderSubtitle =>
+        HeaderSubtitleOverride
+        ?? (Mode == FocusItemModalMode.Edit
+            ? (Loc?["Page_TodaysFocusSection_Edit_Subtitle"] ?? "Update your task")
+            : (Loc?["Page_TodaysFocusSection_Add_Subtitle"] ?? "Create a new task for today"));
+
+    protected override void OnParametersSet()
+    {
+        // Ladda bara en gång per "öppning"
+        if (IsOpen && !_hasLoadedForThisOpen)
+        {
+            LoadFromParameters();
+            _focusTitleOnNextRender = true;
+            _hasLoadedForThisOpen = true;
+        }
+
+        if (!IsOpen)
+            _hasLoadedForThisOpen = false;
+    }
+
+    private void LoadFromParameters()
+    {
+        _showValidation = false;
+
+        if (Mode == FocusItemModalMode.Edit && InitialItem is not null)
+        {
+            _title = InitialItem.Title ?? "";
+            _description = InitialItem.Description ?? "";
+            _iconClass = InitialItem.IconClass ?? "";
+            _href = InitialItem.Href ?? "";
+            return;
+        }
+
+        // Add defaults
+        _title = "";
+        _description = "";
+        _iconClass = DefaultIconClass ?? "";
+        _href = "";
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (IsOpen && _focusTitleOnNextRender)
+        {
+            _focusTitleOnNextRender = false;
+            await JS.InvokeVoidAsync("contista.focus.focusById", _titleInputId);
+        }
+    }
+
+    private async Task CloseAsync()
+    {
+        if (IsOpenChanged.HasDelegate)
+            await IsOpenChanged.InvokeAsync(false);
+    }
+
+    private async Task OnOverlayClick()
+        => await CloseAsync();
+
+    private async Task OnModalKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key is "Escape")
+            await CloseAsync();
+    }
+
+    private void SelectIcon(string icon)
+    {
+        _iconClass = icon;
+        _showValidation = false;
+    }
+
+    private void ClearIcon()
+    {
+        _iconClass = "";
+        _showValidation = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_title))
+        {
+            _showValidation = true;
+            return;
+        }
+
+        var item = new FocusItem
+        {
+            Title = _title.Trim(),
+            Description = string.IsNullOrWhiteSpace(_description) ? null : _description.Trim(),
+            IconClass = string.IsNullOrWhiteSpace(_iconClass) ? null : _iconClass.Trim(),
+            Href = string.IsNullOrWhiteSpace(_href) ? null : _href.Trim(),
+            IsDone = InitialItem?.IsDone ?? false
+        };
+
+        if (OnSave.HasDelegate)
+            await OnSave.InvokeAsync(new FocusItemModalResult(Mode, item));
+
+        await CloseAsync();
+    }
+
+    private static readonly string[] DefaultIcons =
+    {
+        "bi-bullseye",
+        "bi-calendar-week",
+        "bi-check2-circle",
+        "bi-list-check",
+        "bi-lightning-charge",
+        "bi-megaphone",
+        "bi-pencil-square",
+        "bi-journal-text",
+        "bi-chat-dots",
+        "bi-camera",
+        "bi-graph-up",
+        "bi-stars",
+        "bi-rocket-takeoff",
+        "bi-alarm",
+        "bi-clock",
+        "bi-bookmark",
+        "bi-pin-angle",
+        "bi-link-45deg",
+        "bi-globe",
+        "bi-people",
+        "bi-person-heart",
+        "bi-heart",
+        "bi-award"
+    };
+}

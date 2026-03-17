@@ -1,0 +1,50 @@
+﻿@* SamplesNav.razor component *@
+<nav class="samples-nav card mb-3 p-3 sticky-top">
+    <div class="d-flex align-items-center justify-content-between mb-2">
+        <div class="fw-bold">@Title</div>
+
+        <button type="button" class="btn btn-sm btn-outline-secondary"
+                @onclick="Toggle" aria-expanded="@isOpen">
+            <i class="bi bi-list" aria-hidden="true"></i>
+        </button>
+    </div>
+
+    <div class="samples-nav-list @(isOpen ? "is-open" : "")">
+        @foreach (var item in Items)
+        {
+            <button type="button"
+                    class="samples-nav-link btn btn-link p-0 text-start"
+                    @onclick="() => GoTo(item.Id)">
+                <i class="@item.IconClass" aria-hidden="true"></i>
+                <span>@item.Label</span>
+            </button>
+        }
+    </div>
+</nav>
+
+
+@code {
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    [Parameter] public string Title { get; set; } = "Components";
+    [Parameter, EditorRequired] public IReadOnlyList<SamplesNavItem> Items { get; set; } = Array.Empty<SamplesNavItem>();
+
+    private bool isOpen = false; // ✅ starta stängd
+
+    private void Toggle() => isOpen = !isOpen;
+
+    private async Task GoTo(string id)
+    {
+        // Om du vill auto-stänga:
+        isOpen = false;
+        await InvokeAsync(StateHasChanged);
+        await Task.Yield(); // viktigt: låt layouten uppdateras innan vi mäter offset
+
+        // Lägg in selectors som ska räknas in i offseten (sticky/fixed)
+        var offsetSelectors = new[] { ".samples-nav" /*, ".topbar" */ };
+
+        await JS.InvokeVoidAsync("contista.samplesNav.scrollToIdAuto", id, offsetSelectors, 15);
+    }
+
+    public record SamplesNavItem(string Id, string Label, string IconClass);
+}

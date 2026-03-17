@@ -1,0 +1,36 @@
+﻿/* =========================================================
+   LINKS
+   ========================================================= */
+
+a {
+    color: var(--ui-focus);
+    text-decoration: none;
+    transition: color var(--transition-fast) var(--ease-default), background-color var(--transition-fast) var(--ease-default);
+}
+
+    a:hover {
+        color: var(--text-primary);
+        text-decoration: none;
+    }
+
+    a:active {
+        color: var(--ui-primary);
+    }
+
+    a:visited {
+        color: var(--ui-focus);
+    }
+
+    /* Button-like links */
+    a.btn-link {
+        color: var(--ui-focus);
+        font-weight: var(--font-semibold);
+        border-radius: var(--radius-sm);
+        padding: 0.5rem 1rem;
+    }
+
+        a.btn-link:hover {
+            color: var(--text-primary);
+            background-color: var(--bg-secondary);
+            text-decoration: none;
+        }

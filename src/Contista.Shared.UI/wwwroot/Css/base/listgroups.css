@@ -1,0 +1,65 @@
+﻿/* =========================================================
+   🧩 LISTS GROUPS
+   ========================================================= */
+
+.list-group {
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 1px solid var(--border-default);
+    background: var(--bg-card);
+}
+
+.list-group-item {
+    border: 0;
+    border-bottom: 1px solid var(--border-default);
+    padding: 0.75rem 1rem;
+    color: var(--text-secondary);
+    background-color: var(--bg-card);
+}
+
+    .list-group-item:last-child {
+        border-bottom: 0;
+    }
+
+    .list-group-item:hover {
+        background-color: var(--bg-secondary);
+        color: var(--text-primary);
+    }
+
+    /* Active state */
+    .list-group-item.active {
+        background-color: var(--bg-secondary);
+        border-left: 4px solid var(--ui-focus);
+        color: var(--text-primary);
+        font-weight: var(--font-semibold);
+    }
+
+/* Bootstrap variant classes – mappa till feedback */
+.list-group-item-success {
+    background-color: var(--color-success-bg);
+    color: var(--color-success);
+}
+
+.list-group-item-danger {
+    background-color: var(--color-error-bg);
+    color: var(--color-error);
+}
+
+.list-group-item-warning {
+    background-color: var(--color-warning-bg);
+    color: var(--color-warning);
+}
+
+.list-group-item-info {
+    background-color: var(--color-info-bg);
+    color: var(--color-info);
+}
+
+/* Neutrala */
+.list-group-item-primary,
+.list-group-item-secondary,
+.list-group-item-light,
+.list-group-item-dark {
+    background-color: var(--bg-card);
+    color: var(--text-secondary);
+}

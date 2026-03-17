@@ -1,0 +1,688 @@
+﻿@* CalendarDayEventsModal.razor *@
+@using Contista.Shared.Core.DTO.Calendar
+@using Contista.Shared.Core.Models.Calendar
+@using Contista.Shared.UI.Utils
+@using Contista.Shared.UI.Components.Modals
+@using Contista.Shared.UI.Components.Calendar
+@using Contista.Shared.UI.Components.Common
+
+@if (IsOpen)
+{
+    <div class="cal-modalOverlay" @onclick="CloseAsync">
+        <div class="cal-modal cal-dayModal" @onclick:stopPropagation="true">
+            <div class="cal-modalHeader cal-dayModalHeader">
+                <div class="cal-dayModalHeaderLeft">
+                    <div class="cal-dayModalTitleRow">
+                        <div class="cal-modalTitle">@HeaderDate</div>
+
+                        @if (!IsSingleMode)
+                        {
+                            <IconButton IconClass="bi bi-plus-lg"
+                                        Title="@Loc.GetOr("Common_Actions_Add", "Add")"
+                                        AriaLabel="@Loc.GetOr("Common_Actions_Add", "Add")"
+                                        Size="sm"
+                                        Tone="ghost"
+                                        Class="cal-dayModalIconBtn"
+                                        OnClick="@(e => AddAsync())" />
+                        }
+                    </div>
+
+                    <div class="cal-modalSub">@SubText</div>
+                </div>
+
+                <IconButton IconClass="bi bi-x-lg"
+                            Title="@Loc.GetOr("Common_Actions_Close", "Close")"
+                            AriaLabel="@Loc.GetOr("Common_Actions_Close", "Close")"
+                            Size="sm"
+                            Tone="ghost"
+                            Class="cal-dayModalIconBtn cal-dayModalCloseBtn"
+                            OnClick="@(e => CloseAsync())" />
+            </div>
+
+            <div class="cal-modalBody cal-dayEvent-modalBody">
+                @if (VisibleEvents.Count == 0)
+                {
+                    <div class="cal-statusPanel cal-statusPanel-neutral">
+                        @Loc.GetOr("Page_Calendar_NoEventsForDay", "No events for this day.")
+                    </div>
+                }
+                else
+                {
+                    <div class="cal-dayList">
+                        @foreach (var ev in VisibleEvents.OrderBy(e => e.StartUtc).ThenBy(e => e.Title))
+                        {
+                            var id = ev.EventId ?? "";
+                            var expanded = !string.IsNullOrWhiteSpace(id) && _expandedIds.Contains(id);
+                            var hex = ResolveHex(ev.CalendarId);
+                            var calName = CalendarIdToName?.Invoke(ev.CalendarId);
+                            var effVis = EffectiveVisibility(ev);
+                            var canShowDetails = effVis == CalendarVisibility.Details;
+
+                            <div class="cal-dayItem @(expanded ? "is-open" : "")" style="--cal-accent:@hex">
+                                <div class="cal-dayRow"
+                                     role="button"
+                                     tabindex="0"
+                                     @onclick="() => ToggleIfDetails(ev)">
+
+                                    <div class="cal-dayRowMain">
+                                        <CalendarEventCard Ev="ev"
+                                                           Variant="list"
+                                                           SpacedRange="true"
+                                                           CurrentUserId="@CurrentUserId" />
+                                    </div>
+
+                                    <div class="cal-dayRowSide" @onclick:stopPropagation="true">
+                                        @if (!HideActions)
+                                        {
+                                            <div class="cal-dayRowActions">
+                                                @{
+                                                    var seriesId = ev.Recurrence?.SeriesId ?? ev.OccurrenceOverrideSeriesId;
+                                                    var isInSeries = !string.IsNullOrWhiteSpace(seriesId);
+                                                }
+
+                                                @if (!isInSeries)
+                                                {
+                                                    <IconButton IconClass="bi bi-pencil"
+                                                                Title="@Loc.GetOr("Common_Actions_Edit", "Edit")"
+                                                                AriaLabel="@Loc.GetOr("Common_Actions_Edit", "Edit")"
+                                                                Size="sm"
+                                                                Tone="ghost"
+                                                                Class="cal-dayRowIconBtn"
+                                                                StopPropagation="true"
+                                                                OnClick="@(e => OnEditRequested.InvokeAsync(ev))" />
+                                                }
+                                                else
+                                                {
+                                                    <div class="dropdown cal-editDropdown">
+                                                        <button type="button"
+                                                                class="ui-iconBtn ui-iconBtn--sm ui-iconBtn--ghost cal-dayRowIconBtn cal-editBtn dropdown-toggle"
+                                                                data-bs-toggle="dropdown"
+                                                                data-bs-display="static"
+                                                                aria-expanded="false"
+                                                                title="@Loc.GetOr("Common_Actions_Edit", "Edit")"
+                                                                aria-label="@Loc.GetOr("Common_Actions_Edit", "Edit")"
+                                                                @onclick:stopPropagation="true">
+                                                            <i class="bi bi-pencil" aria-hidden="true"></i>
+                                                        </button>
+
+                                                        <ul class="dropdown-menu dropdown-menu-end cal-dayDropdownMenu">
+                                                            <li>
+                                                                <button type="button"
+                                                                        class="dropdown-item"
+                                                                        @onclick="() => OnEditRequested.InvokeAsync(ev)">
+                                                                    @Loc.GetOr("Calendar_Edit_This", "Edit this event")
+                                                                </button>
+                                                            </li>
+
+                                                            <li>
+                                                                <button type="button"
+                                                                        class="dropdown-item"
+                                                                        @onclick="() => OnEditSeriesRequested.InvokeAsync(ev)">
+                                                                    @Loc.GetOr("Calendar_Edit_Series", "Edit entire series")
+                                                                </button>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                }
+
+                                                <IconButton IconClass="bi bi-trash"
+                                                            Title="@Loc.GetOr("Common_Actions_Delete", "Delete")"
+                                                            AriaLabel="@Loc.GetOr("Common_Actions_Delete", "Delete")"
+                                                            Size="sm"
+                                                            Tone="ghost"
+                                                            Class="cal-dayRowIconBtn"
+                                                            StopPropagation="true"
+                                                            OnClick="@(e => DeleteClickedAsync(ev))" />
+
+                                                @if (canShowDetails)
+                                                {
+                                                    <IconButton IconClass="@(expanded ? "bi bi-chevron-up" : "bi bi-chevron-down")"
+                                                                Title="@Loc.GetOr("Common_Actions_More", "More")"
+                                                                AriaLabel="@Loc.GetOr("Common_Actions_More", "More")"
+                                                                Size="sm"
+                                                                Tone="ghost"
+                                                                Class="cal-dayRowIconBtn"
+                                                                StopPropagation="true"
+                                                                OnClick="@(e => { ToggleIfDetails(ev); return Task.CompletedTask; })" />
+                                                }
+                                            </div>
+                                        }
+
+                                        @if (!string.IsNullOrWhiteSpace(calName))
+                                        {
+                                            <span class="cal-dayRowCalBadge" title="@calName">
+                                                @calName
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+
+                                @if (canShowDetails)
+                                {
+                                    <div class="cal-dayExpand @(expanded ? "is-open" : "")">
+                                        <div class="cal-dayExpandInner">
+
+                                            <div class="cal-dayDetailTopRow">
+                                                <div class="cal-dayDetailTitle">@ev.Title</div>
+
+                                                <span class="badge bg-warning cal-dayTypeBadge">
+                                                    @TypeLabel(ev.Type)
+                                                </span>
+                                            </div>
+
+                                            @{
+                                                var creatorName = ResolveUserName(ev.CreatedById);
+                                            }
+
+                                            @if (!string.IsNullOrWhiteSpace(ev.CreatedById))
+                                            {
+                                                <div class="cal-dayMetaRow">
+                                                    <span class="cal-dayMetaLabel">@Loc.GetOr("Common_CreatedBy", "Created by")</span>
+                                                    <span class="cal-dayMetaValue">@(!string.IsNullOrWhiteSpace(creatorName) ? creatorName : ev.CreatedById)</span>
+                                                </div>
+                                            }
+
+                                            @if (!string.IsNullOrWhiteSpace(ev.Description))
+                                            {
+                                                <div class="cal-dayDetailSection">
+                                                    <div class="cal-dayDetailLabel">@Loc.GetOr("Common_Description", "Description")</div>
+                                                    <div class="cal-dayDetailText">@ev.Description</div>
+                                                </div>
+                                            }
+
+                                            @if (CalendarLocationHelper.HasValue(ev.Location))
+                                            {
+                                                <div class="cal-dayDetailSection">
+                                                    <div class="cal-dayDetailLabel">@Loc.GetOr("Common_Location", "Location")</div>
+
+                                                    <div class="cal-dayLocationRow">
+                                                        <div class="cal-dayDetailRow cal-dayLocationValue">
+                                                            <i class="bi @(CalendarLocationHelper.IsLinkLike(ev.Location) ? "bi-link-45deg" : "bi-geo-alt")"
+                                                               aria-hidden="true"></i>
+                                                            <span>@CalendarLocationHelper.GetDisplayText(ev.Location)</span>
+                                                        </div>
+
+                                                        <a class="ui-iconBtn ui-iconBtn--sm ui-iconBtn--ghost cal-dayLocationIconBtn"
+                                                           target="_blank"
+                                                           rel="noopener"
+                                                           href="@CalendarLocationHelper.BuildOpenHref(ev.Location)"
+                                                           aria-label="@CalendarLocationHelper.GetOpenLabel(Loc, ev.Location)"
+                                                           title="@CalendarLocationHelper.GetOpenLabel(Loc, ev.Location)">
+                                                            <i class="bi @(CalendarLocationHelper.IsLinkLike(ev.Location) ? "bi-box-arrow-up-right" : "bi-map")"
+                                                               aria-hidden="true"></i>
+                                                        </a>
+                                                    </div>
+
+                                                    @if (!CalendarLocationHelper.IsLinkLike(ev.Location))
+                                                    {
+                                                        <div class="cal-dayLocationMapPreview">
+                                                            <iframe title="@Loc.GetOr("Common_Action_OpenMap", "Open map")"
+                                                                    loading="lazy"
+                                                                    referrerpolicy="no-referrer-when-downgrade"
+                                                                    src="@GetLocationMapEmbedUrl(ev.Location)">
+                                                            </iframe>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+
+                                            <div class="cal-dayDetailGrid">
+                                                <div class="cal-dayDetailKv">
+                                                    <div class="cal-dayDetailLabel">@Loc.GetOr("Common_Availability", "Availability")</div>
+                                                    <div class="cal-dayDetailValue">@AvailabilityLabel(ev.Availability)</div>
+                                                </div>
+
+                                                <div class="cal-dayDetailKv">
+                                                    <div class="cal-dayDetailLabel">@Loc.GetOr("Common_Visibility", "Visibility")</div>
+                                                    <div class="cal-dayDetailValue">@VisibilityLabel(ev.Visibility)</div>
+                                                </div>
+
+                                                @if (ev.Reminders is { Count: > 0 })
+                                                {
+                                                    <div class="cal-dayDetailKv">
+                                                        <div class="cal-dayDetailLabel">@Loc.GetOr("Common_Reminders", "Reminders")</div>
+                                                        <div class="cal-dayDetailValue">@RemindersText(ev.Reminders)</div>
+                                                    </div>
+                                                }
+
+                                                @if (HasRecurrence(ev))
+                                                {
+                                                    <div class="cal-dayDetailKv">
+                                                        <div class="cal-dayDetailLabel">@Loc.GetOr("Common_Recurrence", "Recurrence")</div>
+                                                        <div class="cal-dayDetailValue">@RecurrenceText(ev)</div>
+                                                    </div>
+                                                }
+
+                                                @if (ev.Type == CalendarEventType.Task)
+                                                {
+                                                    <div class="cal-dayDetailKv">
+                                                        <div class="cal-dayDetailLabel">@Loc.GetOr("Common_Actions_Done", "Done")</div>
+                                                        <div class="cal-dayDetailValue">
+                                                            @(ev.IsDone? Loc.GetOr("Common_Actions_Yes", "Yes") : Loc.GetOr("Common_Actions_No", "No"))
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
+
+                                            @if (ev.Checklist is { Count: > 0 })
+                                            {
+                                                <div class="cal-dayDetailSection">
+                                                    <div class="cal-dayDetailLabel">@Loc.GetOr("Common_Checklist", "Checklist")</div>
+
+                                                    <div class="cal-dayChecklist">
+                                                        @foreach (var item in ev.Checklist.OrderBy(i => i.Order))
+                                                        {
+                                                            <label class="cal-dayChecklistItem">
+                                                                <input type="checkbox"
+                                                                       checked="@item.Done"
+                                                                       @onchange="(e) => ChecklistChanged(ev, item, e)" />
+                                                                <span class="cal-dayChecklistText">@item.Text</span>
+                                                            </label>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            }
+
+                                            <div class="cal-dayMeta">
+                                                <div class="cal-dayMetaDates">
+                                                    <div class="cal-dayMetaKv">
+                                                        <span class="cal-dayMetaLabelInline">@Loc.GetOr("Common_CreatedAt", "Created"):</span>
+                                                        <span class="cal-dayMetaValueFooter">@FormatUtcAsLocal(ev.CreatedAtUtc)</span>
+                                                    </div>
+
+                                                    <div class="cal-dayMetaKv">
+                                                        <span class="cal-dayMetaLabelInline">@Loc.GetOr("Common_UpdatedAt", "Updated"):</span>
+                                                        <span class="cal-dayMetaValueFooter">@FormatUtcAsLocal(ev.UpdatedAtUtc)</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="cal-modalFooter">
+                <button type="button" class="btn btn-ghost" @onclick="CloseAsync">
+                    @Loc.GetOr("Common_Actions_Close", "Close")
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <ConfirmModal @ref="_deleteConfirm"
+                  Variant="danger"
+                  ModalOptions="@(new { backdrop = false, keyboard = false })"
+                  Title="@Loc.GetOr("Common_ConfirmModel_Delete_Title", "Delete")"
+                  Message="@Loc.GetOr("Common_ConfirmModel_Delete_Message", "Are you sure your want to delete this?")"
+                  CancelText="@Loc.GetOr("Common_Actions_Cancel", "Cancel")"
+                  ConfirmText="@Loc.GetOr("Common_Actions_Delete", "Delete")"
+                  CloseAriaLabel="@Loc.GetOr("Common_Actions_Close", "Close")"
+                  IsBusy="@_deleteBusy"
+                  OnConfirm="ConfirmDeleteAsync" />
+}
+
+@code {
+    [CascadingParameter] public ILocalizationService Loc { get; set; } = default!;
+
+    [Parameter] public CalendarEventDto? SingleEvent { get; set; }
+
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public EventCallback<bool> IsOpenChanged { get; set; }
+
+    [Parameter] public DateTime DateLocal { get; set; }
+    [Parameter] public List<CalendarEventDto> Events { get; set; } = new();
+    [Parameter] public IEnumerable<CalendarEventDto>? AllEvents { get; set; }
+
+    [Parameter] public Func<string?, string>? CalendarIdToHex { get; set; }
+    [Parameter] public Func<string?, string?>? CalendarIdToName { get; set; }
+
+    [Parameter] public EventCallback<DateTime> OnAddRequested { get; set; }
+    [Parameter] public EventCallback<CalendarEventDto> OnEditRequested { get; set; }
+    [Parameter] public EventCallback<CalendarEventDto> OnEditSeriesRequested { get; set; }
+    [Parameter] public EventCallback<CalendarEventDto> OnDeleteRequested { get; set; }
+    [Parameter] public EventCallback<(CalendarEventDto Ev, int Order, bool Done)> OnChecklistToggled { get; set; }
+
+    [Parameter] public Func<string, RecurrenceDto?>? SeriesIdToRecurrence { get; set; }
+    [Parameter] public Func<string?, string?>? UserIdToName { get; set; }
+
+    [Parameter] public string CurrentUserId { get; set; } = "";
+    [Parameter] public Func<string?, bool>? CanSeeDetailsForCalendar { get; set; }
+    [Parameter] public string? FocusEventId { get; set; } = null;
+    [Parameter] public bool HideActions { get; set; } = false;
+
+    // Parent increments this whenever modal data should be treated as refreshed.
+    [Parameter] public int RefreshKey { get; set; }
+
+    [Parameter]
+    public DateTime DayLocal
+    {
+        get => DateLocal;
+        set => DateLocal = value;
+    }
+
+    private bool IsSingleMode => SingleEvent is not null;
+    private readonly HashSet<string> _expandedIds = new(StringComparer.Ordinal);
+    private ConfirmModal? _deleteConfirm;
+    private CalendarEventDto? _pendingDeleteEvent;
+    private bool _deleteBusy;
+
+    private string? _lastAppliedFocusEventId;
+    private int _lastAppliedRefreshKey = -1;
+    private bool _lastWasOpen;
+
+    private CalendarVisibility EffectiveVisibility(CalendarEventDto ev)
+        => CalendarVisibilityPolicy.EffectiveVisibility(ev, CurrentUserId);
+
+    private string HeaderDate
+        => IsSingleMode
+            ? DateTimes.ToLocalFromUtc(SingleEvent!.StartUtc).Date.ToString("yyyy-MM-dd")
+            : DateLocal.ToString("yyyy-MM-dd");
+
+    private string SubText
+        => IsSingleMode
+            ? Loc.GetOr("Page_Calendar_EventDetails_Sub", "Event details")
+            : string.Format(
+                Loc.GetOr("Page_Calendar_DayModal_Sub", "Day's {0} events"),
+                VisibleEvents.Count.ToString());
+
+    private List<CalendarEventDto> VisibleEvents
+    {
+        get
+        {
+            var src = IsSingleMode
+                ? new List<CalendarEventDto> { SingleEvent! }
+                : (Events ?? new List<CalendarEventDto>());
+
+            return src
+                .Where(e => e is not null && !CalendarVisibilityPolicy.IsHidden(e, CurrentUserId))
+                .ToList();
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (!IsOpen)
+        {
+            _lastWasOpen = false;
+            _lastAppliedFocusEventId = null;
+            _lastAppliedRefreshKey = RefreshKey;
+            _expandedIds.Clear();
+            base.OnParametersSet();
+            return;
+        }
+
+        var reopened = !_lastWasOpen;
+        var refreshChanged = _lastAppliedRefreshKey != RefreshKey;
+        var focusChanged = !string.Equals(_lastAppliedFocusEventId, FocusEventId, StringComparison.Ordinal);
+
+        if (reopened || refreshChanged || focusChanged)
+        {
+            if (IsSingleMode && SingleEvent is not null && !string.IsNullOrWhiteSpace(SingleEvent.EventId))
+            {
+                _expandedIds.Clear();
+
+                if (EffectiveVisibility(SingleEvent) == CalendarVisibility.Details)
+                    _expandedIds.Add(SingleEvent.EventId!);
+            }
+            else if (!string.IsNullOrWhiteSpace(FocusEventId))
+            {
+                _expandedIds.Clear();
+
+                if (VisibleEvents.Any(e => string.Equals(e.EventId, FocusEventId, StringComparison.Ordinal)))
+                    _expandedIds.Add(FocusEventId!);
+            }
+            else if (refreshChanged && !IsSingleMode)
+            {
+                // Keep only still-existing expanded ids after a refresh
+                var validIds = VisibleEvents
+                    .Where(e => !string.IsNullOrWhiteSpace(e.EventId))
+                    .Select(e => e.EventId!)
+                    .ToHashSet(StringComparer.Ordinal);
+
+                _expandedIds.RemoveWhere(id => !validIds.Contains(id));
+            }
+
+            _lastAppliedFocusEventId = FocusEventId;
+            _lastAppliedRefreshKey = RefreshKey;
+        }
+
+        _lastWasOpen = true;
+
+        base.OnParametersSet();
+    }
+
+    private async Task DeleteClickedAsync(CalendarEventDto ev)
+    {
+        _pendingDeleteEvent = ev;
+
+        var title = Loc.GetOr("Common_Actions_Delete", "Delete");
+        var msg = $"{Loc.GetOr("Common_Confirm_Delete_Text", "Are you sure you want to delete")} “{ev.Title}”?";
+
+        if (_deleteConfirm is not null)
+            await _deleteConfirm.ShowAsync(title: title, message: msg);
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_pendingDeleteEvent is null)
+            return;
+
+        try
+        {
+            _deleteBusy = true;
+            await InvokeAsync(StateHasChanged);
+
+            if (OnDeleteRequested.HasDelegate)
+                await OnDeleteRequested.InvokeAsync(_pendingDeleteEvent);
+        }
+        finally
+        {
+            _deleteBusy = false;
+            _pendingDeleteEvent = null;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task ChecklistChanged(CalendarEventDto ev, ChecklistItemDto item, ChangeEventArgs e)
+    {
+        var done = e.Value is bool b && b;
+        item.Done = done;
+        await OnChecklistToggled.InvokeAsync((ev, item.Order, done));
+    }
+
+    private string ResolveHex(string? calendarId)
+    {
+        if (CalendarIdToHex is null)
+            return "#2B2622";
+
+        var hex = CalendarIdToHex(calendarId);
+        return string.IsNullOrWhiteSpace(hex) ? "#2B2622" : hex;
+    }
+
+    private string? ResolveUserName(string? userId)
+    {
+        if (string.IsNullOrWhiteSpace(userId))
+            return null;
+
+        return UserIdToName?.Invoke(userId);
+    }
+
+    private void Toggle(CalendarEventDto ev)
+    {
+        var id = ev.EventId ?? "";
+        if (string.IsNullOrWhiteSpace(id))
+            return;
+
+        if (_expandedIds.Contains(id)) _expandedIds.Remove(id);
+        else _expandedIds.Add(id);
+    }
+
+    private void ToggleIfDetails(CalendarEventDto ev)
+    {
+        if (EffectiveVisibility(ev) != CalendarVisibility.Details)
+            return;
+
+        Toggle(ev);
+    }
+
+    private Task AddAsync()
+        => OnAddRequested.InvokeAsync(DateLocal.Date);
+
+    private async Task CloseAsync()
+    {
+        _expandedIds.Clear();
+        IsOpen = false;
+        await IsOpenChanged.InvokeAsync(false);
+    }
+
+    private string TypeLabel(CalendarEventType type) => type switch
+    {
+        CalendarEventType.Event => Loc.GetOr("Page_Calendar_Event_Options", "Event"),
+        CalendarEventType.Meeting => Loc.GetOr("Page_Calendar_Meeting_Options", "Meeting"),
+        CalendarEventType.Task => Loc.GetOr("Page_Calendar_Task_Options", "Task"),
+        CalendarEventType.Checklist => Loc.GetOr("Page_Calendar_Checklist_Options", "Checklist"),
+        CalendarEventType.Dnd => Loc.GetOr("Page_Calendar_Dnd_Options", "Do not disturb"),
+        _ => type.ToString()
+    };
+
+    private string AvailabilityLabel(CalendarAvailability a) => a switch
+    {
+        CalendarAvailability.Free => Loc.GetOr("Page_Calendar_Availability_Free", "Free"),
+        CalendarAvailability.Busy => Loc.GetOr("Page_Calendar_Availability_Busy", "Busy"),
+        CalendarAvailability.OutOfOffice => Loc.GetOr("Page_Calendar_Availability_OutOfOffice", "Out of office"),
+        CalendarAvailability.Tentative => Loc.GetOr("Page_Calendar_Availability_Tentative", "Tentative"),
+        _ => a.ToString()
+    };
+
+    private string VisibilityLabel(CalendarVisibility v) => v switch
+    {
+        CalendarVisibility.Private => Loc.GetOr("Page_Calendar_Visibility_Private", "Private"),
+        CalendarVisibility.BusyOnly => Loc.GetOr("Page_Calendar_Visibility_BusyOnly", "Busy only"),
+        CalendarVisibility.Details => Loc.GetOr("Page_Calendar_Visibility_Details", "Details"),
+        _ => v.ToString()
+    };
+
+    private string RemindersText(List<ReminderDto>? reminders)
+    {
+        if (reminders is null || reminders.Count == 0)
+            return "";
+
+        return string.Join(", ", reminders
+            .OrderBy(r => r.MinutesBeforeStart)
+            .Select(r => $"{r.Channel} {r.MinutesBeforeStart} min"));
+    }
+
+    private static bool HasRecurrence(CalendarEventDto ev)
+    {
+        if (ev.Recurrence is not null) return true;
+        if (!string.IsNullOrWhiteSpace(ev.EventId) && ev.EventId.Contains(':')) return true;
+        if (!string.IsNullOrWhiteSpace(ev.OccurrenceOverrideSeriesId) && ev.OriginalStartUtc.HasValue) return true;
+        return false;
+    }
+
+    private string RecurrenceText(CalendarEventDto ev)
+    {
+        var r = ev.Recurrence;
+        if (r is null)
+            return Loc.GetOr("Common_Recurrence_Ongoing", "Ongoing");
+
+        static bool IsUnsetUntil(DateTime? untilUtc)
+            => !untilUtc.HasValue || untilUtc.Value == default || untilUtc.Value.Year < 1900;
+
+        string intervalText;
+        if (r.Interval <= 1)
+        {
+            intervalText = string.Format(
+                Loc.GetOr("Common_Recurrence_Every_1", "Every {0}"),
+                FreqNounForInterval(r.Frequency));
+        }
+        else if (r.Interval == 2)
+        {
+            intervalText = string.Format(
+                Loc.GetOr("Common_Recurrence_Every_2", "Every other {0}"),
+                FreqNounForInterval(r.Frequency));
+        }
+        else
+        {
+            intervalText = string.Format(
+                Loc.GetOr("Common_Recurrence_Every_N", "Every {0} {1}s"),
+                r.Interval,
+                FreqNounForInterval(r.Frequency));
+        }
+
+        var daysText = "";
+        if (r.Frequency == RecurrenceFrequency.Weekly && r.ByWeekDays is { Count: > 0 })
+        {
+            var days = string.Join(", ", r.ByWeekDays.Select(ShortDay));
+            daysText = " · " + string.Format(
+                Loc.GetOr("Common_Recurrence_OnDays", "On {0}"),
+                days);
+        }
+
+        string endText;
+        if (!IsUnsetUntil(r.UntilUtc))
+        {
+            var untilLocal = DateTimes.ToLocalFromUtc(
+                DateTime.SpecifyKind(r.UntilUtc!.Value, DateTimeKind.Utc));
+
+            endText = " · " + string.Format(
+                Loc.GetOr("Common_Recurrence_Until", "Until {0}"),
+                untilLocal.ToString("yyyy-MM-dd"));
+        }
+        else
+        {
+            endText = " · " + Loc.GetOr("Common_Recurrence_Ongoing", "Ongoing");
+        }
+
+        var countText = "";
+        if (r.Count is > 0)
+        {
+            countText = " · " + string.Format(
+                Loc.GetOr("Common_Recurrence_Count", "{0} times"),
+                r.Count.Value);
+        }
+
+        return $"{intervalText}{daysText}{endText}{countText}".Trim();
+
+        string FreqNounForInterval(RecurrenceFrequency f) => f switch
+        {
+            RecurrenceFrequency.Daily => Loc.GetOr("Common_Recurrence_Noun_Day", "day"),
+            RecurrenceFrequency.Weekly => Loc.GetOr("Common_Recurrence_Noun_Week", "week"),
+            RecurrenceFrequency.Monthly => Loc.GetOr("Common_Recurrence_Noun_Month", "month"),
+            RecurrenceFrequency.Yearly => Loc.GetOr("Common_Recurrence_Noun_Year", "year"),
+            _ => f.ToString().ToLowerInvariant()
+        };
+    }
+
+    private string ShortDay(DayOfWeek d) => d switch
+    {
+        DayOfWeek.Monday => Loc.GetOr("Common_Actions_MondayShort", "Mon"),
+        DayOfWeek.Tuesday => Loc.GetOr("Common_Actions_TuesdayShort", "Tue"),
+        DayOfWeek.Wednesday => Loc.GetOr("Common_Actions_WednesdayShort", "Wed"),
+        DayOfWeek.Thursday => Loc.GetOr("Common_Actions_ThursdayShort", "Thu"),
+        DayOfWeek.Friday => Loc.GetOr("Common_Actions_FridayShort", "Fri"),
+        DayOfWeek.Saturday => Loc.GetOr("Common_Actions_SaturdayShort", "Sat"),
+        DayOfWeek.Sunday => Loc.GetOr("Common_Actions_SundayShort", "Sun"),
+        _ => d.ToString()
+    };
+
+    private string FormatUtcAsLocal(DateTime utc)
+    {
+        if (utc == default) return "-";
+        return $"{DateTimes.ToLocalFromUtc(utc):yyyy-MM-dd HH:mm}";
+    }
+
+    private string GetLocationMapEmbedUrl(string? location)
+    {
+        var clean = CalendarLocationHelper.Clean(location);
+        if (string.IsNullOrWhiteSpace(clean))
+            return string.Empty;
+
+        return $"https://www.google.com/maps?q={Uri.EscapeDataString(clean)}&output=embed";
+    }
+}

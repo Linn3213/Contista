@@ -1,0 +1,149 @@
+﻿@* UpgradeRequired.razor *@
+@page "/app/upgrade"
+@attribute [Authorize]
+@attribute [Feature(FeatureKey.UpgradeRequired)]
+@inherits AppPageBase
+@using Contista.Shared.Core.Models.Auth
+@using Contista.Shared.UI.Components.Billing
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthProvider
+
+<div class="container my-4">
+    <div class="card p-4">
+        <h1 class="page-title mb-1">@Loc["Page_UpgradeRequired_Title"]</h1>
+        <p class="la-muted mb-4">
+            @Loc["Page_UpgradeRequired_SubTitle"]
+        </p>
+
+        <div class="mb-3">
+            <div class="small la-muted">@Loc["Page_UpgradeRequired_SelectedFunction_Text"]</div>
+            <div class="fw-bold">
+                @(!string.IsNullOrWhiteSpace(Feature) ? Feature : Loc["Page_UpgradeRequired_UnknownFunction_Text"])
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <div class="small la-muted">Din plan</div>
+            <div class="fw-bold">
+                @_currentPlanText
+            </div>
+        </div>
+
+        <div class="d-flex gap-2 flex-wrap">
+            <button class="btn la-btn-primary" @onclick="GoUpgrade">
+                @Loc["Common_Actions_Upgrade"] <span aria-hidden="true">→</span>
+            </button>
+
+            <button class="btn la-btn-outline" @onclick="GoBack">
+                @Loc["Common_Actions_Back"]
+            </button>
+        </div>
+    </div>
+
+        <hr class="h-line my-4" />
+    <div class="card p-4">
+        @* Du hade redan PricingSection, behåll den men lägg den efter CTAs *@
+        <PricingSection />
+    </div>
+</div>
+
+@code {
+    // Query
+    [Parameter, SupplyParameterFromQuery(Name = "returnUrl")]
+    public string? ReturnUrl { get; set; }
+
+    [Parameter, SupplyParameterFromQuery(Name = "feature")]
+    public string? Feature { get; set; }
+
+    private string? _safeReturnUrl;
+    private string? _featureLabel;
+    private string? _requiredText;
+    private string? _currentPlanText;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // 1) Auth info (för att visa "Din plan")
+        var state = await AuthProvider.GetAuthenticationStateAsync();
+        var u = state.User;
+
+        var plan = u.FindFirst("la.planLevel")?.Value;
+        var type = u.FindFirst("la.membershipType")?.Value;
+
+        if (!string.IsNullOrWhiteSpace(type) || !string.IsNullOrWhiteSpace(plan))
+            _currentPlanText = $"{(type ?? Loc["Common_Errors_Unknown"])} (level: {plan ?? "?"})";
+        else
+            _currentPlanText = Loc["Page_UpgradeRequired_UnknownClaimsMissing_Error"];
+
+        // 2) feature label + required plan text
+        if (TryParseFeature(Feature, out var fk))
+        {
+            _featureLabel = fk.ToString();
+
+            // Förklaring baserat på FeatureRequirements.Map
+            if (FeatureRequirements.Map.TryGetValue(fk, out var req))
+                _requiredText = RequiredText(req.Allowed);
+        }
+
+        // 3) safe returnUrl
+        var ru = NormalizeReturnUrl(ReturnUrl);
+        _safeReturnUrl = IsSafeReturnUrl(ru) ? ru : null;
+    }
+
+    private void GoUpgrade()
+    {
+        // Du kan byta till /pricing sen.
+        Nav.NavigateTo("/app/settings");
+    }
+
+    private void GoBack()
+    {
+        if (!string.IsNullOrWhiteSpace(_safeReturnUrl))
+            Nav.NavigateTo(_safeReturnUrl!, replace: true);
+        else
+            Nav.NavigateTo("/app/home", replace: true);
+    }
+
+    private string RequiredText(Entitlement allowed)
+    {
+        // Prioritera “högst” först
+        if (allowed.HasFlag(Entitlement.Admin)) return Loc["Common_Membership_Admin"];
+        if (allowed.HasFlag(Entitlement.Permanent)) return Loc["Common_Membership_Permanent"];
+        if (allowed.HasFlag(Entitlement.Premium)) return Loc["Common_Membership_Premium"];
+        if (allowed.HasFlag(Entitlement.Standard)) return Loc["Common_Membership_Standard"];
+        if (allowed.HasFlag(Entitlement.Free)) return Loc["Common_Membership_Free"];
+        return Loc["Common_Errors_Unknown"];
+    }
+
+    private static string? NormalizeReturnUrl(string? returnUrl)
+    {
+        var ru = (returnUrl ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(ru)) return null;
+        if (!ru.StartsWith("/")) ru = "/" + ru;
+        return ru;
+    }
+
+    private static bool IsSafeReturnUrl(string? ru)
+    {
+        if (string.IsNullOrWhiteSpace(ru)) return false;
+        if (!ru.StartsWith("/")) return false;
+        if (ru.StartsWith("//") || ru.StartsWith("/\\"))
+            return false;
+        if (ru.Contains("://", StringComparison.OrdinalIgnoreCase))
+            return false;
+        return true;
+    }
+
+    private static bool TryParseFeature(string? value, out FeatureKey fk)
+    {
+        fk = default;
+
+        if (string.IsNullOrWhiteSpace(value))
+            return false;
+
+        var v = value.Trim();
+        if (v.StartsWith("FeatureKey.", StringComparison.OrdinalIgnoreCase))
+            v = v.Substring("FeatureKey.".Length);
+
+        return Enum.TryParse(v, ignoreCase: true, out fk);
+    }
+}

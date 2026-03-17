@@ -1,0 +1,37 @@
+﻿.login-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+    .login-card .form-label {
+        color: var(--text-primary);
+        font-weight: var(--font-medium);
+        margin-bottom: 6px;
+    }
+
+    .login-card .form-control {
+        border-radius: var(--radius-sm);
+    }
+
+    /* Status-alerts spacing i kortet */
+    .login-card .alert {
+        margin-bottom: 0;
+    }
+
+/* Links-raden */
+.login-links {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-md);
+}
+
+    .login-links a {
+        color: var(--ui-focus);
+        font-weight: var(--font-medium);
+    }
+
+        .login-links a:hover {
+            color: var(--text-primary);
+            text-decoration: none;
+        }
