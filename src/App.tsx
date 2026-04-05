@@ -22,7 +22,7 @@ function isAuthBypassed() {
   if (import.meta.env.VITE_AUTH_BYPASS === '1') return true
   if (!import.meta.env.DEV) return false
   try {
-    return localStorage.getItem('contista.auth.bypass') === '1'
+    return sessionStorage.getItem('contista.auth.preview_bypass') === '1'
   } catch {
     return false
   }
@@ -61,7 +61,7 @@ function AppRoutes() {
   return (
     <Suspense fallback={<RouteLoading />}>
       <Routes>
-        <Route path="/auth" element={user || isAuthBypassed() ? <Navigate to="/dashboard" replace /> : <AuthPage />} />
+        <Route path="/auth" element={user ? <Navigate to="/dashboard" replace /> : <AuthPage />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
         <Route path="/kalender" element={<ProtectedRoute><KalenderPage /></ProtectedRoute>} />

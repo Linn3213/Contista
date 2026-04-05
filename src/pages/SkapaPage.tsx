@@ -330,7 +330,10 @@ function ChipGrid({ items, selected, onSelect }: {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   const [showInfo, setShowInfo] = useState(false)
+  const normalizedTitle = title.replace(/^[^\p{L}\p{N}]+/u, '').trim()
+  const sectionKey = normalizedTitle.replace(/^Välj\s+/, '')
   const aiTips: Record<string, string> = {
+    'Pågående inlägg': 'Syfte: Fortsätt där du slutade. Här hittar du dina senaste utkast så att du kan redigera, förbättra och publicera utan att tappa fart.',
     'Drömkund': 'Syfte: Skriv för en person, inte för alla. När du väljer drömkund blir hela inlägget mer relevant och lättare att agera på.',
     'Fritänkande': 'Syfte: Töm huvudet innan du strukturerar. Här fångar du råa idéer, problem och insikter som senare blir tydlig storytelling.',
     'Script Template Builder': 'Syfte: Ge innehållet en tydlig röd tråd. En bra struktur hjälper läsaren att förstå, känna och agera.',
@@ -345,7 +348,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     'Slututkast': 'Syfte: Kvalitetssäkra innan publicering. Kontrollera tydlighet, flyt, relevans och att CTA matchar inläggets mål.',
   }
 
-  const infoText = aiTips[title] || 'Syfte: Håll fokus på ett mål, en målgrupp och ett tydligt nästa steg.'
+  const infoText = aiTips[sectionKey] || aiTips[normalizedTitle] || 'Syfte: Välj vad du vill uppnå i det här steget innan du går vidare.'
 
   return (
     <div className="bg-surface-container-lowest rounded-2xl border border-black/5 p-5">
@@ -354,9 +357,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
         <button
           onClick={() => setShowInfo(v => !v)}
           className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-primary/80 hover:text-primary transition-colors"
-          title="AI-info"
+          title="Information"
         >
-          <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
+          <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-current text-[10px] font-semibold leading-none">i</span>
           Guide
         </button>
       </div>

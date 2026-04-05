@@ -2,20 +2,18 @@
 _Senast uppdaterad: 
 
 ## Vad är gjort
-- Lade till lokal auth-bypass via VITE_AUTH_BYPASS i appens route-guard.
-- Satte VITE_AUTH_BYPASS=1 i .env.
-- Startade om appen som dev-server på fast port 4173 (strictPort).
-- Öppnade appen i browsern på localhost.
+- Verifierade vilken Supabase-URL appen använder i lokal .env.
+- Bekräftade att appen just nu pekar på projekt mhswnvzpqekdcdjxxrmm, inte nya pnjzslrblurxyoprlffk.
 
 ## Nuvarande status
-Appen kör lokalt med aktiv bypass och ska släppa in utan vanlig login.
+Lovable kan vara kopplat till Supabase, men lokal app är ännu inte ompekad till nya projektet.
 
 ## Pågående uppgift
-Verifiera att dashboard öppnas direkt utan inloggning.
+Guidning för korrekt koppling mellan Lovable och rätt Supabase-projekt.
 
 ## Nästa steg
-- Bekräfta att du är inne i appen.
-- När riktig login ska användas igen: sätt VITE_AUTH_BYPASS=0 och starta om servern.
+- Uppdatera env-variabler till nya projektets URL + anon key.
+- Starta om appen och verifiera auth/data.
 
 ## Kända problem
-- Bypass är avsiktligt aktiv i lokal miljö tills den stängs av.
+- Otydlighet mellan "integration kopplad" och faktisk databas/projekt-id i appens miljövariabler.

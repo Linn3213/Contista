@@ -15,7 +15,8 @@ export default function AuthPage() {
 
   const continueWithoutLogin = () => {
     try {
-      localStorage.setItem('contista.auth.bypass', '1')
+      sessionStorage.setItem('contista.auth.preview_bypass', '1')
+      localStorage.removeItem('contista.auth.bypass')
     } catch {
       // Ignore storage failures.
     }
