@@ -63,7 +63,7 @@ export default function AuthPage() {
           setError('Inloggning misslyckades. Kontrollera e-post och lösenord.')
           return
         }
-        navigate('/bibliotek')
+        navigate('/dashboard')
       } else {
         const { data, error } = await supabase.auth.signUp({ email, password })
         if (error) throw error
