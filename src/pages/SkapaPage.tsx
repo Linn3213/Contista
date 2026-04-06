@@ -1145,33 +1145,60 @@ export default function SkapaPage() {
                 </select>
               )}
 
-              {/* Sök */}
-              <input
-                type="text"
-                value={hookSearch}
-                onChange={e => setHookSearch(e.target.value)}
-                placeholder="Sök hooks..."
-                className="input-field text-sm mb-3"
-              />
+              {/* Sök med dropdown */}
+              <div className="relative">
+                <input
+                  type="text"
+                  value={hookSearch}
+                  onChange={e => setHookSearch(e.target.value)}
+                  placeholder="Sök hooks..."
+                  className="input-field text-sm"
+                />
+                {hookSearch && (
+                  <div className="absolute z-50 left-0 right-0 mt-1 bg-surface-container-lowest border border-outline-variant/30 rounded-xl shadow-editorial max-h-72 overflow-y-auto">
+                    {loadingHooks ? (
+                      <p className="text-xs text-on-surface-variant text-center py-4">Laddar hooks...</p>
+                    ) : currentHooks.length === 0 ? (
+                      <p className="text-xs text-on-surface-variant text-center py-4">Inga träffar</p>
+                    ) : (
+                      <>
+                        <p className="text-[10px] text-on-surface-variant/60 px-3 pt-2 pb-1">{currentHooks.length} träffar</p>
+                        {currentHooks.slice(0, 20).map(hook => (
+                          <button
+                            key={hook.id}
+                            onClick={() => { prependToDraft(hook.text); setHookSearch('') }}
+                            className="w-full text-left px-3 py-2.5 hover:bg-primary/5 transition-colors text-xs text-on-surface leading-relaxed border-b border-outline-variant/10 last:border-b-0"
+                          >
+                            {hook.text.length > 120 ? hook.text.slice(0, 120) + '…' : hook.text}
+                          </button>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
 
-              <p className="text-[11px] text-on-surface-variant mb-2">
-                {currentHooks.length} hooks. Klicka för att lägga till i utkastet.
-              </p>
-
-              {loadingHooks ? (
-                <p className="text-xs text-on-surface-variant text-center py-4">Laddar hooks...</p>
-              ) : (
-                <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
-                  {currentHooks.map(hook => (
-                    <button
-                      key={hook.id}
-                      onClick={() => prependToDraft(hook.text)}
-                      className="w-full text-left p-3 rounded-xl border border-outline-variant/20 bg-background hover:border-primary/40 hover:bg-primary/3 transition-all text-xs text-on-surface leading-relaxed"
-                    >
-                      {hook.text.length > 120 ? hook.text.slice(0, 120) + '…' : hook.text}
-                    </button>
-                  ))}
-                </div>
+              {!hookSearch && (
+                <>
+                  <p className="text-[11px] text-on-surface-variant mb-2 mt-3">
+                    {currentHooks.length} hooks. Klicka för att lägga till i utkastet.
+                  </p>
+                  {loadingHooks ? (
+                    <p className="text-xs text-on-surface-variant text-center py-4">Laddar hooks...</p>
+                  ) : (
+                    <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                      {currentHooks.map(hook => (
+                        <button
+                          key={hook.id}
+                          onClick={() => prependToDraft(hook.text)}
+                          className="w-full text-left p-3 rounded-xl border border-outline-variant/20 bg-background hover:border-primary/40 hover:bg-primary/3 transition-all text-xs text-on-surface leading-relaxed"
+                        >
+                          {hook.text.length > 120 ? hook.text.slice(0, 120) + '…' : hook.text}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </Section>
 
