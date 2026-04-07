@@ -2,18 +2,20 @@
 _Senast uppdaterad: 
 
 ## Vad är gjort
-- Verifierade vilken Supabase-URL appen använder i lokal .env.
-- Bekräftade att appen just nu pekar på projekt mhswnvzpqekdcdjxxrmm, inte nya pnjzslrblurxyoprlffk.
+- Commitat och pushat 20260405190000_security_advisor_cleanup.sql.
+- Synkat med nya remote-ändringar från Contista/main.
+- Pushat slutligt läge till både contista/main och clonecontista/master.
 
 ## Nuvarande status
-Lovable kan vara kopplat till Supabase, men lokal app är ännu inte ompekad till nya projektet.
+Lovable är nu uppdaterad med senaste säkerhetsmigreringarna i GitHub (HEAD: 4365416).
 
 ## Pågående uppgift
-Guidning för korrekt koppling mellan Lovable och rätt Supabase-projekt.
+Verifiering av kvarvarande Supabase Advisor-varningar.
 
 ## Nästa steg
-- Uppdatera env-variabler till nya projektets URL + anon key.
-- Starta om appen och verifiera auth/data.
+- Kör alla senaste migrationer i Supabase SQL Editor i rätt projekt.
+- Aktivera Leaked Password Protection i Supabase Auth.
+- Kör om Security Advisor efter migrering.
 
 ## Kända problem
-- Otydlighet mellan "integration kopplad" och faktisk databas/projekt-id i appens miljövariabler.
+- Advisor-varningar försvinner inte förrän SQL faktiskt körts i databasen.
