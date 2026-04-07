@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useState } from 'react'
 import TopNav from './TopNav'
 import BottomNav from './BottomNav'
 import SideNav from './SideNav'
+import GuidetteWidget from './GuidetteWidget'
 
 export default function Layout({ children, hideNav = false }: { children: ReactNode; hideNav?: boolean }) {
   const [sideNavOpen, setSideNavOpen] = useState(true)
@@ -35,6 +36,7 @@ export default function Layout({ children, hideNav = false }: { children: ReactN
         {children}
       </main>
       {!hideNav && <BottomNav />}
+      {!hideNav && <GuidetteWidget />}
     </div>
   )
 }

@@ -2,7 +2,9 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { ToastProvider } from './contexts/ToastContext'
+import { GuidetteProvider } from './contexts/GuidetteContext'
 import { useAuth } from './contexts/AuthContext'
+import { useGuidette } from './contexts/GuidetteContext'
 
 const AuthPage = lazy(() => import('./pages/AuthPage'))
 const BibliotekPage = lazy(() => import('./pages/BibliotekPage'))
@@ -17,6 +19,7 @@ const DashboardPage = lazy(() => import('./pages/DashboardPage'))
 const KalenderPage = lazy(() => import('./pages/KalenderPage'))
 const TrendspaningPage = lazy(() => import('./pages/TrendspaningPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
+const OnboardingPage = lazy(() => import('./pages/OnboardingPage'))
 
 function isAuthBypassed() {
   if (import.meta.env.VITE_AUTH_BYPASS === '1') return true
@@ -51,8 +54,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function AppRoutes() {
   const { user, loading } = useAuth()
+  const { onboardingDone, loading: guidetteLoading } = useGuidette()
 
-  if (loading) return (
+  if (loading || guidetteLoading) return (
     <div className="min-h-screen bg-background flex items-center justify-center">
       <span className="serif-headline text-3xl italic text-on-surface-variant animate-pulse">Contista</span>
     </div>
@@ -62,8 +66,13 @@ function AppRoutes() {
     <Suspense fallback={<RouteLoading />}>
       <Routes>
         <Route path="/auth" element={user ? <Navigate to="/dashboard" replace /> : <AuthPage />} />
+        <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            {user && !onboardingDone ? <Navigate to="/onboarding" replace /> : <DashboardPage />}
+          </ProtectedRoute>
+        } />
         <Route path="/kalender" element={<ProtectedRoute><KalenderPage /></ProtectedRoute>} />
         <Route path="/veckoplanering" element={<Navigate to="/kalender" replace />} />
         <Route path="/trender" element={<ProtectedRoute><TrendspaningPage /></ProtectedRoute>} />
@@ -101,9 +110,11 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <ToastProvider>
-          <AppRoutes />
-        </ToastProvider>
+        <GuidetteProvider>
+          <ToastProvider>
+            <AppRoutes />
+          </ToastProvider>
+        </GuidetteProvider>
       </AuthProvider>
     </BrowserRouter>
   )
